@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: neo4j-supply-chain
+    restart: unless-stopped
+    ports:
+      - "7474:7474"  # HTTP (web console)
+      - "7687:7687"  # Bolt protocol (database)
+    environment:
+      NEO4J_AUTH: neo4j/neo4jPASSWORD
+      NEO4J_dbms_memory_heap_initial__size: 512M
+      NEO4J_dbms_memory_heap_max__size: 1G
+      NEO4J_dbms_memory_pagecache_size: 512M
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: 'apoc.*'
+    volumes:
+      - neo4j_data:/var/lib/neo4j/data
+      - neo4j_logs:/var/lib/neo4j/logs
+      - ./neo4j/init.cypher:/var/lib/neo4j/init.cypher
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "neo4jPASSWORD", "RETURN 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - supply-chain-network
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-compose
+    restart: unless-stopped
+
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=Europe/Berlin
+      - TZ=Europe/Berlin
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./data-processors:/home/node/.n8n-files
+    networks:
+      - supply-chain-network
+
+volumes:
+  neo4j_data:
+    driver: local
+  neo4j_logs:
+    driver: local
+  n8n_data:
+    external: true
+
+networks:
+  supply-chain-network:
+    driver: bridge
+

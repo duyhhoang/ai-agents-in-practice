@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  permission-fixer:
+    image: alpine:latest
+    container_name: n8n-permission-fixer
+    volumes:
+      - n8n_data:/home/node/.n8n
+    command: sh -c "find /home/node/.n8n"
+    user: root
+
+
+volumes:
+  n8n_data:
+    external: true
+

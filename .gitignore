@@ -1,0 +1,87 @@
+# =========================================================================
+# Gitignore for GenAI Agents for Supply Chain Analysis Project
+# =========================================================================
+
+# 1. Environment Variables & Secrets
+# ----------------------------------
+.env
+.env.*
+mcp-server/.env
+
+# 2. Python Virtual Environments
+# -----------------------------
+.venv/
+venv/
+ENV/
+# Ignore venv folders inside tum-air-akg-example
+tum-air-akg-example/Lib/
+tum-air-akg-example/Include/
+tum-air-akg-example/Scripts/
+tum-air-akg-example/pyvenv.cfg
+
+# 3. Python Caching & Bytecode
+# ----------------------------
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# 4. Node.js (MCP Server) Dependencies & Builds
+# ---------------------------------------------
+**/node_modules/
+**/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+
+# 5. Local Databases & Temporary State
+# ------------------------------------
+# n8n & container local SQLite database files and backups
+*.sqlite
+*.sqlite.bak
+*.sqlite-shm
+*.sqlite-wal
+*.db
+
+# 6. Temporary Directories & Log Files
+# ------------------------------------
+temp_large_files/
+**/logs/
+**/*.log
+
+# 7. Ad-Hoc Execution Dumps & JSON Payload Logs
+# ---------------------------------------------
+# Excludes raw execution results and JSON dumps at the root
+/*.json
+resolved_execution_*.json
+wf.json
+wf_current.json
+wf_patched*.json
+data-processors/execution_*.json
+
+# 8. Root-Level Ad-hoc / Debug Helper Scripts
+# -------------------------------------------
+# Prevents committing the many debugging/inspection scripts at the root.
+# Core codebase files reside inside subdirectories (e.g. tum-air-akg-example/src/, mcp-server/src/).
+# Note: If you ever want to force-add a root script, use: git add -f <script_name>.py
+/*.py
+/*.ipynb
+Neo4j-bfaf074a-Created-2026-05-28.txt
+
+# 9. Reference / Lecture / Course Materials
+# -----------------------------------------
+# Ignore PDFs, slide decks, and Word docs in the root workspace
+/*.pdf
+/*.pptx
+/*.docx
+/*.doc
+
+# 10. IDE & OS Metadata
+# ---------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
