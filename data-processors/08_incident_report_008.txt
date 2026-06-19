@@ -1,0 +1,38 @@
+INCIDENT REPORT - EVC-2024-0008
+Date Filed: 2025-08-31
+Reported by: Site Operator Maria Santos, SITE-004
+Equipment ID: EVC-2024-0008
+
+INCIDENT DESCRIPTION:
+During routine 2-hour charging session on 2025-08-30 around 16:45, user reported charger making unusual high-pitched buzzing sound and slight burning smell. User immediately unplugged vehicle.
+
+INVESTIGATION:
+Field technician Stefan Krone arrived on-site within 45 minutes.
+
+Findings:
+1. Connector assembly showed discoloration and charring on pin contacts
+2. Burn pattern consistent with arc tracking (possible connection resistance issue)
+3. Visual inspection: Customer had previously inserted vehicle connector in reverse orientation (attempted before trip)
+4. This caused partial contact and intermittent arc during charging
+
+ROOT CAUSE ANALYSIS:
+- User error: Connector inserted incorrectly (design allows manual insertion, but strain caused partial seating)
+- The charging session before incident (same day morning) may have caused micro-arcs that degraded contacts
+- No fault detected in charger electronics or power delivery (current limiting works correctly)
+
+CORRECTIVE ACTION TAKEN:
+1. Connector assembly replaced with new unit (part #KKE-2024-Rev2)
+2. Full electrical safety retest performed - all parameters OK
+3. Site operator re-trained on proper connector insertion technique
+4. Updated user manual with clearer diagrams (now includes warning about reverse insertion)
+5. QR code instructions updated with video showing correct insertion
+
+PREVENTIVE MEASURES:
+- Design improvement: Next generation connector (in design phase) will use keyed design to prevent reverse insertion
+- Customer communication: Email sent to all users about connector care
+
+RISK ASSESSMENT: LOW
+Equipment functioned as designed. User error, easily prevented through better design.
+
+Status: RESOLVED
+Signature: Klaus Mueller, Quality Manager | 2025-09-02

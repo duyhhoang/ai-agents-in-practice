@@ -1,0 +1,193 @@
+SUPPLIER QUALITY AUDIT REPORT
+EuroCharge Final Assembly Factory (Actor A8)
+Audit Period: Q2 2025
+Audit Date: 2025-06-15
+
+FACILITY OVERVIEW
+Location: Budapest, Hungary
+Certifications: ISO 9001:2015, ISO 14001:2015, IATF 16949
+Employees: 245 (production: 180, quality: 35, support: 30)
+Production Capacity: 2,500 units/year
+Current Utilization: 68%
+
+AUDIT FINDINGS
+
+1. MANUFACTURING PROCESS QUALITY
+Overall Rating: GOOD (8.2/10)
+
+Process Flow Observations:
+- Automated testing station operational and well-maintained
+- Final torque verification performed on all critical fasteners
+- Electrical safety checks logged consistently
+- Cable routing and connector seating within specification
+
+Issues Found:
+- Minor: Connector batch A7-2024-556 showed intermittent contact resistance issues
+  Root Cause: Supplier (A4 - Global Sea Freight) environmental contamination during transport
+  Action: Connectors replaced, supplier notified, improved packaging specified
+  Follow-up: Corrective action verified in June 2025
+
+- No Critical Issues
+
+2. CALIBRATION & METROLOGY
+Overall Rating: EXCELLENT (9.1/10)
+
+Equipment Calibration:
+- All precision instruments calibrated within 12 months
+- Calibration certificate documentation complete
+- Environmental monitoring (temperature, humidity) logged daily
+- Backup equipment available for critical measurements
+
+Observations:
+- New CMM (Coordinate Measuring Machine) installed Q1 2025, performing well
+- Tolerance stack-up analysis reviewed and validated
+- Statistical process control charts maintained and monitored
+
+3. WORKFORCE COMPETENCY
+Overall Rating: GOOD (7.8/10)
+
+Training Program:
+- 40 hours mandatory annual training per employee
+- Product-specific training: New employees complete 3-week program
+- Certification records maintained
+- Cross-training program: 18 employees trained on backup processes
+
+Areas for Improvement:
+- Technician skills variance: Some operators more consistent than others
+  Recommendation: Implement mentorship pairing program
+- New hire ramp-up time: Average 6 weeks to full productivity
+  Benchmark: Industry standard 4-5 weeks
+
+4. SUPPLIER PERFORMANCE
+Overall Rating: GOOD (8.0/10)
+
+Key Component Suppliers Performance:
+- Connector supplier (A6): On-time delivery 96%, quality 2 PPM (parts per million) defects
+- Housing supplier (A1): On-time 98%, quality 1 PPM
+- Electronics supplier (A5): On-time 92%, quality 3 PPM (concerning)
+- Coating supplier (A7): On-time 99%, quality <1 PPM
+
+Findings:
+- Electronics supplier (A5) showing declining on-time performance (92% vs. 96% baseline)
+  Recommendation: Schedule face-to-face quality meeting Q3 2025
+- Supply chain visibility: 3-week lead time buffer maintained
+
+5. ENVIRONMENTAL MANAGEMENT
+Overall Rating: EXCELLENT (9.0/10)
+
+Waste Management:
+- Packaging waste: 95% recycled
+- Scrap metal: 98% recycled (sold to Materials Recovery Inc., A16)
+- Electronic waste: 100% segregated to certified e-waste recycler
+- Water usage: 12 m³/unit (within target 14 m³/unit)
+
+Energy Consumption:
+- Solar panels: Installed 2024, 15% of facility power
+- LED lighting retrofit completed 2024, 22% energy reduction
+- Gas heating: Recently upgraded to high-efficiency condensing boiler
+
+Compliance:
+- All environmental permits current
+- No violations recorded in past 24 months
+- ISO 14001 certification valid until 2027
+
+6. SAFETY & REGULATORY COMPLIANCE
+Overall Rating: EXCELLENT (9.4/10)
+
+Occupational Safety:
+- Lost Time Injury Rate (LTIR): 0.3 per 200,000 hours (excellent)
+- Near-miss reporting system: Functional and used
+- Safety training: Mandatory quarterly, records complete
+- Hazard assessments: Current (updated Q1 2025)
+
+Product Safety Compliance:
+- VDE testing integration: All units tested before shipment
+- Traceability: Serial numbers linked to batch records
+- Documentation: Complete and auditable
+- Field incident log: 8 incidents tracked in past 12 months (investigated and resolved)
+
+7. PRODUCTION EFFICIENCY
+Overall Rating: GOOD (8.3/10)
+
+Metrics:
+- First Pass Yield: 96.8% (target: 98%)
+- Rework Rate: 2.1% (target: <2%)
+- On-time Delivery: 98.2% (excellent)
+- Inventory Turns: 12x per year (good)
+
+Observations:
+- Inventory of finished units: 45-50 units maintained (2-week buffer)
+- Packaging design change Q2 2025 improved shelf stability
+- Order-to-ship lead time: 7-10 days (within specification)
+
+8. DOCUMENTATION & TRACEABILITY
+Overall Rating: EXCELLENT (9.2/10)
+
+Records System:
+- Electronic Work Instructions: Up-to-date, version controlled
+- Batch Documentation: Complete from receipt of components to shipment
+- Serial Number Traceability: Full genealogy available via system
+- Retention: Records maintained for 10 years minimum
+
+Test Data:
+- All VDE test results documented and stored
+- Integration with Neo4j system: In-progress (expected Q3 2025)
+- Data retention: 5-year archive maintained
+
+AUDIT SUMMARY
+
+Strengths:
+✓ Strong environmental management and sustainability practices
+✓ Excellent safety record and regulatory compliance
+✓ Good calibration and metrology discipline
+✓ Consistent on-time delivery performance
+✓ Comprehensive traceability and documentation
+
+Areas for Development:
+- Improve first-pass yield to 98% (currently 96.8%)
+- Address electronics supplier performance decline
+- Standardize technician competency (reduce variance)
+- Accelerate new hire ramp-up time
+
+Recommendations:
+1. Implement technician mentorship program (Owner: HR Manager)
+2. Schedule quality meeting with electronics supplier A5 (Owner: Procurement)
+3. Pilot advanced process control on final testing line (Owner: Quality Manager)
+4. Expand environmental monitoring data to supply chain (Owner: Sustainability Team)
+
+OVERALL AUDIT RATING: 8.6/10 - GOOD (with strong potential)
+
+CERTIFICATION RENEWAL: APPROVED for continued ISO 9001:2015 and IATF 16949 certification
+
+Next Audit Scheduled: Q2 2026
+
+AUDIT TEAM
+Lead Auditor: Dr. Maria Kovacs (15 years experience, IATF certified)
+Co-Auditors: Johann Schmidt (Process), Elena Rossi (Environmental)
+Auditee Witness: Facility Manager Peter Szabo
+
+Date: 2025-06-15
+Approved by: Dr. Maria Kovacs, Lead Auditor
+Signature: [Digital Signature]
+Distribution: Factory Management, Corporate Quality, Customer Representatives
+
+---
+
+FOLLOW-UP ITEMS
+
+Action Item 1: Mentorship Program Design
+Owner: HR Manager
+Due Date: 2025-07-31
+Status: In Progress
+
+Action Item 2: Electronics Supplier Quality Meeting
+Owner: Procurement Manager
+Due Date: 2025-08-30
+Status: Scheduled (2025-07-20)
+
+Action Item 3: Process Control Pilot Evaluation
+Owner: Quality Manager
+Due Date: 2025-09-30
+Status: Equipment RFQ under evaluation
+
+Verification Due: 2025-12-31 (Submit corrective action verification)
