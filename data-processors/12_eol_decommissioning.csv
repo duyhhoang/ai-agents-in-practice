@@ -1,0 +1,9 @@
+unit_id,installation_date,decommission_date,actual_service_life_years,fault_rate_per_year,decommission_reason,collection_contractor,dismantling_facility,collection_distance_km,status
+EVC-2024-0001,2/27/2024,1/16/2036,11.9,3.5,Technology upgrade programme,Decommissioning Contractor,Dismantling Facility O,192,COMPLETED
+EVC-2024-0002,3/5/2024,11/4/2035,11.7,4.2,Technology upgrade programme,Decommissioning Contractor,Dismantling Facility O,251,COMPLETED
+EVC-2024-0003,3/12/2024,1/26/2036,11.9,3.7,Fault rate exceeded threshold (>3/yr),Decommissioning Contractor,Dismantling Facility O,120,COMPLETED
+EVC-2024-0004,3/19/2024,3/16/2036,12,3.4,Technology upgrade programme,Decommissioning Contractor,Dismantling Facility O,137,COMPLETED
+EVC-2024-0005,3/26/2024,2/18/2036,11.9,4.1,Fault rate exceeded threshold (>3/yr),Decommissioning Contractor,Dismantling Facility O,179,COMPLETED
+EVC-2024-0006,4/2/2024,10/8/2035,11.5,2.9,Technology upgrade programme,Decommissioning Contractor,Dismantling Facility O,277,COMPLETED
+EVC-2024-0007,4/9/2024,12/18/2035,11.7,2.9,Operator site closure,Decommissioning Contractor,Dismantling Facility O,258,COMPLETED
+EVC-2024-0008,4/16/2024,12/11/2035,11.7,4,Operator site closure,Decommissioning Contractor,Dismantling Facility O,125,COMPLETED

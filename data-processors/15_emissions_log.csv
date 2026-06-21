@@ -1,0 +1,537 @@
+source_table,unit_id,process_id,co2_kg,notes
+energy_consumption,EVC-2024-0001,P02,7.569,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0001,P03,13.881,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0001,P05,21.799,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0001,P06,2.164,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0001,P07,0.838,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0001,P08,1.95,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0001,P09,1.12,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0001,P12,1.168,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0002,P02,6.954,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0002,P03,13.598,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0002,P05,21.737,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0002,P06,2.018,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0002,P07,0.886,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0002,P08,2.029,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0002,P09,1.091,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0002,P12,1.132,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0003,P02,3.382,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0003,P03,6.187,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0003,P05,8.626,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0003,P06,0.951,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0003,P07,0.377,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0003,P08,0.883,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0003,P09,0.487,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0003,P12,0.513,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0004,P02,3.342,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0004,P03,6.335,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0004,P05,9.23,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0004,P06,0.873,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0004,P07,0.384,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0004,P08,0.904,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0004,P09,0.447,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0004,P12,0.527,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0005,P02,3.041,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0005,P03,6.052,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0005,P05,9.054,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0005,P06,0.873,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0005,P07,0.366,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0005,P08,0.892,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0005,P09,0.479,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0005,P12,0.541,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0006,P02,3.104,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0006,P03,5.916,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0006,P05,9.089,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0006,P06,0.959,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0006,P07,0.395,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0006,P08,0.915,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0006,P09,0.501,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0006,P12,0.522,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0007,P02,3.279,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0007,P03,5.646,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0007,P05,8.705,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0007,P06,0.904,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0007,P07,0.41,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0007,P08,0.865,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0007,P09,0.49,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0007,P12,0.545,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0008,P02,3.276,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0008,P03,6.291,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0008,P05,8.339,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0008,P06,0.889,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0008,P07,0.366,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0008,P08,0.865,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0008,P09,0.479,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0008,P12,0.536,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0009,P02,1.94,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0009,P03,3.542,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0009,P05,5.804,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0009,P06,0.557,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0009,P07,0.249,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0009,P08,0.504,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0009,P09,0.282,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0009,P12,0.313,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0010,P02,3.426,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0010,P03,5.726,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0010,P05,8.86,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0010,P06,0.873,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0010,P07,0.403,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0010,P08,0.869,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0010,P09,0.472,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0010,P12,0.522,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0011,P02,7.43,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0011,P03,13.376,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0011,P05,20.489,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0011,P06,1.971,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0011,P07,0.827,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0011,P08,2.093,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0011,P09,1.127,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0011,P12,1.141,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0012,P02,2.009,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0012,P03,3.979,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0012,P05,5.464,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0012,P06,0.533,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0012,P07,0.242,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0012,P08,0.566,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0012,P09,0.282,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0012,P12,0.297,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0013,P02,18.575,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0013,P03,32.89,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0013,P05,50.477,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0013,P06,5.388,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0013,P07,2.17,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0013,P08,4.855,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0013,P09,2.606,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0013,P12,2.958,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0014,P02,3.309,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0014,P03,6.052,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0014,P05,8.873,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0014,P06,0.897,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0014,P07,0.373,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0014,P08,0.915,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0014,P09,0.447,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0014,P12,0.485,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0015,P02,2.141,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0015,P03,3.838,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0015,P05,5.887,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0015,P06,0.603,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0015,P07,0.253,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0015,P08,0.545,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0015,P09,0.278,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0015,P12,0.338,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0016,P02,7.031,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0016,P03,13.266,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0016,P05,21.596,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0016,P06,1.963,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0016,P07,0.853,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0016,P08,2.065,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0016,P09,1.058,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0016,P12,1.224,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0017,P02,3.393,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0017,P03,5.701,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0017,P05,8.816,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0017,P06,0.85,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0017,P07,0.388,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0017,P08,0.8,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0017,P09,0.487,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0017,P12,0.545,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0018,P02,2.104,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0018,P03,3.635,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0018,P05,5.468,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0018,P06,0.533,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0018,P07,0.242,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0018,P08,0.511,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0018,P09,0.293,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0018,P12,0.338,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0019,P02,7.141,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0019,P03,12.755,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0019,P05,20.683,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0019,P06,2.033,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0019,P07,0.834,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0019,P08,1.921,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0019,P09,1.12,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0019,P12,1.115,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0020,P02,20.298,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0020,P03,35.572,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0020,P05,53.524,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0020,P06,5.643,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0020,P07,2.086,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0020,P08,4.667,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0020,P09,2.734,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0020,P12,2.914,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0021,P02,18.633,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0021,P03,32.866,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0021,P05,49.251,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0021,P06,5.156,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0021,P07,2.247,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0021,P08,4.991,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0021,P09,2.683,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0021,P12,2.843,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0022,P02,3.506,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0022,P03,6.384,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0022,P05,9.565,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0022,P06,0.897,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0022,P07,0.366,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0022,P08,0.899,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0022,P09,0.498,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0022,P12,0.504,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0023,P02,7.126,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0023,P03,13.911,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0023,P05,22.015,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0023,P06,2.095,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0023,P07,0.922,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0023,P08,2.033,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0023,P09,1.153,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0023,P12,1.093,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0024,P02,7.968,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0024,P03,13.715,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0024,P05,20.608,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0024,P06,1.987,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0024,P07,0.824,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0024,P08,1.861,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0024,P09,1.028,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0024,P12,1.244,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0025,P02,3.301,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0025,P03,6.181,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0025,P05,8.366,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0025,P06,0.943,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0025,P07,0.41,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0025,P08,0.881,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0025,P09,0.447,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0025,P12,0.513,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0026,P02,19.727,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0026,P03,35.608,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0026,P05,50.402,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0026,P06,5.403,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0026,P07,2.291,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0026,P08,5.141,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0026,P09,2.745,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0026,P12,3.073,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0027,P02,18.168,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0027,P03,32.195,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0027,P05,48.819,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0027,P06,5.164,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0027,P07,2.24,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0027,P08,5.021,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0027,P09,2.935,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0027,P12,3.142,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0028,P02,7.686,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0028,P03,13.973,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0028,P05,20.683,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0028,P06,2.257,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0028,P07,0.853,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0028,P08,1.973,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0028,P09,1.021,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0028,P12,1.152,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0029,P02,17.952,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0029,P03,34.502,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0029,P05,50.821,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0029,P06,5.017,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0029,P07,2.189,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0029,P08,4.766,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0029,P09,2.683,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0029,P12,2.783,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0030,P02,7.752,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0030,P03,12.983,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0030,P05,19.62,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0030,P06,1.979,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0030,P07,0.893,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0030,P08,1.865,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0030,P09,1.138,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0030,P12,1.093,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0031,P02,2.013,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0031,P03,3.629,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0031,P05,5.623,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0031,P06,0.572,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0031,P07,0.253,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0031,P08,0.531,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0031,P09,0.278,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0031,P12,0.334,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0032,P02,7.543,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0032,P03,13.296,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0032,P05,20.237,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0032,P06,1.987,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0032,P07,0.849,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0032,P08,1.921,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0032,P09,1.113,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0032,P12,1.221,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0033,P02,7.997,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0033,P03,13.339,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0033,P05,21.927,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0033,P06,1.956,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0033,P07,0.915,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0033,P08,1.937,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0033,P09,1.098,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0033,P12,1.244,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0034,P02,17.703,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0034,P03,33.382,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0034,P05,48.113,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0034,P06,5.334,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0034,P07,2.405,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0034,P08,5.219,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0034,P09,2.789,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0034,P12,2.933,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0035,P02,3.294,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0035,P03,5.541,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0035,P05,9.133,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0035,P06,0.966,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0035,P07,0.399,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0035,P08,0.876,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0035,P09,0.512,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0035,P12,0.515,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0036,P02,19.306,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0036,P03,33.708,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0036,P05,55.782,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0036,P06,5.04,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0036,P07,2.134,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0036,P08,4.637,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0036,P09,2.745,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0036,P12,3.176,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0037,P02,18.036,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0037,P03,36.07,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0037,P05,51.262,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0037,P06,4.978,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0037,P07,2.236,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0037,P08,4.977,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0037,P09,2.613,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0037,P12,2.896,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0038,P02,3.049,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0038,P03,6.267,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0038,P05,9.332,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0038,P06,0.951,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0038,P07,0.362,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0038,P08,0.89,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0038,P09,0.465,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0038,P12,0.494,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0039,P02,7.247,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0039,P03,14.379,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0039,P05,21.269,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0039,P06,2.079,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0039,P07,0.86,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0039,P08,2.04,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0039,P09,1.054,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0039,P12,1.235,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0040,P02,3.063,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0040,P03,5.572,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0040,P05,8.45,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0040,P06,0.951,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0040,P07,0.366,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0040,P08,0.92,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0040,P09,0.487,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0040,P12,0.481,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0041,P02,3.261,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0041,P03,6.07,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0041,P05,8.353,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0041,P06,0.966,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0041,P07,0.388,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0041,P08,0.81,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0041,P09,0.476,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0041,P12,0.511,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0042,P02,7.895,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0042,P03,12.983,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0042,P05,21.261,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0042,P06,2.103,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0042,P07,0.915,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0042,P08,2.049,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0042,P09,1.16,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0042,P12,1.134,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0043,P02,6.969,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0043,P03,14.612,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0043,P05,21.243,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0043,P06,2.149,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0043,P07,0.838,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0043,P08,1.925,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0043,P09,1.091,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0043,P12,1.164,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0044,P02,7.353,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0044,P03,13.401,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0044,P05,20.14,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0044,P06,2.01,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0044,P07,0.842,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0044,P08,1.87,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0044,P09,1.043,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0044,P12,1.161,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0045,P02,17.692,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0045,P03,37.035,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0045,P05,51.443,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0045,P06,5.009,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0045,P07,2.211,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0045,P08,4.752,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0045,P09,2.628,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0045,P12,3.163,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0046,P02,7.851,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0046,P03,13.542,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0046,P05,20.282,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0046,P06,2.234,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0046,P07,0.875,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0046,P08,1.847,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0046,P09,1.058,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0046,P12,1.118,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0047,P02,8.026,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0047,P03,14.268,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0047,P05,19.219,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0047,P06,2.095,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0047,P07,0.838,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0047,P08,2.075,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0047,P09,1.102,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0047,P12,1.166,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0048,P02,17.934,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0048,P03,36.119,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0048,P05,48.426,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0048,P06,5.481,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0048,P07,2.083,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0048,P08,5.318,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0048,P09,2.588,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0048,P12,2.864,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0049,P02,3.228,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0049,P03,6.224,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0049,P05,8.547,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0049,P06,0.974,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0049,P07,0.381,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0049,P08,0.872,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0049,P09,0.472,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0049,P12,0.49,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0050,P02,19.665,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0050,P03,34.12,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0050,P05,51.121,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0050,P06,5.086,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0050,P07,2.295,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0050,P08,4.738,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0050,P09,2.932,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0050,P12,2.831,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0001,P15,4210.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0002,P15,4201.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0003,P15,2028.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0004,P15,2061,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0005,P15,2001.9,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0006,P15,2107.7,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0007,P15,2024.5,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0008,P15,2097.5,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0009,P15,1391.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0010,P15,2022,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0011,P15,4410.5,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0012,P15,1416.1,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0013,P15,9870.5,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0014,P15,2030.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0015,P15,1424.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0016,P15,4200.2,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0017,P15,2066.2,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0018,P15,1396.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0019,P15,4272.5,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0020,P15,10532.1,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0021,P15,9814.9,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0022,P15,2064.4,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0023,P15,4441.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0024,P15,4284.1,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0025,P15,2019.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0026,P15,10213.7,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0027,P15,9829.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0028,P15,4316.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0029,P15,10612.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0030,P15,4426.5,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0031,P15,1348.9,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0032,P15,4262.8,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0033,P15,4558.2,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0034,P15,10789,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0035,P15,1958.3,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0036,P15,9855.4,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0037,P15,9960.6,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0038,P15,2018.7,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0039,P15,4280,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0040,P15,2123.4,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0041,P15,1922.8,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0042,P15,4510.9,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0043,P15,4224.3,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0044,P15,4538.9,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0045,P15,9853.2,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0046,P15,4457,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0047,P15,4365.4,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0048,P15,10504.9,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0049,P15,1961.2,Manufacturing/assembly energy
+energy_consumption,EVC-2024-0050,P15,10729,Manufacturing/assembly energy
+transport,EVC-2024-0001,P16,11.8,Sea Ho Chi Minh City Port → Hamburg Port
+transport,EVC-2024-0001,P16,28.4,Truck Hamburg Port → Budapest Assembly
+transport,EVC-2024-0001,P16,21.6,Truck Budapest Assembly → SITE-001
+transport,EVC-2024-0002,P16,11.8,Sea Ho Chi Minh City Port → Hamburg Port
+transport,EVC-2024-0002,P16,18.6,Truck Hamburg Port → Budapest Assembly
+transport,EVC-2024-0002,P16,14,Truck Budapest Assembly → SITE-003
+transport,EVC-2024-0003,P16,11.8,Sea Ho Chi Minh City Port → Hamburg Port
+transport,EVC-2024-0003,P16,24.1,Truck Hamburg Port → Budapest Assembly
+transport,EVC-2024-0003,P16,24.8,Truck Budapest Assembly → SITE-002
+transport,EVC-2024-0004,P16,11.8,Sea Ho Chi Minh City Port → Hamburg Port
+transport,EVC-2024-0004,P16,28.4,Truck Hamburg Port → Budapest Assembly
+transport,EVC-2024-0004,P16,9.9,Truck Budapest Assembly → SITE-005
+transport,EVC-2024-0005,P16,11.8,Sea Ho Chi Minh City Port → Hamburg Port
+transport,EVC-2024-0005,P16,24.1,Truck Hamburg Port → Budapest Assembly
+transport,EVC-2024-0005,P16,12.9,Truck Budapest Assembly → SITE-006
+transport,EVC-2024-0006,P16,11.8,Sea Ho Chi Minh City Port → Hamburg Port
+transport,EVC-2024-0006,P16,18.6,Truck Hamburg Port → Budapest Assembly
+transport,EVC-2024-0006,P16,17.9,Truck Budapest Assembly → SITE-007
+transport,EVC-2024-0007,P16,11.8,Sea Ho Chi Minh City Port → Hamburg Port
+transport,EVC-2024-0007,P16,31.8,Truck Hamburg Port → Budapest Assembly
+transport,EVC-2024-0007,P16,28.4,Truck Budapest Assembly → SITE-008
+transport,EVC-2024-0008,P16,11.8,Sea Ho Chi Minh City Port → Hamburg Port
+transport,EVC-2024-0008,P16,28.4,Truck Hamburg Port → Budapest Assembly
+transport,EVC-2024-0008,P16,21.6,Truck Budapest Assembly → SITE-001
+transport,EVC-2024-0009,P16,11.8,Sea Ho Chi Minh City Port → Hamburg Port
+transport,EVC-2024-0009,P16,24.1,Truck Hamburg Port → Budapest Assembly
+transport,EVC-2024-0009,P16,24.8,Truck Budapest Assembly → SITE-002
+transport,EVC-2024-0010,P16,11.8,Sea Ho Chi Minh City Port → Hamburg Port
+transport,EVC-2024-0010,P16,18.6,Truck Hamburg Port → Budapest Assembly
+transport,EVC-2024-0010,P16,14,Truck Budapest Assembly → SITE-003
+eol_collection,EVC-2024-0001,P22,0.33,EOL truck collection
+eol_collection,EVC-2024-0002,P22,0.43,EOL truck collection
+eol_collection,EVC-2024-0003,P22,0.2,EOL truck collection
+eol_collection,EVC-2024-0004,P22,0.23,EOL truck collection
+eol_collection,EVC-2024-0005,P22,0.3,EOL truck collection
+eol_collection,EVC-2024-0006,P22,0.47,EOL truck collection
+eol_collection,EVC-2024-0007,P22,0.44,EOL truck collection
+eol_collection,EVC-2024-0008,P22,0.21,EOL truck collection
+eol_recycling_credit,EVC-2024-0001,P24,-44.64,Recycling credit – steel
+eol_recycling_credit,EVC-2024-0001,P24,-10.19,Recycling credit – plastic
+eol_recycling_credit,EVC-2024-0001,P24,-108.86,Recycling credit – electronics
+eol_recycling_credit,EVC-2024-0001,P24,-29.59,Recycling credit – cables
+eol_recycling_credit,EVC-2024-0001,P24,-1.14,Recycling credit – glass
+eol_recycling_credit,EVC-2024-0001,P24,-0.71,Recycling credit – other
+eol_recycling_credit,EVC-2024-0002,P24,-13.13,Recycling credit – steel
+eol_recycling_credit,EVC-2024-0002,P24,-2.73,Recycling credit – plastic
+eol_recycling_credit,EVC-2024-0002,P24,-34.02,Recycling credit – electronics
+eol_recycling_credit,EVC-2024-0002,P24,-6.76,Recycling credit – cables
+eol_recycling_credit,EVC-2024-0002,P24,-0.33,Recycling credit – glass
+eol_recycling_credit,EVC-2024-0002,P24,-0.19,Recycling credit – other
+eol_recycling_credit,EVC-2024-0003,P24,-87.19,Recycling credit – steel
+eol_recycling_credit,EVC-2024-0003,P24,-18.67,Recycling credit – plastic
+eol_recycling_credit,EVC-2024-0003,P24,-206.39,Recycling credit – electronics
+eol_recycling_credit,EVC-2024-0003,P24,-44.98,Recycling credit – cables
+eol_recycling_credit,EVC-2024-0003,P24,-2.05,Recycling credit – glass
+eol_recycling_credit,EVC-2024-0003,P24,-0.45,Recycling credit – other
+eol_recycling_credit,EVC-2024-0004,P24,-24.29,Recycling credit – steel
+eol_recycling_credit,EVC-2024-0004,P24,-4.87,Recycling credit – plastic
+eol_recycling_credit,EVC-2024-0004,P24,-53.51,Recycling credit – electronics
+eol_recycling_credit,EVC-2024-0004,P24,-12.79,Recycling credit – cables
+eol_recycling_credit,EVC-2024-0004,P24,-0.52,Recycling credit – glass
+eol_recycling_credit,EVC-2024-0004,P24,-0.28,Recycling credit – other
+eol_recycling_credit,EVC-2024-0005,P24,-48.19,Recycling credit – steel
+eol_recycling_credit,EVC-2024-0005,P24,-10.27,Recycling credit – plastic
+eol_recycling_credit,EVC-2024-0005,P24,-112.06,Recycling credit – electronics
+eol_recycling_credit,EVC-2024-0005,P24,-28.03,Recycling credit – cables
+eol_recycling_credit,EVC-2024-0005,P24,-1.14,Recycling credit – glass
+eol_recycling_credit,EVC-2024-0005,P24,-0.7,Recycling credit – other
+eol_recycling_credit,EVC-2024-0006,P24,-25.29,Recycling credit – steel
+eol_recycling_credit,EVC-2024-0006,P24,-4.7,Recycling credit – plastic
+eol_recycling_credit,EVC-2024-0006,P24,-53,Recycling credit – electronics
+eol_recycling_credit,EVC-2024-0006,P24,-12.32,Recycling credit – cables
+eol_recycling_credit,EVC-2024-0006,P24,-0.51,Recycling credit – glass
+eol_recycling_credit,EVC-2024-0006,P24,-0.31,Recycling credit – other
+eol_recycling_credit,EVC-2024-0007,P24,-13.34,Recycling credit – steel
+eol_recycling_credit,EVC-2024-0007,P24,-2.73,Recycling credit – plastic
+eol_recycling_credit,EVC-2024-0007,P24,-35.28,Recycling credit – electronics
+eol_recycling_credit,EVC-2024-0007,P24,-7.28,Recycling credit – cables
+eol_recycling_credit,EVC-2024-0007,P24,-0.31,Recycling credit – glass
+eol_recycling_credit,EVC-2024-0007,P24,-0.2,Recycling credit – other
+eol_recycling_credit,EVC-2024-0008,P24,-85.3,Recycling credit – steel
+eol_recycling_credit,EVC-2024-0008,P24,-19.47,Recycling credit – plastic
+eol_recycling_credit,EVC-2024-0008,P24,-190.85,Recycling credit – electronics
+eol_recycling_credit,EVC-2024-0008,P24,-41.86,Recycling credit – cables
+eol_recycling_credit,EVC-2024-0008,P24,-1.97,Recycling credit – glass
+eol_recycling_credit,EVC-2024-0008,P24,-0.46,Recycling credit – other
