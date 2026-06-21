@@ -1,0 +1,5 @@
+product_variant,rated_power_kw,standby_power_w,unit_price_eur,total_weight_kg,electronics_weight_kg
+AC-7kW,7,38,1200,22.4,8.2
+AC-22kW,22,55,2100,34.1,12.8
+DC-150kW,150,280,22000,130.1,42.6
+DC-50kW,50,120,8500,78.3,28.4
