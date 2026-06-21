@@ -1,0 +1,85 @@
+<svg viewBox="0 0 820 500" xmlns="http://www.w3.org/2000/svg" font-family="Arial,sans-serif" font-size="11">
+  <rect width="820" height="500" fill="#fafafa"/>
+  <text x="410" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a1a2e">Energy Consumption &amp; CO₂ by Lifecycle Stage</text>
+  <text x="410" y="48" text-anchor="middle" font-size="10" fill="#555">AC-22kW reference variant | Functional unit: 1 EV charging station over 12-year lifetime</text>
+
+  <!-- Y-axis label -->
+  <text x="18" y="280" text-anchor="middle" font-size="10" fill="#333" transform="rotate(-90,18,280)">Energy (kWh) / CO₂ (kg)</text>
+
+  <!-- Grid lines -->
+  <line x1="80" y1="60" x2="80" y2="400" stroke="#ccc" stroke-width="1"/>
+  <line x1="80" y1="400" x2="780" y2="400" stroke="#333" stroke-width="1.5"/>
+  <line x1="80" y1="350" x2="780" y2="350" stroke="#eee" stroke-width="1"/>
+  <line x1="80" y1="300" x2="780" y2="300" stroke="#eee" stroke-width="1"/>
+  <line x1="80" y1="250" x2="780" y2="250" stroke="#eee" stroke-width="1"/>
+  <line x1="80" y1="200" x2="780" y2="200" stroke="#eee" stroke-width="1"/>
+  <line x1="80" y1="150" x2="780" y2="150" stroke="#eee" stroke-width="1"/>
+  <line x1="80" y1="100" x2="780" y2="100" stroke="#eee" stroke-width="1"/>
+  <!-- Y axis labels (scale: 400px = 1300 units → 1px = 3.25 units) -->
+  <text x="75" y="404" text-anchor="end" font-size="9" fill="#555">0</text>
+  <text x="75" y="354" text-anchor="end" font-size="9" fill="#555">162</text>
+  <text x="75" y="304" text-anchor="end" font-size="9" fill="#555">325</text>
+  <text x="75" y="254" text-anchor="end" font-size="9" fill="#555">487</text>
+  <text x="75" y="204" text-anchor="end" font-size="9" fill="#555">650</text>
+  <text x="75" y="154" text-anchor="end" font-size="9" fill="#555">812</text>
+  <text x="75" y="104" text-anchor="end" font-size="9" fill="#555">975</text>
+
+  <!-- DATA (scale 1px=1.33 kWh or CO2 unit, 0 at y=400)
+       Manufacturing energy: 247 kWh → bar height = 247/1.33 ≈ 186
+       Manufacturing CO2: 520 kg → bar height = 520/1.33 ≈ 391 (too tall, use scale 0.4px per unit, 0 at y=400)
+       Let's use scale: 400px = 1100 units → 1px = 2.75 units
+  -->
+  <!-- scale: 400px = 1100 → 1px = 2.75 kWh or kg CO2 -->
+  <!-- Manufacturing: energy=247, CO2=520 -->
+  <rect x="100" y="310" width="45" height="90" fill="#4a90d9" opacity="0.85"/>
+  <text x="122" y="306" text-anchor="middle" font-size="8" fill="#333">247</text>
+  <rect x="148" y="211" width="45" height="189" fill="#4a90d9" opacity="0.40"/>
+  <text x="170" y="207" text-anchor="middle" font-size="8" fill="#1a1a2e">520</text>
+
+  <!-- Transport: energy≈54, CO2=34 -->
+  <rect x="220" y="380" width="45" height="20" fill="#2196f3" opacity="0.85"/>
+  <text x="242" y="376" text-anchor="middle" font-size="8" fill="#333">54</text>
+  <rect x="268" y="388" width="45" height="12" fill="#2196f3" opacity="0.40"/>
+  <text x="290" y="384" text-anchor="middle" font-size="8" fill="#333">34</text>
+
+  <!-- Installation: energy≈38, CO2=42 -->
+  <rect x="340" y="386" width="45" height="14" fill="#ff9800" opacity="0.85"/>
+  <text x="362" y="382" text-anchor="middle" font-size="8" fill="#333">38</text>
+  <rect x="388" y="385" width="45" height="15" fill="#ff9800" opacity="0.40"/>
+  <text x="410" y="381" text-anchor="middle" font-size="8" fill="#333">42</text>
+
+  <!-- Use phase: standby=660, CO2=410 -->
+  <rect x="460" y="160" width="45" height="240" fill="#9c27b0" opacity="0.85"/>
+  <text x="482" y="156" text-anchor="middle" font-size="8" fill="#333">660</text>
+  <rect x="508" y="251" width="45" height="149" fill="#9c27b0" opacity="0.40"/>
+  <text x="530" y="247" text-anchor="middle" font-size="8" fill="#333">410</text>
+
+  <!-- Maintenance: energy≈110, CO2=56 -->
+  <rect x="580" y="360" width="45" height="40" fill="#4caf50" opacity="0.85"/>
+  <text x="602" y="356" text-anchor="middle" font-size="8" fill="#333">110</text>
+  <rect x="628" y="380" width="45" height="20" fill="#4caf50" opacity="0.40"/>
+  <text x="650" y="376" text-anchor="middle" font-size="8" fill="#333">56</text>
+
+  <!-- EOL: energy≈38, CO2 net=24 (incl. credit) -->
+  <rect x="700" y="386" width="45" height="14" fill="#ff5722" opacity="0.85"/>
+  <text x="722" y="382" text-anchor="middle" font-size="8" fill="#333">38</text>
+  <rect x="748" y="391" width="45" height="9" fill="#ff5722" opacity="0.40"/>
+  <text x="770" y="387" text-anchor="middle" font-size="8" fill="#333">24</text>
+
+  <!-- X-axis stage labels -->
+  <text x="145" y="420" text-anchor="middle" font-size="9" fill="#333" font-weight="bold">Mfg.</text>
+  <text x="265" y="420" text-anchor="middle" font-size="9" fill="#333" font-weight="bold">Transport</text>
+  <text x="385" y="420" text-anchor="middle" font-size="9" fill="#333" font-weight="bold">Install.</text>
+  <text x="505" y="420" text-anchor="middle" font-size="9" fill="#333" font-weight="bold">Use Phase</text>
+  <text x="625" y="420" text-anchor="middle" font-size="9" fill="#333" font-weight="bold">Maint.</text>
+  <text x="745" y="420" text-anchor="middle" font-size="9" fill="#333" font-weight="bold">EOL</text>
+
+  <!-- Legend -->
+  <rect x="80" y="440" width="660" height="45" rx="5" fill="white" stroke="#ccc" stroke-width="1"/>
+  <rect x="100" y="454" width="14" height="14" fill="#4a90d9" opacity="0.85"/>
+  <text x="118" y="465" font-size="9" fill="#333">Energy consumed (kWh)</text>
+  <rect x="240" y="454" width="14" height="14" fill="#4a90d9" opacity="0.40"/>
+  <text x="258" y="465" font-size="9" fill="#333">GWP CO₂-eq (kg)</text>
+  <text x="420" y="465" font-size="9" fill="#555">Use-phase standby dominates energy | Manufacturing dominates CO₂ (embedded emissions)</text>
+  <text x="410" y="478" text-anchor="middle" font-size="8" fill="#888">EOL CO₂ shown net of recycling credit (–95 kg avoided); recycling credit not shown separately</text>
+</svg>

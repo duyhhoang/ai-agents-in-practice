@@ -1,0 +1,31 @@
+From: operations@globalseafreight.sg (Global Sea Freight – European Operations Desk)
+To: dispatch@eurocharge-bud.hu; petra.nagy@eurocharge-bud.hu
+CC: compliance@globalseafreight.sg
+Date: Monday, 29 January 2024, 08:03
+Subject: CUSTOMS HOLD – Shipment SHIP-2024-0008 – Hamburg Port – Action Required
+
+Dear EuroCharge Assembly Team,
+
+We regret to inform you that Shipment SHIP-2024-0008, containing injection-moulded plastic components (8.2 kg, Consignee: EuroCharge Assembly Budapest), has been placed on CUSTOMS HOLD at Hamburg Port of Entry as of 28 January 2024, 23:40 local time.
+
+Shipment reference: SHIP-2024-0008
+Bill of Lading No.: GSF-BL-2024-00441
+Container: TCKU-3841-027 (20ft)
+Port of loading: Ho Chi Minh City (Cat Lai terminal)
+Port of discharge: Hamburg (Eurogate terminal)
+Reason for hold: Customs Tariff Code query – DE Customs Authority requesting additional documentation to confirm product classification under HS code 3926.90 (plastic articles, NES) vs. 8538.90 (parts for electrical apparatus).
+
+Documents required by DE Customs (Hamburg):
+  1. Technical product description confirming end-use application (charging station component)
+  2. Manufacturer's declaration from Plastic Factory C (Vietnam) confirming material composition (ABS, %)
+  3. Signed invoice with unit values per part number
+
+Target resolution: If documentation is submitted by 31 January 2024 (17:00 CET), we expect clearance within 24–48 hours, giving an estimated release date of 1–2 February. This represents a delay of approximately 3–4 days versus the original ETA.
+
+Please send the required documents to our customs desk at compliance@globalseafreight.sg by 31 January at the latest. We will keep you updated on clearance status.
+
+Storage charges at Hamburg terminal will begin accruing from 3 February 2024 if the hold is not resolved. Current daily storage rate: EUR 42/day.
+
+Apologies for the inconvenience. Please do not hesitate to call our operations desk (+65 6221 8800) for urgent assistance.
+
+Global Sea Freight – European Operations

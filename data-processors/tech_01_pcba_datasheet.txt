@@ -1,0 +1,67 @@
+TECHNICAL DATASHEET
+Document: EVC-PCBA-CTRL-DS-Rev4.2
+Product: EV Charging Controller PCBA – Type EVC-CTRL-22A
+Manufacturer: Electronics Manufacturing Euro (A5), Brno, Czech Republic
+Application: EV Charging Station (AC-22kW, Mode 3 / IEC 61851-1)
+Issue date: 10 January 2024
+
+1. PRODUCT OVERVIEW
+The EVC-CTRL-22A is a single-board charging controller assembly designed for integration into the EuroCharge EV charging station product family. It manages pilot signal generation, communication protocol handling (OCPP 1.6J / 2.0.1), safety monitoring, and user authentication (RFID ISO 14443-A/B). The board is conformal-coated for protection against condensation and humidity in outdoor environments (IP54 enclosure assumed).
+
+2. ELECTRICAL SPECIFICATIONS
+  Supply voltage:            24 VDC ± 10% (from internal SMPS)
+  Supply current (typical):  420 mA
+  Supply current (max load): 780 mA
+  Pilot signal output:       1 kHz, ±12 V square wave, per IEC 61851-1
+  Pilot signal duty cycle:   Variable, 10%–96% (corresponds to 6 A–80 A current limit)
+  RFID reader:               13.56 MHz, ISO 14443-A/B, ISO 15693
+  RFID read range:           ≥ 5 cm (tested with standard MIFARE Classic card)
+  Communication:             Ethernet 10/100 Mbps (RJ45), 4G LTE CAT-M1 (optional module)
+  OCPP:                      1.6J (JSON over WebSocket), 2.0.1 ready (firmware selectable)
+  Operating temperature:     -40°C to +70°C (board), -25°C to +50°C (system)
+  Storage temperature:       -55°C to +85°C
+  Humidity (non-condensing):  5%–95% RH
+
+3. MECHANICAL SPECIFICATIONS
+  PCB dimensions:            210 mm × 148 mm (A5 footprint)
+  PCB thickness:             1.6 mm ± 0.1 mm
+  PCB material:              FR-4, Tg 150°C
+  Copper layers:             6-layer stack-up (2 signal / 2 power / 2 GND)
+  Connectors:                JST-PH 2.0 mm (low current), Phoenix MSTB 2.5 (power/relay)
+  Mounting holes:            4× M3, pattern 200 mm × 138 mm
+  Weight:                    87 g ± 5 g
+
+4. KEY COMPONENTS
+  MCU:          STMicroelectronics STM32F4xx (ARM Cortex-M4, 168 MHz)
+  RFID chip:    NXP MFRC522 (ISO 14443)
+  Relay driver: Infineon BTS7008-2EPA (dual-channel high-side switch)
+  Ethernet PHY: Microchip LAN8720A
+  RTC:          NXP PCF8523T (I2C, with backup coin cell)
+  Pilot signal: Discrete MOSFET + comparator circuit per IEC 61851-1 Annex A
+
+5. SAFETY AND COMPLIANCE
+  Standard:         IEC 61851-1:2017 (pilot signal generation and monitoring)
+  EMC:              EN 61000-6-1:2019, EN 61000-6-3:2021 (verified per DoC-EVC-AC22-2024-REV3)
+  RoHS:             Compliant (per RoHS Directive 2011/65/EU, Annex II)
+  REACH:            Screened; Pb in solder <0.1% per homogeneous material (RoHS Annex III exempt)
+  Conformal coat:   Humiseal 1B73 (IPC-CC-830 compliant), applied to top and bottom sides
+  IPC inspection:   Class 2 (IPC-A-610 Rev. G) at source
+
+6. QUALITY AND TRACEABILITY
+  Each board is laser-marked with:
+    – Part number: MAT-ELEC-CTRL / EVC-CTRL-22A
+    – Revision: Rev. 4.2
+    – 2D DataMatrix code (encodes serial number + production date code)
+  100% AOI (automated optical inspection) performed at bare board level
+  100% ICT (in-circuit test) performed after assembly
+  Burn-in test: 4 hours at 60°C (sample basis: 10% of batch)
+
+7. HANDLING AND STORAGE
+  ESD sensitivity: Class 2 (HBM, ESDS per ANSI/ESD S20.20)
+  Store in original ESD bag; avoid temperatures >40°C in storage
+  Shelf life (sealed ESD bag, 21°C / 40% RH): 24 months from manufacture date
+  Re-baking required if moisture indicator card shows >30% RH upon opening
+
+8. KNOWN ISSUES AND FIELD NOTES
+  Rev. 4.0 → 4.1 change: Added pull-up resistor R142 (10 kΩ) on pilot signal feedback line. Resolves rare false "EV disconnected" event during noisy grid conditions. Field retrofit possible but not required for Rev. 4.0 units already in service.
+  Rev. 4.1 → 4.2 change: Firmware v2.1.6 adds watchdog timer reset improvement (addresses OCPP session freeze reported in field, ~0.2% occurrence on v2.1.4). OTA firmware update available via OCPP ChangeConfiguration command.

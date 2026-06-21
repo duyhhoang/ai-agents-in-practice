@@ -1,0 +1,53 @@
+EU DECLARATION OF CONFORMITY
+Document Reference: DoC-EVC-AC22-2024-REV3
+Issued: 15 February 2024
+
+In accordance with EU Decision No 768/2008/EC and applicable EU directives, the undersigned hereby declares under sole responsibility that the product described below fulfils the relevant Union harmonisation legislation.
+
+PRODUCT IDENTIFICATION
+Product name:          EV Charging Station – Type AC-22kW
+Model designation:     EVC-AC22-EUR-01
+Serial number range:   SN-000FA2B2 through SN-FFFFFFFF (AC-22kW variant)
+Intended use:          Supply of AC power for electric vehicle charging, Mode 3 (IEC 61851-1), for indoor and outdoor installation in publicly accessible and semi-public environments
+Rated voltage:         230/400 V AC (single-phase and three-phase)
+Rated current:         32 A max (three-phase)
+Rated output power:    22 kW
+IP rating:             IP54
+Operating temperature: -25°C to +50°C
+
+MANUFACTURER
+EuroCharge Assembly GmbH
+Gyári út 14, H-1211 Budapest, Hungary
+VAT: HU-29411808
+Authorised representative in EU: same as above
+
+APPLICABLE EU DIRECTIVES
+This product is in conformity with the following EU Directives:
+  – Low Voltage Directive (LVD): 2014/35/EU
+  – Electromagnetic Compatibility Directive (EMC): 2014/30/EU
+  – Radio Equipment Directive (RED): 2014/53/EU (applies to integrated OCPP communication module)
+  – RoHS Directive: 2011/65/EU (as amended by 2015/863/EU)
+  – Ecodesign Regulation: (EU) 2019/1782 (networked standby)
+
+HARMONISED STANDARDS APPLIED
+  IEC 61851-1:2017     – Electric vehicle conductive charging systems – General requirements
+  IEC 61851-21-2:2018  – EMC requirements for off-board EV charging systems
+  IEC 62196-2:2022     – Plugs, socket-outlets – Type 2 connector (AC)
+  EN 61000-6-1:2019    – EMC – Immunity for residential environments
+  EN 61000-6-3:2021    – EMC – Emission standard for residential environments
+  EN 62368-1:2020      – Audio/video, IT and communication equipment – Safety
+  EN IEC 63000:2018    – Technical documentation for RoHS assessment
+
+NOTIFIED BODY
+VDE Testing Services (Notified Body No.: 0366)
+Merianstrasse 28, 63069 Offenbach am Main, Germany
+EU-Type Examination Certificate: VDE-0366-2024-EC-04421 (issued 10 February 2024)
+
+AUTHORISED SIGNATORY
+András Fekete
+Plant Manager – EuroCharge Assembly GmbH, Budapest
+15 February 2024
+
+[Signature on file – original document held at Budapest facility, QM archive ref. QA-DOC-2024-CE-001]
+
+This declaration of conformity is issued under the sole responsibility of the manufacturer. The object of the declaration described above is in conformity with the relevant Union harmonisation legislation.

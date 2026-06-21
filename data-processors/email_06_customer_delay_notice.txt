@@ -1,0 +1,30 @@
+From: customer.ops@eurocharge-bud.hu (EuroCharge Assembly – Customer Operations)
+To: procurement@eurocharge-network.de (EuroCharge Network Operator – Procurement)
+CC: petra.nagy@eurocharge-bud.hu; planning@eurocharge-bud.hu
+Date: Friday, 14 March 2025, 15:30
+Subject: Order Update – Units EVC-2024-0044 to EVC-2024-0050 – Revised Delivery Schedule
+
+Dear EuroCharge Network Operator Team,
+
+We are writing to inform you of a revised delivery schedule for the following units under your standing order SO-ECN-2025-0012:
+
+Affected units: EVC-2024-0044, EVC-2024-0045, EVC-2024-0046, EVC-2024-0047, EVC-2024-0048, EVC-2024-0049, EVC-2024-0050
+Product variants: DC-50kW (×4) and DC-150kW (×3)
+Original committed delivery: 28–30 March 2025
+Revised delivery: 4–7 April 2025 (5–8 working day delay)
+
+Root cause:
+We have experienced a partial supply disruption from our PCBA supplier in Brno (Electronics Manufacturing Euro), caused by an upstream MLCC capacitor shortage. This is an industry-wide component issue affecting multiple European EMS providers. A partial delivery of 42 PCBAs has been secured for 17 March, which will allow us to complete all AC-variant orders on schedule. The DC-variant units in your order require a specific PCBA variant from the delayed second batch, expected 28–31 March.
+
+Our production team has re-sequenced the build plan to minimise the delay. All 7 units in your order will be completed during the week of 31 March and dispatched to your designated installation sites by 4 April at the latest.
+
+No change to unit specifications, pricing, or installation site assignments.
+
+We will provide a confirmed dispatch notification with tracking details as soon as units leave our facility. If the delay causes any critical scheduling conflict at your installation sites, please contact us immediately and we will prioritise accordingly.
+
+We apologise for the inconvenience and thank you for your understanding.
+
+Yours sincerely,
+Customer Operations Team
+EuroCharge Assembly GmbH
+customer.ops@eurocharge-bud.hu | +36 1 555 8800

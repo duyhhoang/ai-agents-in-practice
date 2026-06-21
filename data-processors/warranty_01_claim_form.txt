@@ -1,0 +1,50 @@
+WARRANTY CLAIM FORM
+Claim Reference: WC-2025-0031
+Date submitted: 02 September 2025
+Submitted by: EuroCharge Network Operator M – Asset Management Team
+Contact: asset.management@eurocharge-network.de | +49 89 4411 7700
+
+PRODUCT INFORMATION
+Unit ID:              EVC-2024-0008
+Serial number:        SN-0010C408
+Product variant:      AC-22kW
+Manufacture date:     September 2024
+Installation date:    October 2024
+Installation site:    SITE-004, Vienna South Motorway Services (AT-A2-KM18)
+Warranty period:      24 months from installation (expires approximately October 2026)
+Warranty status:      IN WARRANTY ✓
+
+DESCRIPTION OF FAULT
+On 30 August 2025, user reported an unusual high-pitched buzzing sound and burning smell emanating from the charging unit during an active charging session. The user disconnected immediately. Site staff confirmed unit offline. Field technician attended within 45 minutes and identified burn marks and arc tracking on the connector assembly (contact pins 1 and 3). The charging unit was taken out of service.
+
+The fault resulted in:
+  – Replacement of the connector assembly (part #KKE-2024-Rev2)
+  – Emergency field technician call-out (unplanned, outside normal maintenance cycle)
+  – Unit downtime: 30 August (16:45) – 31 August 2025 (09:00) = approximately 16 hours
+
+CLAIMED COSTS
+  Replacement connector assembly (part #KKE-2024-Rev2):  EUR 184.00
+  Emergency field technician call-out (2.5 hours):        EUR 312.50
+  Travel (75 km round trip at EUR 0.35/km):               EUR 26.25
+  Total claimed:                                          EUR 522.75
+
+SUPPORTING DOCUMENTATION ATTACHED
+  – Incident Report IR-SITE004-2025-0031
+  – Field technician report (maintenance log ref. M005)
+  – Parts invoice from Maintenance Provider N
+  – Photographic evidence: PHO-SITE004-INCID-001 (arc damage), PHO-SITE004-INCID-002 (replacement connector)
+
+OPERATOR STATEMENT
+We acknowledge that the root cause investigation (ref. NCR field report) indicates the primary initiation was likely a user inserting a damaged vehicle-side connector. However, the EuroCharge unit did not prevent the subsequent arc event or provide an alarm before the user noticed the fault. We are claiming under warranty for the component replacement and emergency response costs, as the unit was within warranty and no product design exclusion appears to apply. We reserve the right to request further analysis if the warranty claim is not accepted.
+
+Submitted by: Maria Santos, Site Operations Manager, EuroCharge Network Operator M
+
+─────────────────────────────────────────────────────────────────
+FOR MANUFACTURER USE:
+Claim received: 03 September 2025
+Assessed by: QA Manager, EuroCharge Assembly GmbH
+Assessment outcome: PARTIALLY ACCEPTED
+  – Connector assembly replacement (EUR 184.00): ACCEPTED (component within warranty)
+  – Emergency call-out labour and travel (EUR 338.75): NOT ACCEPTED (fault initiated by user-side damaged connector; excluded under warranty terms §4.2 "damage caused by non-EuroCharge equipment")
+  – Counter-offer: EUR 184.00 credit note issued (CN-2025-0441) against next spare parts order
+Communicated to claimant: 10 September 2025
