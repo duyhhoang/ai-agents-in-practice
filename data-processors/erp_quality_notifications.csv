@@ -1,0 +1,7 @@
+notification_id,unit_id,process_id,actor_id,material_id,notification_type,defect_description,severity,status,created_date,closed_date,corrective_action,responsible_qa
+QN-2024-0001,EVC-2024-0012,P09,A6,MAT-CABL-HARN,DEFECT,Connector pin wear on cable harness sample batch,Minor,CLOSED,2024-06-10,2024-06-14,Connector batch replaced; retest PASS,A9
+QN-2025-0008,EVC-2024-0008,P13,A6,MAT-CABL-HARN,DEFECT,Corroded busbar connector from batch A7-2024-556,Major,CLOSED,2025-05-10,2025-05-18,Connector replaced; root cause: sea freight moisture exposure; improved packaging specified,A9
+QN-2025-0031,EVC-2024-0018,P08,A8,MAT-FINAL-EVC,DEFECT,Circuit breaker tripped overcurrent post-assembly,Major,CLOSED,2025-05-10,2025-05-20,Full electrical safety re-test; CB replaced; unit cleared,A9
+QN-2025-0044,EVC-2024-0005,P06,A5,MAT-ELEC-CTRL,QUALITY_BLOCK,Charging controller batch CZ-2025-Q3-881 showing intermittent comm errors in burn-in,Critical,OPEN,2025-09-01,,Batch quarantined; supplier investigation ongoing; 88 units blocked,A9
+QN-2024-0019,EVC-2024-0001,P09,A9,MAT-FINAL-EVC,NCR,Earth continuity 0.14Ω (limit 0.10Ω) – crimp failure,Major,CLOSED,2024-02-19,2024-02-21,Earth cable re-crimped; pull-test added to in-process check; CAR issued to Cable Workshop F,A9
+QN-2024-0033,EVC-2024-0015,P02,A2,MAT-STEEL-SS304,DEVIATION,Surface roughness Ra 2.8 µm (spec ≤2.5 µm) on housing panels,Minor,CLOSED,2024-04-20,2024-04-25,Accepted under concession; supplier re-calibrated milling process,A9

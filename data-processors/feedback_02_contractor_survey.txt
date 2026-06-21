@@ -1,0 +1,36 @@
+INSTALLATION CONTRACTOR SATISFACTION SURVEY
+Survey Reference: CSS-2024-Q2-0041
+Respondent: Roberto Sánchez, Site Supervisor
+Company: Installation Partners EU – Iberian Region (Actor A12)
+Survey period: Q2 2024 (April–June installations)
+Sites covered: SITE-004 (Vienna AT), SITE-006 (Barcelona ES), SITE-007 (Lyon FR)
+Survey completed: 05 July 2024
+
+Please rate each area from 1 (very poor) to 5 (excellent).
+
+1. PRODUCT QUALITY – PHYSICAL CONDITION ON ARRIVAL
+   Rating: 4 / 5
+   Comments: Units generally arrived in good condition. One unit (SITE-007 delivery, SHIP-2024-0006) had a minor cosmetic scratch on the rear panel that was not present in the departure photos. Not a functional issue but worth noting for packaging review. Packaging foam could be thicker on the corners.
+
+2. DOCUMENTATION AND INSTALLATION MANUAL
+   Rating: 3 / 5
+   Comments: The installation manual (Rev. 4) is mostly clear but Section 6 (cable conduit entry routing) has two diagrams that appear to show contradictory cable entry directions for the TN-C-S and TT earthing system variants. This caused a 30-minute delay on-site at SITE-006 while we clarified with the technical support hotline. Suggest updating Rev. 5 with clearer system-specific diagrams. Support hotline was helpful when reached but wait time was 18 minutes.
+
+3. DELIVERY SCHEDULING AND COMMUNICATION
+   Rating: 5 / 5
+   Comments: All three deliveries arrived within the confirmed time windows. Driver called ahead 45 minutes before arrival on all occasions – very professional. No scheduling surprises. Keep it up.
+
+4. ACCESSORY KIT COMPLETENESS
+   Rating: 4 / 5
+   Comments: In the SITE-004 kit, the M10 anchor bolt washers were missing (4 pieces). We had compatible spares on the van, so no delay resulted. Please check kit packing for M10 washer inclusion on future AC-22kW orders.
+
+5. TECHNICAL SUPPORT AVAILABILITY
+   Rating: 3 / 5
+   Comments: As noted above, phone wait time on the technical support line is too long. For installers on-site with a customer watching, 18 minutes on hold is not acceptable. A WhatsApp or chat option would help significantly. The engineer who answered was knowledgeable and solved the issue quickly.
+
+6. OVERALL EXPERIENCE
+   Rating: 4 / 5
+   Comments: Good product, reliable delivery, minor documentation and accessory issues that should be easy fixes. Looking forward to the Q3 installation batch.
+
+OPEN FEEDBACK:
+The DC-50kW units are noticeably heavier than the AC variants (approx. 78 kg vs. 34 kg). The installation manual does not specify a minimum crew size for DC units. We used 3 people for the SITE-006 DC-50kW install, which was necessary and safe. Please add a note in the manual: "minimum 2 persons required for DC variants; 3 persons recommended."

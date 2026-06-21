@@ -1,0 +1,37 @@
+From: petra.nagy@eurocharge-bud.hu (Petra Nagy, Procurement Lead)
+To: andras.fekete@eurocharge-bud.hu (András Fekete, Plant Manager – EuroCharge Assembly)
+CC: quality@eurocharge-bud.hu; planning@eurocharge-bud.hu
+Date: Thursday, 14 March 2025, 11:42
+Subject: URGENT – PCBA Supply Disruption – Action Required by EOD
+
+András,
+
+Following my call this morning with Electronics Manufacturing Euro (Brno), I need to flag an urgent supply situation requiring your sign-off on the response plan.
+
+SITUATION SUMMARY
+EME have confirmed a partial delivery of 42 PCBAs on 17 March (vs. 100 ordered). The remaining 58 units will arrive approximately 28–31 March. Root cause is an MLCC capacitor shortage (Taiwan supply disruption – appears to be affecting the broader market, not just EME).
+
+PRODUCTION IMPACT
+Current build queue for this week and next (units EVC-2024-0038 through EVC-2024-0050):
+  – 12 units require DC-50kW PCBAs → need 12 units from this batch
+  – 30 units require AC-22kW PCBAs → separate stock, not affected
+  – Remaining 8 units are DC-150kW → 8 PCBAs also needed from PO-2024-0031
+
+With only 42 units arriving on 17 March, we can cover 20 of the 20 impacted units if we prioritise correctly. The problem is the remaining 38 PCBAs will be late, pushing 8–10 final assembly completions to early April.
+
+PROPOSED ACTIONS
+1. Accept partial delivery of 42 units on 17 March – I will confirm to EME now unless you object.
+2. Re-sequence production plan to build AC-22kW units first (weeks 12–13), buying time for the second PCBA batch.
+3. Explore secondary source: I have a contact at Czech Electronics Solutions (Ostrava) who may be able to supply 10–15 equivalent-spec PCBAs on short notice. I need authorisation to issue an emergency enquiry (estimated 15–20% premium on unit price).
+4. Notify affected customers (EuroCharge Network Operator – Munich) of potential 5–7 day delay on units EVC-2024-0044 through EVC-2024-0050.
+
+Decision needed from you:
+  a) Approve partial delivery acceptance → Yes / No
+  b) Approve secondary source enquiry → Yes / No, budget limit EUR ___
+  c) Approve customer notification → Yes / No, I will draft the message
+
+I can have the customer notification ready within 2 hours if approved. Let me know when you are free for a 15-minute call this afternoon.
+
+Petra Nagy
+Procurement Lead – EuroCharge Assembly Budapest
+Mobile: +36 30 441 7823

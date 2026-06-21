@@ -1,0 +1,34 @@
+SUPPLY CHAIN INTELLIGENCE NOTE
+Reference: SC-INTEL-2025-018
+Source monitoring: Industry press (Freightwaves, JOC, Splash247) + freight agent briefing (Global Sea Freight, Singapore)
+Prepared by: Zsófia Takács, Logistics Coordinator – EuroCharge Assembly
+Date: 12 February 2025
+Distribution: Procurement, Production Planning, Plant Manager
+
+SUBJECT: Southeast Asia Sea Freight Disruption – Vietnam Port Congestion & Regional Labour Action
+
+SITUATION OVERVIEW
+Multiple credible sources are reporting significant congestion at Cat Lai Container Terminal (Ho Chi Minh City), Vietnam's largest container port and the primary export gateway for EuroCharge's plastic component supplier (Asian Injection Molding, A3). The disruption is expected to add 5–10 days to vessel departure schedules for shipments loading in late February and early March 2025.
+
+CAUSES REPORTED
+  1. Vessel bunching: A surge in pre-Tet lunar new year export volumes (Vietnamese Tet 2025: 29 January) left an unusually large queue of vessels awaiting berths at Cat Lai in early February. As of 10 February, average vessel waiting time at anchorage: 4.1 days (normal: <1 day).
+  2. Labour action: A partial work-to-rule action by terminal handling equipment operators at Cat Lai began 07 February 2025, reportedly related to overtime pay disputes. Throughput is estimated at 65% of normal capacity. No formal strike declared; situation fluid.
+  3. Knock-on effect at Hamburg: Global Sea Freight (our carrier) has advised that Hamburg import berth scheduling is also affected, with 3–5 day delays on arrivals of vessels from Southeast Asia through March 2025.
+
+IMPACT ASSESSMENT FOR EUROCHARGE
+  Upcoming shipments affected:
+    – SHIP-2025-0007 (plastic parts, 8.2 kg, for unit batch EVC-2025-0021 to 0030): Originally loading 18 February, HCM City. Carrier now expects loading 24–26 February. Estimated Hamburg arrival: circa 30 March 2025 (vs. original ETA: 22 March 2025).
+    – Delay impact: Approximately 8–10 days. Buffer stock of plastic sub-assemblies at interface assembly supplier: 12 unit sets (covers approximately 12 days of production). Current assessment: manageable without production impact if situation resolves by early March.
+
+  Risk Register: This event is consistent with Risk R1 (Sea freight lead time dependency – MEDIUM/MEDIUM). No risk re-rating recommended at this stage.
+
+ACTIONS TAKEN
+  1. Global Sea Freight requested to hold booking priority and advise immediately if loading slips beyond 26 February.
+  2. Asian Injection Molding contacted: AIM confirmed finished parts are available at factory and will move to port as soon as berth slot is confirmed.
+  3. Production Planning informed: László Gál has re-sequenced Week 12–13 build plan to consume plastic sub-assembly buffer stock before new shipment arrives (consistent with PCBA re-sequencing already in place for the EME partial delivery).
+  4. Plastipak GmbH (Munich – regional backup supplier, under qualification): Enquiry raised to confirm whether qualification lot of 2.5 kg (prototype parts) can be made available by mid-March if needed for limited production use. Response pending.
+
+MONITORING
+Daily updates from Global Sea Freight forwarding desk. Next scheduled update: 14 February 2025.
+
+If delay extends beyond 28 February loading, recommend escalation to Plant Manager and consideration of airfreight for a partial quantity (estimated additional cost: EUR 4.20/kg vs. EUR 0.05/kg sea – approximately EUR 35 premium per EVC unit). Decision threshold: <5 unit sets of buffer stock remaining.

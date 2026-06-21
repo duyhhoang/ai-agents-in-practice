@@ -1,0 +1,54 @@
+SITE AND PRODUCT PHOTO LOG
+Reference: PHOTO-LOG-EVC-2024-2025
+Compiled by: EuroCharge Assembly – Quality & Installation Documentation Team
+Last updated: 15 September 2025
+
+This log records photographic evidence captured during installation, maintenance, inspection, and incident response activities. Photos are stored in the document management system under project folder EVC-PHOTOS-2024.
+
+─────────────────────────────────────────────────────────────────
+PHOTO ID: PHO-SITE001-001
+Date: 20 May 2024
+Site: SITE-001, Hamburg (Shopping centre car park, Bay P12)
+Unit: EVC-2024-0001 (AC-22kW)
+Stage: Installation – concrete base inspection
+Caption: Freshly installed concrete base (1.2 m × 0.8 m × 0.4 m deep) at SITE-001. Base poured 15 May 2024, photographed 20 May 2024 after 5-day cure. Surface appears smooth and uniform. No visible cracking. Anchor bolt group (4× M10, pattern 600 mm × 300 mm) correctly positioned within ±1.5 mm of drawing. Yellow conduit opening visible at rear of base, sealed with foam plug. Drainage gradient visible (sloping away from base, ~2% slope).
+
+─────────────────────────────────────────────────────────────────
+PHOTO ID: PHO-SITE001-002
+Date: 20 May 2024
+Site: SITE-001, Hamburg
+Unit: EVC-2024-0001 (AC-22kW)
+Stage: Installation – completed installation
+Caption: EVC-2024-0001 fully installed and energised at SITE-001. Unit standing upright on concrete base, housing in RAL 9016 Traffic White, all external panels flush and aligned. Cable conduit entry at rear sealed with IP54-rated cable gland (black). Display screen lit showing "Ready to charge" status screen. RFID reader indicator LED glowing blue (network connected). No visible damage to housing or coating. Shopping centre logo applied by site operator to upper housing panel (vinyl decal, non-structural). Green status indicator LED visible on front fascia.
+
+─────────────────────────────────────────────────────────────────
+PHOTO ID: PHO-SITE004-INCID-001
+Date: 31 August 2025
+Site: SITE-004, Vienna South (AT-A2-KM18 motorway services)
+Unit: EVC-2024-0008 (AC-22kW)
+Stage: Incident response – connector damage
+Caption: Connector assembly of EVC-2024-0008 removed for inspection following incident report IR-SITE004-2025-0031. Photo taken by field technician Stefan Krone at 17:22. Discolouration and charring visible on contact pins 1 and 3 (L1 and PE conductors). Burn pattern is consistent with arc tracking rather than sustained overcurrent. Housing of connector body shows melting and blackening on interior face. Replacement part #KKE-2024-Rev2 visible in background, still in packaging. External cable (vehicle side, not EuroCharge property) also visible – shows corresponding burn marks on receptacle, suggesting vehicle connector was the initiation point.
+
+─────────────────────────────────────────────────────────────────
+PHOTO ID: PHO-SITE006-INSTALL-003
+Date: 01 March 2024
+Site: SITE-006, Barcelona (Supermarket car park, Level P1)
+Unit: EVC-2024-0005 (DC-50kW)
+Stage: Installation – 3-person crew handling
+Caption: Three-member installation crew positioning EVC-2024-0005 (DC-50kW, approximately 78 kg) onto prepared concrete base using a manual equipment trolley. Photo taken by site supervisor Roberto Sánchez at 10:05. Crew wearing hi-vis vests and safety boots. Unit on trolley, being guided into alignment with anchor bolts. Mounting brackets and hardware visible on unit base. Note: this photo was used as evidence to update the installation manual (Rev. 5) with the recommendation "minimum 3 persons for DC variants" (see ECN-EVC-2025-0018 background documentation).
+
+─────────────────────────────────────────────────────────────────
+PHOTO ID: PHO-FACTORY-QA-011
+Date: 19 February 2025
+Location: EuroCharge Assembly, Budapest – VDE Test Station
+Unit: EVC-2024-0702 (AC-22kW)
+Stage: Non-conformance – earth continuity failure
+Caption: Unit EVC-2024-0702 on VDE test bench, test engineer TE-I-009 (partial view) connecting earth continuity test leads. Digital milliohmmeter display reads 0.14 Ω (out-of-spec; limit 0.10 Ω). Red "FAIL" indicator on automated test bench visible at top-right. NCR-2025-0088 label (yellow sticky tag, handwritten) affixed to unit housing. Cable harness visible in open housing – earth bonding cable (green/yellow) marked with red cable tie indicating suspect crimp location.
+
+─────────────────────────────────────────────────────────────────
+PHOTO ID: PHO-SITE002-MAINT-007
+Date: 05 September 2025
+Site: SITE-002, Munich North (DE)
+Unit: EVC-2024-0015 (DC-50kW)
+Stage: Seasonal maintenance – pre-winter preparation
+Caption: Field technician Jan Nowak applying silicone sealant to cable conduit entry joint at base of EVC-2024-0015 during seasonal maintenance visit. Unit housing open (front access panel removed, held by retaining strap). Interior electronics visible and in clean condition – no dust accumulation or moisture ingress. Technician wearing latex gloves. Sealant gun and gap filler in foreground. Photo taken by site contact (SITE-002 facility manager) as maintenance documentation record. Unit returned to service 11:20 same day.

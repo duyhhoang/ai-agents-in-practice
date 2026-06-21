@@ -1,0 +1,44 @@
+FREIGHT INSURANCE CLAIM
+Claim Reference: INS-TL-2024-0041
+Date of claim: 21 March 2024
+Policy holder: EuroCharge Assembly GmbH, Budapest
+Insurer: Allianz Trade – Cargo Division, Munich
+Policy reference: TL-INS-2024-EU
+Policy type: All-risk cargo, EUR 25,000/unit limit, EUR 500 deductible
+
+SHIPMENT DETAILS
+Shipment reference:    SHIP-2024-0009
+Bill of lading:        TL-CMR-2024-0119
+Carrier:               TransLogistics EU (driver: M. Horváth, vehicle EU-TL-5519)
+Route:                 Budapest Assembly → SITE-002, Zaragoza, Spain
+Cargo:                 3× EV Charging Station units (EVC-2024-0003, EVC-2024-0007, EVC-2024-0009)
+Cargo value declared:  EUR 14,250 (3 units × EUR 4,750 per unit)
+Date of damage discovery: 20 March 2024, 09:20 (pre-departure inspection, Budapest)
+
+DESCRIPTION OF INCIDENT
+Prior to departure from Budapest, driver M. Horváth identified a compression mark (approximately 15 × 8 cm) on the top-right corner of the outer carton of Unit 2 of 3 (unit EVC-2024-0009, serial SN-0010F441). The inner packaging foam was partially compromised. The damage was not present when units were loaded from the assembly facility (loading inspection photo PHO-FACTORY-SHIP-009-A confirms intact packaging at departure). The damage is believed to have occurred during storage in the TransLogistics EU Hamburg transit warehouse between 14 March (inbound from Hamburg port) and 20 March 2024 (pre-departure loading).
+
+DAMAGE ASSESSMENT
+EuroCharge Quality team opened packaging on 20 March 2024 and inspected unit EVC-2024-0009:
+  – External housing: 2 scratches on rear panel (approx. 8 mm and 12 mm length, surface only)
+  – Display interface: No damage observed ✓
+  – Electronic modules: Visual inspection normal ✓
+  – Connector: No damage ✓
+  – Electrical safety test (partial, bench): Insulation resistance >2 MΩ; earth continuity 0.07 Ω ✓
+
+Assessment result: Unit is cosmetically damaged but functionally intact. Customer (Installation Partners EU, SITE-002) has been consulted. They will accept the unit with a price reduction of EUR 350 (agreed via email 21 March 2024) to account for the cosmetic defect.
+
+CLAIMED AMOUNT
+  Customer price reduction accepted:     EUR 350.00
+  Replacement outer carton and repack:   EUR 42.00
+  QA inspection labour (2 hrs × EUR 45): EUR 90.00
+  Total claimed:                         EUR 482.00
+  Deductible (policy):                   EUR 500.00
+  NET CLAIM: EUR 0 (below deductible threshold)
+
+NOTE: Although the net claim is EUR 0 after the deductible, this incident is being filed for record purposes and to support the formal freight exception report (EXC-2024-0041) against TransLogistics EU. EuroCharge will seek recovery of EUR 482 directly from TransLogistics EU under the carrier's liability (CMR Convention, Art. 17).
+
+Carrier response received: 28 March 2024. TransLogistics EU accepted liability. Credit note issued by TransLogistics: TL-CN-2024-0088 (EUR 482.00), offset against next shipment invoice.
+
+Claim status: CLOSED – recovered directly from carrier.
+Filed by: Zsófia Takács, Logistics Coordinator – EuroCharge Assembly GmbH

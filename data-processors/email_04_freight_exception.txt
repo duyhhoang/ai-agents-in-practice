@@ -1,0 +1,35 @@
+From: dispatch@translogistics.eu (TransLogistics EU – Dispatch Centre, Hamburg)
+To: logistics@eurocharge-bud.hu; receiving@eurocharge-bud.hu
+Date: Wednesday, 20 March 2024, 14:55
+Subject: Freight Exception Notice – Shipment SHIP-2024-0009 – Packaging Damage Observed
+
+Dear EuroCharge Logistics Team,
+
+Please be advised of a freight exception relating to Shipment SHIP-2024-0009 (3 units EV Charging Stations, Budapest to SITE-002, Spain).
+
+Exception type: External packaging damage – impact marking on outer carton of Unit 2 of 3
+Vehicle registration: EU-TL-5519
+Driver: M. Horváth (Driver ID: DRV-J-118)
+Location at time of discovery: Loading dock inspection, Budapest Assembly facility, 09:20 on 20 March 2024
+Damaged unit serial: SN-0011E55E (EVC-2024-0009)
+
+Description of damage:
+During pre-departure load inspection, driver M. Horváth identified a visible compression mark (approx. 15 × 8 cm) on the top-right corner of the outer carton of Unit 2. The inner packaging foam appears intact based on visual inspection through a small tear in the outer carton. No visible damage to the product housing was observed through the tear opening. However, the packaging integrity is compromised.
+
+Actions taken:
+  1. Unit held at Budapest facility pending your quality team's assessment.
+  2. Photographic record taken – 6 images (available on request or attached to freight portal under EXC-2024-0041).
+  3. Remaining 2 units (EVC-2024-0003 and EVC-2024-0007) dispatched on schedule.
+  4. Exception logged in our TMS under reference EXC-2024-0041.
+
+Recommended next steps from our side:
+  – Quality team should open outer packaging and perform visual inspection of unit before shipment proceeds.
+  – If unit is cleared, we can arrange re-packaging and dispatch within 24 hours.
+  – If damage is found, please initiate freight insurance claim under policy TL-INS-2024-EU (coverage: EUR 25,000/unit).
+
+Please confirm your instructions by return. We await your assessment outcome before we can re-schedule delivery to SITE-002.
+
+Kind regards,
+TransLogistics EU – Dispatch Centre
+Hamburg Hub
+dispatch@translogistics.eu | +49 40 3009 2211

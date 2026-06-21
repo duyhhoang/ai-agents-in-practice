@@ -1,0 +1,46 @@
+ENGINEERING CHANGE NOTICE (ECN)
+ECN Reference: ECN-EVC-2025-0018
+Date raised: 22 April 2025
+Raised by: Thomas Becker, Product Engineering – EuroCharge Assembly GmbH
+Approved by: András Fekete, Plant Manager; Quality sign-off: QA Manager (M. Varga)
+Approval date: 29 April 2025
+Effectivity: From production order PROD-000036 onwards (all variants)
+
+TITLE
+Replace DEHP-containing PVC cable insulation with DEHP-free compound in Cable Harness Assembly (MAT-CABL-HARN)
+
+BACKGROUND AND REASON FOR CHANGE
+The REACH compliance review conducted in January 2024 (ref. REACH-EVC-2024-001) identified Bis(2-ethylhexyl) phthalate (DEHP), CAS 117-81-7, in the PVC insulation of certain cables within the harness assembly supplied by Certified Cable Works (A6). DEHP concentration was measured at 0.15% by weight in the PVC compound, exceeding the 0.1% SVHC disclosure threshold under REACH Article 33.
+
+Although current use is not prohibited (DEHP appears on REACH Annex XIV with sunset date but with relevant authorisations in place for specific cable applications), EuroCharge has committed to eliminating DEHP from all products by end of 2025 as part of its chemical management programme. Additionally, several major fleet customers (including EuroCharge Network Operator M) have contractually requested DEHP-free products by Q3 2025.
+
+DESCRIPTION OF CHANGE
+  BEFORE: Cable harness assembly (MAT-CABL-HARN, Rev. 3) using PVC insulation compound Evonik Vestolit B7021 (contains DEHP plasticiser, approx. 35 phr)
+  AFTER:  Cable harness assembly (MAT-CABL-HARN, Rev. 4) using DEHP-free PVC insulation compound INEOS Lacovyl PB 1702 H (phthalate-free, DINCH plasticiser)
+
+Affected cables within harness:
+  – Internal power cables (2.5 mm², brown/blue/green-yellow): all replaced
+  – Communication cables (CAT5e, 0.22 mm²): already phthalate-free, no change
+  – Pilot signal cables (0.75 mm², grey): replaced
+
+QUALIFICATION EVIDENCE
+  Material test report: CCA-QT-2025-012 (tensile strength, elongation, Izod impact, flame resistance UL 94 V-0 – all pass)
+  Cable temperature rating: -25°C to +90°C ✓ (no change from previous compound)
+  REACH / RoHS compliance declaration: Issued by INEOS (April 2025), sighted ✓
+  First article inspection (FAI): FAI-A6-2025-003, completed 18 April 2025, PASS
+  Fit-for-purpose validation: 3 harness assemblies built with Rev. 4 cables, installed in test chassis, subjected to 500-cycle mating/unmating test – PASS
+
+IMPACT ASSESSMENT
+  Functional impact: NONE – electrical and mechanical performance unchanged
+  Safety impact: NONE – flame resistance, temperature rating unchanged
+  Cost impact: +EUR 0.85 per harness set (DINCH plasticiser premium vs. DEHP)
+  Lead time impact: NONE – Certified Cable Works (A6) has confirmed material in stock
+  Documentation updates required: REACH compliance statement (REACH-EVC-2024-001 → Rev. 2), BOM Rev. 4, assembly drawing ASM-CABL-004 Rev. 4
+
+AFFECTED PRODUCT VARIANTS
+  AC-7kW, AC-22kW, DC-50kW, DC-150kW – all variants
+
+CUSTOMER NOTIFICATION
+EuroCharge Network Operator M notified of change by letter (ref. ETC-CUST-2025-0041, 30 April 2025). Change is improvement; no customer approval required under contract terms.
+
+Implementation verified by: QA Manager M. Varga, 05 May 2025

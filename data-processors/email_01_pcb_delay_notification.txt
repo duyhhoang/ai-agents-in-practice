@@ -1,0 +1,29 @@
+From: jan.kovar@eme-brno.cz (Jan Kovář, Supply Chain Manager – Electronics Manufacturing Euro)
+To: petra.nagy@eurocharge-bud.hu (Petra Nagy, Procurement Lead – EuroCharge Assembly)
+CC: quality@eme-brno.cz; dispatch@eurocharge-bud.hu
+Date: Thursday, 14 March 2025, 09:17
+Subject: RE: PO-2024-0031 – PCBA Batch CZ-2025-Q1-1142 – Delivery Delay Notification
+
+Dear Petra,
+
+I am writing to formally notify you of a delay affecting Purchase Order PO-2024-0031 for PCBA Circuit Board Assemblies (MAT-ELEC-PCBA), scheduled for delivery to your Budapest plant on 18 March 2025.
+
+Due to a shortage of a specific capacitor component (MLCC 100nF, 50V, X7R, 0402 package) from our upstream supplier in Taiwan, we are unable to complete the full batch of 100 units by the agreed date. The shortage is industry-wide and has affected multiple Tier-1 EMS providers across Europe. Our procurement team received confirmation from the component distributor only yesterday afternoon.
+
+Current status:
+  – 42 units fully assembled, tested, and ready for dispatch → available 17 March 2025
+  – 58 units on hold pending component receipt → revised ETA: 28 March 2025 (±2 days)
+
+We propose a partial delivery of the 42 ready units on 17 March, which should allow you to continue production for current build orders without interruption. The remaining 58 units will follow as a second delivery on or before 31 March 2025.
+
+Please confirm by return whether this partial shipment arrangement is acceptable. If you have urgent demand beyond the 42 units in the short term, please let us know immediately so we can explore expedite options, including air freight for a smaller quantity (cost impact to be discussed).
+
+We sincerely apologise for the disruption this causes to your production schedule. We have escalated internally and are monitoring the component situation daily.
+
+Risk register note for your records: this situation is consistent with Risk R2 (High / High) in your supply risk assessment for electronics components.
+
+Best regards,
+Jan Kovář
+Supply Chain Manager
+Electronics Manufacturing Euro – Brno Plant
+Tel: +420 511 234 987
