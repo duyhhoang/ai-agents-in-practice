@@ -1,0 +1,37 @@
+COMMODITY MARKET BRIEF – STEEL
+Report type:    Internal procurement intelligence briefing
+Reference:      CMB-STEEL-2025-Q1
+Prepared by:    Petra Nagy, Procurement Lead – EuroCharge Assembly
+Date:           03 April 2025
+Distribution:   Plant Manager, Finance Controller, Production Planning
+
+EXECUTIVE SUMMARY
+Hot-rolled coil (HRC) and stainless steel (304 grade) prices showed modest softening in Q1 2025 following elevated levels throughout H2 2024, driven by easing Chinese export volumes and lower European energy costs. Our primary supplier (Steel Supplier Alpha, Essen) has indicated it expects to hold current contracted pricing through Q2 2025 but has flagged upside risk in H2 2025.
+
+CURRENT PRICE BENCHMARKS (as of 31 March 2025)
+  European HRC (benchmark, EXW Ruhr):           EUR 610/tonne (Q4 2024: EUR 660/tonne, -7.6%)
+  Stainless steel 304, 2mm coil (EXW Germany):  EUR 2,420/tonne (Q4 2024: EUR 2,490/tonne, -2.8%)
+  Scrap steel (E40 grade, Hamburg):              EUR 320/tonne (Q4 2024: EUR 310/tonne, +3.2%)
+
+CONTRACT PRICE vs. MARKET (Steel Supplier Alpha, PO-2024-0001 series)
+  Contracted price for EVC programme (Stainless 304, 1.5–2.0 mm):  EUR 3.80/kg
+  Current spot equivalent estimate:                                  EUR 3.74/kg
+  Variance: -1.6% favourable vs. contract (we are slightly above spot – acceptable given volume certainty and quality reliability)
+  Contract renewal: July 2025. Target: negotiate to EUR 3.65–3.70/kg given spot softness.
+
+KEY MARKET DRIVERS
+  1. China export volumes: Chinese HRC exports rose 18% YoY in Q1 2025 (est.), adding supply-side pressure to European prices. However, EU anti-dumping duties on certain Chinese steel grades remain in force, limiting direct price arbitrage.
+  2. European energy costs: Natural gas prices in Germany averaged EUR 38/MWh in Q1 2025 (vs. EUR 52/MWh Q1 2024), reducing electric arc furnace (EAF) operating costs for European mills. This supports some further price softening.
+  3. EV sector demand: Stainless steel demand from EV charging infrastructure remains a growth segment. Sector demand is expected to rise 22% in 2025 (IEA estimate). This may provide a floor to stainless prices despite broader softness.
+  4. Scrap availability: European scrap prices have firmed slightly (+3.2% QoQ) – limits downside for EAF steelmakers.
+
+RISKS TO WATCH
+  Upside risk: Re-escalation of energy prices in H2 2025 (geopolitical uncertainty); EU trade measures against third-country steel; construction sector recovery increasing domestic demand.
+  Downside risk: Chinese oversupply continuing to weigh on global benchmarks; European automotive sector slowdown reducing overall steel demand.
+
+RECOMMENDED ACTIONS
+  1. Initiate renewal negotiation with Steel Supplier Alpha by May 2025 (deadline 60 days before contract expiry).
+  2. Request H2 2025 price indication from backup supplier (Thyssen Stahl, Düsseldorf – not currently active on EVC programme) to strengthen negotiating position.
+  3. Consider a 6-month price lock on 40% of annual stainless volume if H2 upside risk materialises.
+
+This briefing is for internal use only. Market data sourced from Platts, Steel Orbis, and direct supplier communication.

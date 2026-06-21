@@ -1,0 +1,40 @@
+WEEE PRODUCER REGISTRATION CONFIRMATION
+Directive 2012/19/EU on Waste Electrical and Electronic Equipment
+
+Registration Authority: Elektro-Altgeräte Register (EAR), Fürth, Germany
+Document Reference: WEEE-EAR-DE-2024-04411
+Date of Issue: 03 March 2024
+
+PRODUCER DETAILS
+Registered producer name:  EuroCharge Assembly GmbH
+Registered address:        Gyári út 14, H-1211 Budapest, Hungary
+EU Authorised Representative (Germany): EuroCharge DE GmbH, Leopoldstraße 12, 80802 Munich
+German registration number: DE-28441162
+WEEE category:             Category 5 – Lighting equipment (reclassified; see note below)
+                           Category 9 – Monitoring and control instruments (primary classification)
+Product placed on market:  EV Charging Station (AC-7kW, AC-22kW, DC-50kW, DC-150kW)
+EAN/GTIN range:            4260-XXXXXX-XX (EVC programme)
+
+NOTE ON CATEGORY CLASSIFICATION
+EV charging stations do not fall neatly within the historical WEEE category definitions. Following guidance from EAR and consultation with VDE Institute, the product is classified under Category 9 (Monitoring and control instruments) as the primary classification, with the power electronics sub-system noted as containing elements of Category 5. This classification is subject to revision pending the European Commission's delegated act on EEE categorisation expected in 2025.
+
+TAKE-BACK AND COLLECTION OBLIGATIONS
+EuroCharge Assembly GmbH fulfils its end-of-life collection obligations through membership in the following collective compliance scheme:
+  Scheme operator:   European Recycling Hub GmbH (Actor A15)
+  Scheme name:       EAR-approved collective scheme "TechReturn EU"
+  Annual tonnage reported (2023): 8.4 tonnes (all EVC variants placed on DE market)
+  Collection rate achieved: 72% of estimated WEEE arising
+  Treatment facility:     Dismantling Facility O (certified under § 21 ElektroG)
+
+PRODUCER RESPONSIBILITY STATEMENT
+As a registered WEEE producer, EuroCharge Assembly GmbH commits to:
+  (a) Funding collection, treatment, recovery, and environmentally sound disposal of EEE placed on the German market
+  (b) Reporting annual quantities placed on market to EAR by 30 April each year
+  (c) Labelling all products with the crossed-out wheeled bin symbol per Annex IX of Directive 2012/19/EU
+  (d) Maintaining take-back documentation for a minimum of 5 years
+
+VALIDITY
+This registration is valid from 03 March 2024 until revoked or updated. Annual reporting obligation: next due 30 April 2025.
+
+Issued by: Elektro-Altgeräte Register (EAR), Fürth
+Reference contact: weee@ear-system.de

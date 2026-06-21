@@ -1,0 +1,54 @@
+INCOMING GOODS INSPECTION RECORD
+Document No.: IGI-2024-0089
+Facility: EuroCharge Assembly GmbH – Budapest (Plant PLANT-HU01)
+Receiving Dock: Dock B-3
+Inspector: Zoltán Mészáros (QA Inspector, Badge: QA-023)
+Date / Time: 15 March 2024 / 08:40–10:15
+
+SHIPMENT DETAILS
+Supplier:          Electronics Manufacturing Euro (A5) – Brno, Czech Republic
+Purchase Order:    PO-2024-0031
+Delivery Note No.: EME-DN-2024-0441
+Carrier:           TransLogistics EU, truck EU-TL-4821
+Arrived:           15 March 2024, 07:55
+Material:          PCBA Circuit Board Assemblies (MAT-ELEC-PCBA)
+Quantity received: 42 units (partial delivery – see email EME-SC-2025-0014)
+Expected:          100 units
+
+EXTERNAL PACKAGING CHECK
+Pallet condition:             OK – no visible impact damage
+Stretch wrap integrity:       OK – fully intact on all 6 boxes
+Labels and markings:          OK – ESD warning labels present on all boxes
+Shipping marks vs. PO:        OK – PO-2024-0031 confirmed on all cartons
+Temperature indicator strip:  Green (no thermal exceedance recorded during transport)
+
+QUANTITY VERIFICATION
+Counted by inspector:  42 units ✓
+Matches delivery note: YES
+Matches PO quantity:   NO – 42 of 100 received (partial – pre-advised, accepted)
+ERP goods receipt:     Posted as partial GR / movement type 101 under PO-2024-0031
+
+SAMPLE INSPECTION (AQL 2.5, Level II – 8 units sampled from 42)
+Visual inspection:
+  – PCB surface: No visible contamination, flux residue, or physical damage on 7/8 samples
+  – Sample EME-PCBA-2024-1081: Minor cosmetic flux residue on non-critical area → Accepted under concession (cosmetic only, no functional impact)
+  – Connectors: All connector pins intact, no bent pins observed on any sample
+  – Conformal coating: Uniform coverage on all 8 samples
+
+Dimensional / marking check:
+  – Part number marking (MAT-ELEC-PCBA / Rev. 4.2): Confirmed on all 8 samples
+  – Date code: All samples show Week 10-11 / 2024 – consistent with current production
+  – RoHS marking: Present on all samples ✓
+
+Certificate of Analysis (CoA) review:
+  – CoA reference: EME-COA-2024-0441 received and verified
+  – IPC-A-610 Class 2 inspection passed at source: Confirmed ✓
+  – Functional test record: All 42 units show PASS status in supplier test log
+
+RESULT: ACCEPTED
+All 42 units cleared for production. Stored in WH-CZ-ELEC buffer (ESD-controlled area, shelf E4-12).
+ERP stock posting: UNRESTRICTED, movement type 101, 15 March 2024, 10:20.
+
+Next partial delivery expected: approx. 28–31 March 2024 (58 units – pre-advised).
+
+Signed: Z. Mészáros – QA Inspector | Countersigned: P. Nagy – Procurement Lead

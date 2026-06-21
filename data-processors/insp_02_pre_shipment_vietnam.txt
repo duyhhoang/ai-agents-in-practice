@@ -1,0 +1,60 @@
+PRE-SHIPMENT INSPECTION REPORT
+Third-Party Inspector: SGS Industrial Services – Ho Chi Minh City Office
+Report Reference: SGS-PSI-VN-2024-00817
+Inspection Date: 08 January 2024
+Client: EuroCharge Assembly GmbH, Budapest (via freight agent)
+Supplier: Asian Injection Molding Co. Ltd (AIM), District 9, Ho Chi Minh City, Vietnam
+Product: Injection-moulded ABS plastic parts for EV charging station
+PO Reference: PO-2024-0033 (Plastic Material Supplier B + AIM combined order)
+Quantity ordered: 200 kg (approx. 2,440 moulded parts across 6 part numbers)
+Quantity inspected: 200 kg ready for shipment
+Inspection standard: AQL 1.5 (critical), AQL 4.0 (major), AQL 6.5 (minor)
+
+FACTORY CONDITIONS AT TIME OF INSPECTION
+Facility cleanliness: Good – production floor tidy, no contamination risk observed
+Mould tooling condition: Tools #EVC-ABS-001 through #EVC-ABS-006 in good condition
+Last tool maintenance: 28 December 2023 (records sighted and verified)
+Production batch number: AIM-BATCH-2024-0038
+
+INSPECTION FINDINGS
+
+CRITICAL DEFECTS (AQL 1.5 – accept 0 / reject 1):
+  None found. ✓
+
+MAJOR DEFECTS (AQL 4.0):
+  Part No. EVC-ABS-003 (front interface cover):
+    3 samples out of 125 inspected showed short-shot (incomplete fill) in lower-left corner
+    Short-shot depth: max. 1.2 mm, surface area <4 mm²
+    Disposition: Supplier sorted 100% of EVC-ABS-003 parts. Re-inspection of sorted lot: 0 short-shots found.
+    Accepted after 100% sorting. ✓
+
+MINOR DEFECTS (AQL 6.5):
+  Part No. EVC-ABS-001 (housing side panel, left):
+    Visible sink marks on inner surface (non-visible surface in final product): 8 of 200 inspected
+    All within cosmetic tolerance – no functional impact
+    Accepted ✓
+
+  Surface gloss variation (parts EVC-ABS-002 and EVC-ABS-004):
+    Slight variation in sheen (likely tool temperature variation at start of production run)
+    Within stated tolerance range of 40–55 GU (Gardner gloss units)
+    Accepted ✓
+
+DIMENSIONAL VERIFICATION (3 parts measured per part number using digital calipers):
+  All critical dimensions within drawing tolerance (±0.3 mm).
+  Wall thickness: 2.8–3.1 mm (specification: 2.8–3.2 mm) ✓
+
+MATERIAL VERIFICATION:
+  Material declaration (ABS, Sabic Cycolac MG47): Confirmed via batch certificate
+  RoHS / REACH material declaration: Sighted, current (November 2023 update)
+  Colour (RAL 9016 Traffic White): Confirmed by visual comparison to approved colour chip
+
+PACKING INSPECTION:
+  Parts packed in anti-static PE bags per spec
+  Carton weight: within 5% of declared weight
+  Total net weight packed: 8.2 kg per EVC unit allocation confirmed
+
+OVERALL RESULT: APPROVED FOR SHIPMENT
+Shipment may proceed to Cat Lai Port for loading onto SHIP-2024-0008.
+
+Inspector: Michael Tran, SGS Industrial Services Vietnam
+SGS Vietnam Registration: VN-INS-8844

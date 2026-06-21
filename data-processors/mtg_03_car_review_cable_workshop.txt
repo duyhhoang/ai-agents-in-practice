@@ -1,0 +1,39 @@
+CORRECTIVE ACTION REVIEW – CALL RECORD
+Reference: CAR-REVIEW-F-2025-011
+Date: 21 March 2025 | 09:30–10:15 CET
+Format: Teams call
+Buyer: EuroCharge Assembly – Miklós Horváth (QA Engineer)
+Supplier: Certified Cable Works (A6), Wrocław – Wojciech Kowalski (Quality Manager)
+
+BACKGROUND
+NCR-2025-0088 raised following discovery of under-crimped earth bonding cable in unit EVC-2024-0702 during VDE functional testing (earth continuity 0.14 Ω vs. limit 0.10 Ω). Root cause: insufficient crimp force from tooling on batch CBL-F-2025-024.
+Corrective Action Request CAR-F-2025-011 issued to Certified Cable Works on 08 March 2025, with evidence of corrective action due 21 March 2025.
+
+CORRECTIVE ACTION EVIDENCE REVIEWED
+
+1. Immediate containment (completed 08 March 2025):
+   All harnesses from batch CBL-F-2025-024 returned to Cable Workshop F for 100% inspection.
+   Results: 6 additional earth bonding cables with crimp pull-test failure found out of 30 harnesses (20% defect rate in batch).
+   All 6 replaced. All 30 harnesses re-tested and re-certified. Replacement batch shipped to Budapest 12 March 2025.
+   EuroCharge incoming inspection: PASS ✓
+
+2. Root cause (confirmed):
+   Pneumatic crimp press (Model: Rennsteig PEW 12, tool station #3) showed air pressure regulator drift: set at 6.0 bar, actual measured 4.8 bar at time of batch production. Calibration was 4 months overdue (last calibrated October 2024; due February 2025 per annual plan).
+   Calibration certificates presented by CCA: station #3 now calibrated 09 March 2025 ✓. All other stations calibrated same day ✓.
+
+3. Permanent corrective action:
+   (a) Crimp press calibration interval reduced from 12 months to 6 months. Updated in internal quality plan (doc CCA-QP-007 Rev. 3). ✓
+   (b) Pull-test verification added as mandatory in-process step for all earth bonding cables (100% sample, min. pull force 80 N). Results logged in batch record. ✓
+   (c) Pressure gauge upgraded to digital readout with alarm if pressure deviates >0.3 bar from setpoint. Installed 17 March 2025. ✓
+
+4. Effectiveness verification:
+   Two subsequent batches produced under new controls (CBL-F-2025-025 and CBL-F-2025-026):
+   Pull-test results: all 60 earth cables PASS. EuroCharge incoming inspection of both batches: PASS ✓.
+
+EUTOCHARGE QA ASSESSMENT
+All corrective actions verified as implemented and effective. CAR-F-2025-011 closed.
+QN-2024-0019 updated to CLOSED status in ERP QM module.
+Supplier performance score updated: CCA quality score Q1 2025: 9.1/10 (corrective action quality: excellent).
+
+Action: Miklós Horváth to close CAR in ERP by 22 March 2025.
+Next scheduled supplier audit (CCA): Q4 2025.

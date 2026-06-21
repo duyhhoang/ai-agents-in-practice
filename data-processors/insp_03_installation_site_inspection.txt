@@ -1,0 +1,59 @@
+INSTALLATION SITE READINESS INSPECTION CHECKLIST
+Document No.: SITE-INSP-2024-0014
+Project: EV Charging Station Installation – SITE-006, Barcelona (Supermarket Car Park, Level P1)
+Unit to be installed: EVC-2024-0005 (DC-50kW)
+Inspector: Roberto Sánchez, Installation Partners EU – Iberian Region
+Inspection Date: 28 February 2024
+Contractor present: Civil Works Services (local subcontractor) – Supervisor: Carlos Morales
+
+─────────────────────────────────────────────────────────────────
+SECTION 1: CIVIL / SITE PREPARATION
+─────────────────────────────────────────────────────────────────
+1.1 Concrete base poured and cured:
+    Date poured: 21 February 2024
+    Curing period at inspection: 7 days ✓ (min. required: 5 days)
+    Surface flatness: ±1.5 mm over 1 m ✓ (limit: ±3 mm)
+    Surface finish: Smooth, no honeycombing or voids observed ✓
+    Anchor bolt positions (4×): All within ±2 mm of drawing ✓
+    Drainage: Adequate run-off slope around base ✓
+
+1.2 Trenching and conduit:
+    Cable conduit depth: 0.65 m ✓ (min. 0.60 m per local regulation)
+    Conduit type: HDPE, 63 mm Ø ✓
+    Warning tape laid: YES ✓
+    Conduit draw wire present: YES ✓
+    Conduit opening at base: Sealed with foam (temporary) pending cable pull-through ✓
+
+1.3 Site access and safety:
+    Parking bays around installation point cordoned off: YES ✓
+    Safety signage: Bilingual (ES/EN) ✓
+    No overhead utilities within 3 m of installation point ✓
+
+─────────────────────────────────────────────────────────────────
+SECTION 2: ELECTRICAL SUPPLY READINESS
+─────────────────────────────────────────────────────────────────
+2.1 Supply cable pulled through conduit:      YES ✓
+2.2 Cable type: 5 × 16 mm² Cu, XLPE insulated ✓
+2.3 Supply protection (RCBO): Installed in DB panel, 63 A, 30 mA type A ✓
+2.4 Earth electrode installed (TT system):    YES – 1.8 Ω measured (limit: <200 Ω) ✓
+2.5 Main supply cable terminated at panel:    YES ✓ – ready for connection
+2.6 Communications (4G/LAN) connectivity:    4G SIM pre-provisioned by operator ✓
+
+─────────────────────────────────────────────────────────────────
+SECTION 3: UNIT DELIVERY CONDITION CHECK
+─────────────────────────────────────────────────────────────────
+3.1 Outer packaging intact on arrival:   YES ✓
+3.2 All accessories present (accessory kit unboxed and verified): YES ✓
+3.3 No physical damage to housing:       YES ✓
+3.4 Serial number matches delivery note (SN-0010335D / EVC-2024-0005): CONFIRMED ✓
+
+─────────────────────────────────────────────────────────────────
+OVERALL SITE READINESS: APPROVED – INSTALLATION MAY PROCEED
+─────────────────────────────────────────────────────────────────
+Deficiencies requiring attention before energisation: NONE
+
+Post-installation commissioning test booked: 01 March 2024, 10:00
+Electrical contractor: Instalaciones Roca S.L. (Permit: ES-CAT-2024-1102)
+
+Signed: R. Sánchez – Installation Partners EU | C. Morales – Civil Works Supervisor
+Date: 28 February 2024

@@ -1,0 +1,43 @@
+SITE OPERATOR COMPLAINT & ISSUE LOG
+Operator: EuroCharge Network Operator M
+Site: SITE-004, Vienna South Motorway Services (AT-A2-KM18)
+Unit: EVC-2024-0008 (AC-22kW)
+Log period: July – September 2025
+Compiled by: Operations Centre, EuroCharge Network Operator M
+Log reference: OPS-LOG-SITE004-Q3-2025
+
+─────────────────────────────────────────────────────────────────
+ENTRY 001
+Date / Time: 01 July 2025, 19:32
+Reported by: Site attendant (name withheld per GDPR)
+Description: User reported charger screen flickering intermittently during active session. Session completed normally. No error code logged in OCPP backend.
+Action taken: Logged for monitoring. Remote diagnostic run – no fault found. Possibly caused by low ambient light / direct afternoon sun on display. Monitor next 30 days.
+Status: CLOSED – no action required
+
+ENTRY 002
+Date / Time: 15 July 2025, 08:10
+Reported by: Site manager (EuroCharge Network app submission)
+Description: Charging session started but stopped after 4 minutes. User's vehicle dashboard showed "charging error." No fault code in OCPP log. Second session attempted 10 minutes later – successful.
+Action taken: OCPP session log reviewed. Pilot signal dropped briefly at T+3:52 – suspected vehicle-side issue (EVSE pilot signal within spec). Flagged to network NOC. Remote reset of unit performed.
+Status: CLOSED – likely vehicle-side issue. No hardware fault on EVSE.
+
+ENTRY 003
+Date / Time: 30 August 2025, 16:45
+Reported by: User (direct call to network operator helpline)
+Description: URGENT – User reported buzzing sound and burning smell during charging. User disconnected immediately. Site attendant confirmed unit was offline. Incident escalated to field maintenance team.
+Action taken: Field technician Stefan Krone dispatched (45-min response). Connector assembly replaced. Full electrical safety re-test performed. Incident report filed: NCR-2025-0088. Unit returned to service 31 August 2025.
+Status: CLOSED – see Incident Report IR-SITE004-2025-0031
+
+ENTRY 004
+Date / Time: 08 September 2025, 11:20
+Reported by: Site manager
+Description: Unit showing "Out of Service" on display since approximately 10:00. No user impact reported. OCPP backend shows unit offline.
+Action taken: Remote reboot attempted via network management system – successful. Unit back online at 11:35. Total downtime: approx. 95 minutes. Cause: likely firmware watchdog timeout (known issue in v2.1.4 firmware – patch v2.1.6 queued for rollout next maintenance window).
+Status: CLOSED – firmware update scheduled
+
+SUMMARY Q3 2025
+Total incidents logged: 4
+Critical (safety-related): 1 (Entry 003 – resolved)
+Availability impact events: 2 (Entries 003, 004)
+Average response time (field dispatch, where required): 45 minutes
+User-reported satisfaction (post-session SMS survey, Q3 average): 4.1 / 5.0

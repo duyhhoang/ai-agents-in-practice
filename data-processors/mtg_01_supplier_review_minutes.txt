@@ -1,0 +1,52 @@
+MEETING MINUTES
+Meeting type:  Quarterly Supplier Review – Q2 2025
+Reference:     MOM-QSR-A5-2025-Q2
+Date:          17 June 2025 | 10:00–12:15 CET
+Location:      Video conference (MS Teams)
+
+ATTENDEES
+EuroCharge Assembly (buyer):
+  Petra Nagy – Procurement Lead (chair)
+  Miklós Horváth – Quality Engineer
+  László Gál – Production Planning
+
+Electronics Manufacturing Euro / EME (supplier A5):
+  Jan Kovář – Supply Chain Manager
+  Renata Blahová – Quality Manager
+  Filip Dvořák – Account Manager
+
+AGENDA AND DISCUSSION
+
+1. REVIEW OF Q1 2025 SUPPLY PERFORMANCE
+   On-time delivery (OTD): 91% (target: 95%)
+   Root cause of misses: Partial delivery on PO-2024-0031 (MLCC capacitor shortage, March 2025) – accounted for 6 of the 9 late lines
+   Quality: Incoming defect rate 0.8% (target: <1.0%) ✓
+   No quality notifications (QN) raised against EME in Q1 (QN-2025-0044 from Q3 2024 batch – closed)
+   Action: EME to provide component risk dashboard for critical MLCC / passive component families by 30 June 2025. Owner: Jan Kovář.
+
+2. PCBA BATCH CZ-2025-Q3-881 – QUALITY BLOCK (QN-2025-0044)
+   Background: 88 units of Charging Controller (MAT-ELEC-CTRL) from batch CZ-2025-Q3-881 quarantined in September 2024 following intermittent communication errors in burn-in. Root cause confirmed: electrolytic capacitor C204 (100µF, 25V) from sub-supplier showing early degradation in accelerated life test at 85°C.
+   Current status: Batch fully scrapped. Replacement batch CZ-2025-Q4-012 produced with alternative capacitor (Nichicon UHE series, 105°C rating). EuroCharge incoming inspection: PASS. QN-2025-0044 closed 10 March 2025.
+   Preventive action: EME to add 105°C-rated capacitors as minimum spec for all electrolytic caps in controller BOM from Rev. 5.0 PCB onwards. Timeline: Q3 2025. Owner: Renata Blahová.
+   EuroCharge QA note: Will audit implementation during Q3 factory visit.
+
+3. DUAL-SOURCING UPDATE (Risk R2 mitigation)
+   EuroCharge update: Czech Electronics Solutions (Ostrava) qualification is ongoing. FAI submitted May 2025. Results expected July 2025. Volume split intended: 85% EME / 15% CES once qualified.
+   EME response: No objection. Requested advance notice of any volume rebalancing beyond agreed 15%. Noted in contract amendment draft (pending legal review).
+
+4. CAPACITY PLANNING – H2 2025
+   EuroCharge forecast: 1,600 units H2 2025 (+12% vs H1)
+   EME capacity confirmation: 1,850 units' worth of PCBAs available H2 2025 ✓ (headroom confirmed)
+   Critical raw material status: MLCC supply normalised (Q2 2025). EME holding 6 weeks' safety stock of critical passives from Q2 onward. Buffer arrangement cost shared (EuroCharge contributing 50% of incremental safety stock holding cost – agreed in principle, formal addendum pending).
+
+5. SUSTAINABILITY UPDATE
+   EME carbon reporting: Scope 1+2 emissions for Brno plant: 1,840 tCO₂e (2024). Intensity: 2.8 kg CO₂e per board assembly.
+   Renewable energy: EME targeting 60% renewable electricity by end 2026 (current: 44%). Solar PPA for Brno site signed April 2025.
+   EuroCharge request: Please include emission factor per product line in future CoA documents (for Scope 3 reporting).
+
+6. AOB
+   EME raised: Lead time buffer request – EME requests 10 working days' firm order horizon for DC-150kW PCBA variant (currently 8 days). EuroCharge agreed. Production planning to update ERP lead times accordingly.
+
+NEXT MEETING: Q3 2025 Review – September 2025 (date TBC)
+Minutes prepared by: Petra Nagy
+Distributed: 18 June 2025

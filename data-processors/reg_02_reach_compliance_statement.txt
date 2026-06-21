@@ -1,0 +1,45 @@
+REACH COMPLIANCE STATEMENT
+Regulation (EC) No 1907/2006 – Registration, Evaluation, Authorisation and Restriction of Chemicals
+
+Document Reference: REACH-EVC-2024-001
+Issued by: EuroCharge Assembly GmbH, Budapest
+Date: 20 January 2024
+Applicable product: EV Charging Station (all variants: AC-7kW, AC-22kW, DC-50kW, DC-150kW)
+
+1. SCOPE
+This statement covers the EV Charging Station product range manufactured by EuroCharge Assembly GmbH (Budapest, Hungary) and supplied to customers across the European Economic Area. It addresses compliance with REACH Regulation requirements relevant to articles placed on the EU market, including obligations under Article 33 (duty to communicate information on Substances of Very High Concern – SVHCs) and Article 7 (notification of SVHCs in articles).
+
+2. SVHC SCREENING RESULTS
+EuroCharge Assembly has conducted a bill-of-materials screening of all sub-assemblies and components against the current ECHA Candidate List of SVHCs (updated November 2023, 241 substances).
+
+The following findings are disclosed:
+
+  Component: PCBA – Charging Controller Unit (MAT-ELEC-CTRL, supplied by Electronics Manufacturing Euro, Brno)
+  SVHC identified: Lead (Pb) in solder alloy, CAS 7439-92-1
+  Concentration: <0.1% by weight in homogeneous material within the solder joints
+  Location: Internal soldered connections, not accessible to users under normal use
+  Exemption: Exempt under RoHS Directive Annex III, exemption 7(a) – lead in solders for servers and storage/IT equipment (applied per supplier technical justification; under review for reclassification)
+  Obligation under Art. 33: Communication provided upon customer request
+
+  Component: Cable Harness Assembly (MAT-CABL-HARN, supplied by Certified Cable Works, Wrocław)
+  SVHC identified: Bis(2-ethylhexyl) phthalate (DEHP), CAS 117-81-7, in PVC cable insulation
+  Concentration: 0.15% by weight in the PVC compound of certain cable types
+  Exceeds 0.1% threshold: YES – in the cable sub-article
+  Obligation under Art. 33: Customers must be informed upon request. Disclosure made here.
+  Supplier action: Certified Cable Works is qualifying DEHP-free PVC compound (expected Q3 2025). Transitional timeline agreed under Corrective Action Plan CAP-A6-2024-003.
+
+  All other screened components: No SVHCs detected above the 0.1% threshold in any homogeneous material.
+
+3. AUTHORISED SUBSTANCES (ANNEX XIV)
+No substances subject to authorisation (REACH Annex XIV) were identified in the product.
+
+4. RESTRICTED SUBSTANCES (ANNEX XVII)
+All restrictions under REACH Annex XVII have been verified. No restricted substance use has been identified in the product.
+
+5. DOWNSTREAM USER OBLIGATIONS
+Customers and importers outside the EU are responsible for compliance with equivalent legislation in their jurisdictions. This statement does not substitute for independent compliance assessment.
+
+6. CONTACT FOR SVHC INFORMATION REQUESTS
+regulatory@eurocharge-bud.hu
+EuroCharge Assembly GmbH – Regulatory Affairs Department
+Gyári út 14, H-1211 Budapest, Hungary

@@ -1,0 +1,10 @@
+material_id,material_description,storage_location,uom,stock_qty,moving_avg_price_eur,currency,total_stock_value_eur,snapshot_date,primary_vendor,stock_status
+MAT-STEEL-SS304,Stainless Steel Sheet SS304,WH-HU01-RAW,kg,1240.0,4.1,EUR,5084.0,2024-11-01,A1,UNRESTRICTED
+MAT-PLAS-ABS,ABS Plastic Granulate,WH-VN-MFG,kg,380.0,2.15,EUR,817.0,2024-11-01,A3,UNRESTRICTED
+MAT-ELEC-PCBA,PCBA Circuit Board Assembly,WH-CZ-ELEC,unit,245.0,49.0,EUR,12005.0,2024-11-01,A5,UNRESTRICTED
+MAT-ELEC-SENS,Sensor Module Board,WH-CZ-ELEC,unit,310.0,22.5,EUR,6975.0,2024-11-01,A5,UNRESTRICTED
+MAT-ELEC-CTRL,Charging Controller Unit,WH-CZ-ELEC,unit,88.0,87.5,EUR,7700.0,2024-11-01,A5,QUALITY_BLOCK
+MAT-CABL-HARN,Cable Harness Assembly,WH-PL-CABL,set,195.0,31.5,EUR,6143.0,2024-11-01,A6,UNRESTRICTED
+MAT-COAT-POW,Powder Coating Material,WH-DE-COAT,kg,62.0,5.7,EUR,353.0,2024-11-01,A7,UNRESTRICTED
+MAT-PACK-CART,Packaging Carton Set,WH-HU01-FIN,set,78.0,12.5,EUR,975.0,2024-11-01,A10,UNRESTRICTED
+MAT-FINAL-EVC,EV Charging Station (FG),WH-HU01-FIN,EA,12.0,4800.0,EUR,57600.0,2024-11-01,A8,UNRESTRICTED

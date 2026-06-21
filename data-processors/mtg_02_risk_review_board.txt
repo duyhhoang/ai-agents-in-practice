@@ -1,0 +1,57 @@
+RISK REVIEW BOARD – MEETING RECORD
+Reference: RRB-2025-Q1-003
+Date: 11 February 2025 | 14:00–15:30 CET
+Chair: András Fekete, Plant Manager
+Attendees: Petra Nagy (Procurement), Miklós Horváth (Quality), László Gál (Planning), Zsófia Takács (Logistics)
+
+RISKS REVIEWED
+
+R2 – Electronics: Circuit boards / charging computer – long lead time (HIGH / HIGH)
+  Status update: MLCC shortage risk materialised in March 2025 (partial delivery event). Risk rating maintained at HIGH / HIGH.
+  Actions since last review:
+    – Safety stock of critical passive components established at EME (6 weeks)
+    – Czech Electronics Solutions qualification underway (FAI expected May 2025)
+    – Contractual 90-day capacity notice clause activated
+  Residual risk after mitigations: MEDIUM / HIGH (downgraded from HIGH / HIGH contingent on CES qualification completing by Q3 2025)
+  Next review: Q2 2025
+
+R1 – Plastic parts: Sea freight dependency – long lead time (MEDIUM / MEDIUM)
+  Status update: No disruption events in 2024. Customs hold (SHIP-2024-0008, January 2024) resolved within 4 days; documentation process updated to prevent recurrence.
+  Actions since last review:
+    – European regional supplier qualification (Plastipak GmbH, Munich) reached prototype stage. Volume qualification Q2 2025.
+    – HS code pre-classification letter obtained from DE Zoll for EVC plastic parts → reduces future customs query risk.
+  Residual risk: MEDIUM / LOW (improved from MEDIUM / MEDIUM)
+  Next review: Q2 2025
+
+R4 – Final assembly: Missing sub-assembly blocks complete product (HIGH / HIGH)
+  Status update: Assembly readiness checklist introduced November 2024. Zero assembly stoppages due to missing sub-assembly since introduction.
+  Actions: Checklist embedded in ERP production order confirmation step (mandatory GR confirmation for all sub-assemblies before PROD order status changes to REL).
+  Residual risk: LOW / HIGH (likelihood reduced)
+  Next review: Q3 2025
+
+R5 – Testing: Failed VDE test causes rework delay (MEDIUM / HIGH)
+  Status update: NCR-2025-0088 (crimp failure, cable harness) – resolved. Pre-assembly harness pull-test added to in-process inspection (from batch CBL-F-2025-025 onwards).
+  In-process pre-test results since introduction: 0 defects in 4 subsequent batches.
+  Residual risk: LOW / HIGH → propose downgrade to LOW / MEDIUM at next review if trend holds.
+  Next review: Q2 2025
+
+R7 – Installation: Concrete base delay (MEDIUM / HIGH)
+  No new events. Standard operating procedure updated: site readiness inspection (ref. SITE-INSP checklist) now mandatory sign-off before unit is dispatched from Budapest.
+  Residual risk: LOW / HIGH
+
+R8 – Use phase: Standby energy dominates operational impact (HIGH / MEDIUM)
+  Product engineering confirmed firmware v2.1.6 reduces standby power on DC-50kW units by approximately 8% (from 120 W to 110 W) through improved sleep-mode logic. Operator M confirmed OTA update rollout to all deployed units by end Q1 2025.
+  Design target for DC-150kW next generation: <200 W standby (current: 280 W).
+  Residual risk: HIGH / MEDIUM – no change (structural; requires product redesign for significant improvement)
+
+NEW RISK IDENTIFIED
+R11 – Cybersecurity: OCPP 1.6J known vulnerability (CVE-2024-XXXX) affecting authentication bypass via weak password in ChargeBoxIdentity field.
+  Likelihood: Medium (requires attacker access to OCPP backend endpoint)
+  Impact: High (potential to unlock charging sessions without payment; reputational risk)
+  Owner: EuroCharge Network Operator M (backend) / EME (firmware)
+  Mitigations: Firmware patch v2.2.0 under development at EME (ETA: Q2 2025); Operator M applying network-level IP allowlisting as interim control.
+  Risk level: HIGH / HIGH → added to risk register as R11.
+
+NEXT RRB: Q2 2025 – May 2025 (date TBC)
+Minutes approved by: András Fekete
+Circulated: 12 February 2025
