@@ -477,6 +477,12 @@ if (useStdio) {
   app.use(cors({ exposedHeaders: ["mcp-session-id"] }));
   app.use(express.json());
 
+  // Request Logger (before routes so it captures all requests)
+  app.use((req, res, next) => {
+    console.log(`[REQUEST] ${req.method} ${req.url}`);
+    next();
+  });
+
   // Serve static files from public directory
   app.use(express.static(path.join(__dirname, "../public")));
 
@@ -507,6 +513,53 @@ if (useStdio) {
     }
     return (hash >>> 0).toString(16);
   }
+
+  // Health check endpoint
+  app.get("/api/health", async (req, res) => {
+    const health: any = {
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      services: {
+        mcp_server: { status: "ok" },
+        neo4j: { status: "unknown" },
+        n8n: { status: "unknown" },
+        llm_cluster: { status: "unknown" }
+      }
+    };
+
+    // Check Neo4j
+    const driver = getNeo4jDriver();
+    const session = driver.session();
+    try {
+      const result = await session.run("RETURN 1 AS ok");
+      health.services.neo4j = { status: "ok", message: "Connected" };
+    } catch (err: any) {
+      health.services.neo4j = { status: "error", message: err.message };
+      health.status = "degraded";
+    } finally {
+      await session.close();
+    }
+
+    // Check n8n
+    try {
+      const n8nRes = await fetch("http://localhost:5678/healthz", { signal: AbortSignal.timeout(3000) });
+      health.services.n8n = { status: n8nRes.ok ? "ok" : "error", message: `HTTP ${n8nRes.status}` };
+    } catch {
+      health.services.n8n = { status: "offline", message: "Cannot reach n8n at localhost:5678" };
+    }
+
+    // Check LLM cluster
+    const inferenceUrl = process.env.INFERENCE_BASE_URL || "http://131.159.60.153:3000/inference";
+    try {
+      const llmRes = await fetch(`${inferenceUrl}/models`, { signal: AbortSignal.timeout(5000) });
+      health.services.llm_cluster = { status: llmRes.ok ? "ok" : "error", message: `HTTP ${llmRes.status}` };
+    } catch {
+      health.services.llm_cluster = { status: "offline", message: "Cannot reach LLM inference cluster" };
+    }
+
+    const httpStatus = health.status === "ok" ? 200 : 503;
+    res.status(httpStatus).json(health);
+  });
 
   // Generic query endpoint for the frontend
   app.post("/api/query", async (req, res) => {
@@ -577,9 +630,15 @@ if (useStdio) {
     puml += "skinparam monochrome false\n";
     puml += "skinparam shadowing false\n\n";
 
+    if (!Array.isArray(nodes) || !Array.isArray(relationships)) {
+      res.status(400).send("Invalid request body: nodes and relationships must be arrays.");
+      return;
+    }
+
     nodes.forEach((n: any) => {
-      const cleanId = n.id.replace(/[^a-zA-Z0-9_]/g, "_");
-      const displayName = n.name || n.id;
+      const id = n.id || "";
+      const cleanId = id.replace(/[^a-zA-Z0-9_]/g, "_");
+      const displayName = n.name || id || "Unknown";
       if (n.label === "Actor") puml += `actor "${displayName}" as ${cleanId}\n`;
       else if (n.label === "Location") puml += `boundary "${displayName}" as ${cleanId}\n`;
       else if (n.label === "ChargingStation") puml += `node "${displayName}" as ${cleanId}\n`;
@@ -590,9 +649,11 @@ if (useStdio) {
 
     puml += "\n";
     relationships.forEach((r: any) => {
-      const cleanSrc = r.source.replace(/[^a-zA-Z0-9_]/g, "_");
-      const cleanTgt = r.target.replace(/[^a-zA-Z0-9_]/g, "_");
-      puml += `${cleanSrc} --> ${cleanTgt} : ${r.type}\n`;
+      const src = r.source || "";
+      const tgt = r.target || "";
+      const cleanSrc = src.replace(/[^a-zA-Z0-9_]/g, "_");
+      const cleanTgt = tgt.replace(/[^a-zA-Z0-9_]/g, "_");
+      puml += `${cleanSrc} --> ${cleanTgt} : ${r.type || "RELATED_TO"}\n`;
     });
 
     puml += "\n@enduml";
@@ -651,8 +712,14 @@ if (useStdio) {
     res.send(`File ${req.file.originalname} uploaded successfully.`);
   });
 
+  let isPipelineRunning = false;
+
   // Trigger Ingestion (via n8n Webhook)
   app.post("/api/ingestion/trigger", async (req, res) => {
+    if (isPipelineRunning) {
+      return res.status(429).json({ success: false, error: "The n8n ingestion pipeline is already running. Please wait for it to complete." });
+    }
+    isPipelineRunning = true;
     const webhookUrl = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/trigger-extraction";
     const startTime = Date.now();
     try {
@@ -671,21 +738,75 @@ if (useStdio) {
       }
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
+    } finally {
+      isPipelineRunning = false;
     }
   });
 
-  // Chat Strategy Assistant (Guided Cypher Generator + Context Summary RAG)
-  app.post("/api/chat", async (req, res) => {
-    const { prompt } = req.body;
+  // Helper to call LLM via Chair Clusters API (with 120s timeout)
+  async function callLLM(systemPrompt: string, userPrompt: string, temperature = 0.7, reasoning = "low"): Promise<string> {
     const inferenceUrl = process.env.INFERENCE_BASE_URL || "http://131.159.60.153:3000/inference";
     const apiKey = process.env.CLUSTER_API_KEY;
+    const LLM_TIMEOUT_MS = 120_000; // 120 seconds
+    
+    const body: any = {
+      model: "google/gemma-4-31B-it",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature
+    };
+    
+    if (reasoning === "high") {
+      body.reasoning_effort = "high";
+      body.extra_body = {
+        chat_template_kwargs: { enable_thinking: true },
+        skip_special_tokens: false,
+        "mm-processor-kwargs": { max_soft_tokens: 1120 }
+      };
+    } else {
+      body.reasoning_effort = "low";
+    }
+
+    const res = await fetch(`${inferenceUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(LLM_TIMEOUT_MS)
+    });
+
+    if (!res.ok) {
+      throw new Error(`LLM call failed with status ${res.status}`);
+    }
+
+    const data = await res.json();
+    return data.choices[0].message.content || "";
+  }
+
+  // Multi-Agent Chat Strategy Assistant (Guided Cypher Generator + RAG + Multi-Agent Team)
+  app.post("/api/chat", async (req, res) => {
+    const { prompt } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: "Prompt is required" });
     }
 
     try {
-      // 1. Generate Cypher Query
+      console.log(`[Multi-Agent Chat] Received prompt: "${prompt}"`);
+      
+      // Step 1: Coordinator Agent Plan Formulation
+      const coordinatorPlanSystem = `You are the Coordinator of a supply chain multi-agent team.
+Based on the user's question, state your high-level strategy and what data we need to query from the graph database.
+Keep it extremely brief (1-2 sentences max, no bullet points).`;
+      
+      const coordinatorPlan = await callLLM(coordinatorPlanSystem, `User query: "${prompt}"`, 0.3, "low");
+      console.log("[Agent: Coordinator] Plan:", coordinatorPlan);
+
+      // Step 2: Database Agent (Cypher Specialist)
       const cypherSystem = `You are a Neo4j Cypher query generator for a supply chain lifecycle database.
 Based on the user's question, write a Cypher query to retrieve the relevant data.
 The database schema contains these nodes:
@@ -703,35 +824,14 @@ Relationships:
 
 Output ONLY the raw Cypher query inside a \`\`\`cypher code block. Do not write explanations.`;
 
-      const cypherRes = await fetch(`${inferenceUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: "google/gemma-4-31B-it",
-          messages: [
-            { role: "system", content: cypherSystem },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.1,
-          reasoning_effort: "low"
-        })
-      });
+      const cypherOutput = await callLLM(cypherSystem, prompt, 0.1, "low");
+      const blockMatch = cypherOutput.match(/```cypher\s*([\s\S]*?)```/);
+      const cypherQuery = blockMatch ? blockMatch[1].trim() : cypherOutput.trim();
+      console.log("[Agent: Database Specialist] Generated Cypher:", cypherQuery);
 
-      if (!cypherRes.ok) {
-        throw new Error(`Inference server responded with ${cypherRes.status}`);
-      }
-
-      const cypherData = await cypherRes.json();
-      const cypherText = cypherData.choices[0].message.content || "";
-      const blockMatch = cypherText.match(/```cypher\s*([\s\S]*?)```/);
-      const cypherQuery = blockMatch ? blockMatch[1].trim() : cypherText.trim();
-      
-      console.log("Generated Cypher:", cypherQuery);
-
+      // Run Cypher query
       let dbResults = null;
+      let dbError = null;
       if (cypherQuery && !cypherQuery.toLowerCase().includes("delete") && !cypherQuery.toLowerCase().includes("create") && !cypherQuery.toLowerCase().includes("merge")) {
         const driver = getNeo4jDriver();
         const session = driver.session();
@@ -741,61 +841,67 @@ Output ONLY the raw Cypher query inside a \`\`\`cypher code block. Do not write 
           dbResults = convertNeo4jTypes(dbResults);
         } catch (err: any) {
           console.warn("Generated Cypher failed:", err.message);
+          dbError = err.message;
         } finally {
           await session.close();
         }
       }
 
-      // 2. Synthesize Strategic Answer
-      const summarySystem = `You are a consultant-grade AI Supply Chain Strategy Assistant.
-Analyze the user's question and the data retrieved from the Neo4j supply chain knowledge graph.
-Provide a clear, detailed, and structured response using markdown bullet points and tables.
-Include specific numbers, costs, or bottlenecks found in the data. Provide strategic recommendations.
-If no data was found or the query failed, explain what you would look for.`;
+      // Step 3: Operations Specialist analysis
+      const opsSystem = `You are the Operations & Logistics Specialist.
+Analyze the user's question and the retrieved database records.
+Focus on lead times, process durations, bottleneck phases, transportation modes, and locations.
+Provide a concise bulleted summary of operational insights (1-3 bullets max).`;
+      
+      const opsPrompt = `User Query: "${prompt}"
+Retrieved Database Records: ${JSON.stringify(dbResults || (dbError ? `Error: ${dbError}` : "No records found"))}`;
+      
+      const opsAnalysis = await callLLM(opsSystem, opsPrompt, 0.5, "low");
+      console.log("[Agent: Operations Specialist] Analysis:", opsAnalysis);
 
-      const userPromptWithData = `User Question: "${prompt}"
-Retrieved Data: ${JSON.stringify(dbResults || "No database results found")}
-Generated Cypher Query: ${cypherQuery}`;
+      // Step 4: Finance & Risk Specialist analysis
+      const financeSystem = `You are the Finance & Risk Specialist.
+Analyze the user's question and the retrieved database records.
+Focus on cost distributions, spend optimization, single-source dependency risks, and financial efficiency.
+Provide a concise bulleted summary of financial/risk insights (1-3 bullets max).`;
+      
+      const financePrompt = `User Query: "${prompt}"
+Retrieved Database Records: ${JSON.stringify(dbResults || (dbError ? `Error: ${dbError}` : "No records found"))}`;
+      
+      const financeAnalysis = await callLLM(financeSystem, financePrompt, 0.5, "low");
+      console.log("[Agent: Finance Specialist] Analysis:", financeAnalysis);
 
-      const summaryRes = await fetch(`${inferenceUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: "google/gemma-4-31B-it",
-          messages: [
-            { role: "system", content: summarySystem },
-            { role: "user", content: userPromptWithData }
-          ],
-          temperature: 0.7,
-          reasoning_effort: "high",
-          extra_body: {
-            chat_template_kwargs: { enable_thinking: true },
-            skip_special_tokens: false,
-            "mm-processor-kwargs": { max_soft_tokens: 1120 }
-          }
-        })
+      // Step 5: Coordinator Final Synthesis
+      const synthesisSystem = `You are the Lead Supply Chain Strategy Consultant.
+Synthesize the findings from the Operations Specialist and the Finance & Risk Specialist.
+Write a premium, comprehensive strategic response to the user's question.
+Use tables and formatted markdown. Conclude with actionable recommendations.`;
+
+      const synthesisPrompt = `User Question: "${prompt}"
+Database Results: ${JSON.stringify(dbResults || "None")}
+Operations Specialist Insights: ${opsAnalysis}
+Finance & Risk Specialist Insights: ${financeAnalysis}`;
+
+      const finalResponse = await callLLM(synthesisSystem, synthesisPrompt, 0.7, "high");
+      console.log("[Agent: Coordinator] Final Response length:", finalResponse.length);
+
+      // Compile agent thoughts log
+      const agentThoughts = [
+        { agent: "Coordinator Agent", role: "plan", thought: coordinatorPlan },
+        { agent: "Database Agent", role: "db", thought: `Generated Cypher Query:\n\`\`\`cypher\n${cypherQuery}\n\`\`\`\nRetrieved ${dbResults ? dbResults.length : 0} matching records from Neo4j.` },
+        { agent: "Operations Specialist", role: "ops", thought: opsAnalysis },
+        { agent: "Finance & Risk Specialist", role: "finance", thought: financeAnalysis }
+      ];
+
+      res.json({
+        response: finalResponse,
+        cypher: cypherQuery,
+        agentThoughts
       });
-
-      if (!summaryRes.ok) {
-        throw new Error(`Inference server summary step failed: ${summaryRes.status}`);
-      }
-
-      const summaryData = await summaryRes.json();
-      const finalResponse = summaryData.choices[0].message.content || "";
-
-      res.json({ response: finalResponse, cypher: cypherQuery });
     } catch (err: any) {
+      console.error("[Multi-Agent Chat] Error:", err.message);
       res.status(500).json({ error: err.message });
     }
-  });
-
-  // Global Request Logger
-  app.use((req, res, next) => {
-    console.log(`[REQUEST] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)}`);
-    next();
   });
 
   

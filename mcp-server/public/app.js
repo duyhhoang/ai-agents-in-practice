@@ -120,11 +120,13 @@ async function loadDatabaseStats() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         query: `
-          CALL { MATCH (cs:ChargingStation) RETURN COUNT(cs) AS count, 'ChargingStation' AS label }
-          CALL { MATCH (p:Process) RETURN COUNT(p) AS count, 'Process' AS label }
-          CALL { MATCH (a:Actor) RETURN COUNT(a) AS count, 'Actor' AS label }
-          CALL { MATCH (l:Location) RETURN COUNT(l) AS count, 'Location' AS label }
-          RETURN label, count
+          MATCH (cs:ChargingStation) RETURN 'ChargingStation' AS label, COUNT(cs) AS count
+          UNION
+          MATCH (p:Process) RETURN 'Process' AS label, COUNT(p) AS count
+          UNION
+          MATCH (a:Actor) RETURN 'Actor' AS label, COUNT(a) AS count
+          UNION
+          MATCH (l:Location) RETURN 'Location' AS label, COUNT(l) AS count
         `
       })
     });
@@ -514,6 +516,12 @@ async function handleUpload(event) {
 }
 
 async function triggerIngestion() {
+  const btn = document.getElementById('run-pipeline-btn');
+  if (btn) {
+    btn.setAttribute('disabled', 'true');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running...';
+  }
+  
   const badge = document.getElementById('pipeline-status-badge');
   badge.className = 'badge pending';
   badge.innerText = 'Running';
@@ -539,6 +547,11 @@ async function triggerIngestion() {
     appendConsoleLine('error', `Failed to contact backend: ${err.message}`);
     badge.className = 'badge pending';
     badge.innerText = 'Offline';
+  } finally {
+    if (btn) {
+      btn.removeAttribute('disabled');
+      btn.innerHTML = '<i class="fa-solid fa-play"></i> Run n8n Pipeline';
+    }
   }
 }
 
@@ -554,6 +567,21 @@ function appendConsoleLine(type, text) {
 }
 
 // --- NETWORK EXPLORER ---
+// --- NETWORK EXPLORER ---
+const nodeColors = {
+  ChargingStation: '#0284c7', // Sky blue
+  Process: '#059669',         // Emerald green
+  Actor: '#d97706',           // Amber orange
+  Location: '#7c3aed',        // Violet purple
+  Transport: '#db2777',       // Pink
+  Material: '#10b981',        // Emerald-like Material
+  Node: '#94a3b8'             // Default slate
+};
+
+function getNodeColor(label) {
+  return nodeColors[label] || nodeColors.Node;
+}
+
 function initNetworkGraph() {
   const container = document.getElementById('network-canvas');
   state.nodesDataset = new vis.DataSet();
@@ -568,13 +596,13 @@ function initNetworkGraph() {
     nodes: {
       shape: 'dot',
       size: 16,
-      font: { color: '#ffffff', size: 12, face: 'Inter' },
+      font: { color: '#0f172a', size: 12, face: 'Inter' },
       borderWidth: 2,
       shadow: true
     },
     edges: {
       width: 1.5,
-      color: { color: 'rgba(255,255,255,0.15)', hover: 'var(--color-accent)', highlight: 'var(--color-accent)' },
+      color: { color: 'rgba(15, 23, 42, 0.15)', hover: 'var(--color-accent)', highlight: 'var(--color-accent)' },
       arrows: { to: { enabled: true, scaleFactor: 0.8 } },
       smooth: { type: 'continuous' }
     },
@@ -623,7 +651,17 @@ async function reloadGraph() {
         LIMIT 5
         CALL apoc.path.subgraphAll(start, { maxLevel: $depth })
         YIELD nodes, relationships
-        RETURN nodes, relationships
+        RETURN 
+          [n IN nodes | {
+            id: coalesce(n.actor_id, n.location_code, n.unit_id, n.material_id, n.process_id, n.id),
+            label: labels(n)[0],
+            properties: properties(n)
+          }] AS nodes,
+          [r IN relationships | {
+            source: coalesce(startNode(r).actor_id, startNode(r).location_code, startNode(r).unit_id, startNode(r).material_id, startNode(r).process_id, startNode(r).id),
+            target: coalesce(endNode(r).actor_id, endNode(r).location_code, endNode(r).unit_id, endNode(r).material_id, endNode(r).process_id, endNode(r).id),
+            type: type(r)
+          }] AS relationships
       `;
       params = { regex: `(?i).*${query}.*`, depth };
     } else {
@@ -632,7 +670,17 @@ async function reloadGraph() {
         LIMIT 5
         CALL apoc.path.subgraphAll(start, { maxLevel: $depth })
         YIELD nodes, relationships
-        RETURN nodes, relationships
+        RETURN 
+          [n IN nodes | {
+            id: coalesce(n.actor_id, n.location_code, n.unit_id, n.material_id, n.process_id, n.id),
+            label: labels(n)[0],
+            properties: properties(n)
+          }] AS nodes,
+          [r IN relationships | {
+            source: coalesce(startNode(r).actor_id, startNode(r).location_code, startNode(r).unit_id, startNode(r).material_id, startNode(r).process_id, startNode(r).id),
+            target: coalesce(endNode(r).actor_id, endNode(r).location_code, endNode(r).unit_id, endNode(r).material_id, endNode(r).process_id, endNode(r).id),
+            type: type(r)
+          }] AS relationships
       `;
       params = { depth };
     }
@@ -651,16 +699,23 @@ async function reloadGraph() {
       data.results.forEach(row => {
         if (row.nodes) {
           row.nodes.forEach(n => {
-            const parsed = parseNeo4jNode(n);
-            nodesMap.set(parsed.id, parsed);
+            const mappedColor = getNodeColor(n.label);
+            
+            nodesMap.set(n.id, {
+              id: n.id,
+              label: n.properties.name || n.properties.actor_name || n.properties.location_name || n.properties.process_name || n.properties.unit_id || n.id,
+              color: { background: mappedColor, border: 'rgba(0,0,0,0.05)' },
+              properties: n.properties,
+              nodeLabel: n.label
+            });
           });
         }
         if (row.relationships) {
           row.relationships.forEach(r => {
             const parsedEdge = {
-              id: `${r.startNodeId}-${r.type}-${r.endNodeId}`,
-              from: r.startNodeId,
-              to: r.endNodeId,
+              id: `${r.source}-${r.type}-${r.target}`,
+              from: r.source,
+              to: r.target,
               label: r.type
             };
             edgesMap.set(parsedEdge.id, parsedEdge);
@@ -679,37 +734,32 @@ async function reloadGraph() {
 }
 
 function parseNeo4jNode(n) {
-  const label = n.labels[0] || 'Node';
+  const label = n.labels ? (n.labels[0] || 'Node') : (n.label || 'Node');
   let id = n.elementId || n.id;
   let name = '';
-  let color = '#9cb4d4';
+  const color = getNodeColor(label);
   
   if (label === 'ChargingStation') {
     id = n.properties.unit_id;
     name = n.properties.unit_id;
-    color = 'var(--color-station)';
   } else if (label === 'Process') {
     id = n.properties.process_id;
     name = `${n.properties.process_id}: ${n.properties.process_name}`;
-    color = 'var(--color-process)';
   } else if (label === 'Actor') {
     id = n.properties.actor_id;
     name = n.properties.actor_name;
-    color = 'var(--color-actor)';
   } else if (label === 'Location') {
     id = n.properties.location_code;
     name = n.properties.location_name || n.properties.location_code;
-    color = 'var(--color-location)';
   } else if (label === 'Transport') {
     id = n.properties.transport_id;
     name = `${n.properties.transport_id}: ${n.properties.mode}`;
-    color = 'var(--color-transport)';
   }
   
   return {
     id: id,
     label: name || id,
-    color: { background: color, border: 'rgba(255,255,255,0.1)' },
+    color: { background: color, border: 'rgba(0,0,0,0.05)' },
     properties: n.properties,
     nodeLabel: label
   };
@@ -738,19 +788,14 @@ async function expandNode(nodeId) {
     
     if (subgraph.nodes) {
       subgraph.nodes.forEach(n => {
-        let mappedId = n.id;
-        let mappedColor = '#9cb4d4';
-        if (n.label === 'ChargingStation') mappedColor = 'var(--color-station)';
-        else if (n.label === 'Process') mappedColor = 'var(--color-process)';
-        else if (n.label === 'Actor') mappedColor = 'var(--color-actor)';
-        else if (n.label === 'Location') mappedColor = 'var(--color-location)';
-        else if (n.label === 'Transport') mappedColor = 'var(--color-transport)';
+        const mappedId = n.id;
+        const mappedColor = getNodeColor(n.label);
         
         if (!state.nodesDataset.get(mappedId)) {
           state.nodesDataset.add({
             id: mappedId,
             label: n.properties.name || n.properties.actor_name || n.properties.location_name || n.properties.process_name || n.properties.unit_id || mappedId,
-            color: { background: mappedColor, border: 'rgba(255,255,255,0.1)' },
+            color: { background: mappedColor, border: 'rgba(0,0,0,0.05)' },
             properties: n.properties,
             nodeLabel: n.label
           });
@@ -911,6 +956,9 @@ async function submitChatMessage() {
     removeChatLoader(loaderId);
     
     if (data.response) {
+      if (data.agentThoughts && data.agentThoughts.length > 0) {
+        renderAgentThoughtsTimeline(data.agentThoughts);
+      }
       renderChatBubble('system', data.response);
     } else {
       renderChatBubble('system', `Error: ${data.error || 'Unknown response'}`);
@@ -919,6 +967,52 @@ async function submitChatMessage() {
     removeChatLoader(loaderId);
     renderChatBubble('system', `Failed to send query: ${err.message}`);
   }
+}
+
+function renderAgentThoughtsTimeline(thoughts) {
+  const container = document.getElementById('chat-messages');
+  
+  const thoughtsWrapper = document.createElement('div');
+  thoughtsWrapper.className = 'message system agent-thoughts-timeline-bubble';
+  
+  let thoughtsHtml = `
+    <div class="avatar"><i class="fa-solid fa-users-gear"></i></div>
+    <div class="message-content">
+      <details class="agent-thoughts-details" open>
+        <summary class="agent-thoughts-summary">
+          <i class="fa-solid fa-brain"></i> Multi-Agent Strategic Analysis Log
+        </summary>
+        <div class="agent-thoughts-timeline">
+  `;
+  
+  thoughts.forEach(t => {
+    let iconClass = 'fa-user-gear';
+    let labelClass = 'plan';
+    if (t.role === 'plan') { iconClass = 'fa-route'; labelClass = 'plan'; }
+    else if (t.role === 'db') { iconClass = 'fa-database'; labelClass = 'db'; }
+    else if (t.role === 'ops') { iconClass = 'fa-gears'; labelClass = 'ops'; }
+    else if (t.role === 'finance') { iconClass = 'fa-euro-sign'; labelClass = 'finance'; }
+    
+    thoughtsHtml += `
+          <div class="agent-thought-item ${labelClass}">
+            <div class="agent-thought-header">
+              <span class="agent-icon"><i class="fa-solid ${iconClass}"></i></span>
+              <strong class="agent-name">${escapeHtml(t.agent)}</strong>
+            </div>
+            <div class="agent-thought-body">${parseMarkdown(t.thought)}</div>
+          </div>
+    `;
+  });
+  
+  thoughtsHtml += `
+        </div>
+      </details>
+    </div>
+  `;
+  
+  thoughtsWrapper.innerHTML = thoughtsHtml;
+  container.appendChild(thoughtsWrapper);
+  container.scrollTop = container.scrollHeight;
 }
 
 function renderChatBubble(sender, text) {
