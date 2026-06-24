@@ -4,7 +4,7 @@
 **Course:** AI Agents in Practice (Practical Course)  
 **Project:** 19 - GenAI-Agents for Supply Chain Analysis  
 **Student:** Vora Khushi, Hoang Duy (Information Systems B.Sc.)  
-**Status:** Phase 1/8 - Infrastructure Setup (In Progress)
+**Status:** Phase 4/8 Complete - Next Phase: Phase 5 (Vector Store & Embeddings)
 
 ---
 
@@ -20,11 +20,13 @@ Build an **agentic data pipeline** that processes heterogeneous supply chain dat
 
 ## 📚 Documentation Navigation
 
-This project's documentation has been consolidated into three core files for clarity:
+This project's documentation includes:
 
-1. **`README.md` (You are here)**: Project overview, goals, architecture, and current status.
-2. **`SETUP_GUIDE.md`**: Step-by-step instructions for initializing the Neo4j schema and building the n8n data ingestion workflows.
-3. **`DATA_REFERENCE.md`**: Details on the dataset (CSV files, unstructured data) and a comprehensive library of Neo4j Cypher queries for analysis and AI agent training.
+1. **[README.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/README.md) (You are here)**: Project overview, goals, architecture, and current status.
+2. **[PROJECT_DOCUMENTATION.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/PROJECT_DOCUMENTATION.md)**: Main developer & operational guide covering Docker, Neo4j Graph schema, n8n ingestion logic, MCP API, and troubleshooting.
+3. **[NEXT_STEPS.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/NEXT_STEPS.md)**: Clear implementation guide for upcoming phases (Vector search, stateful agentic RAG, advanced visualization).
+4. **[SETUP_GUIDE.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/SETUP_GUIDE.md)**: Step-by-step guide for manually setting up Neo4j schema and CSV workflows.
+5. **[DATA_REFERENCE.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/DATA_REFERENCE.md)**: Detailed files description and Neo4j Cypher analytics queries.
 
 ---
 
@@ -60,13 +62,13 @@ Insights & Strategy Report
 
 | Layer | Technology | Version | Status |
 |-------|-----------|---------|--------|
-| **Orchestration** | n8n | Latest | ✅ Running |
-| **Knowledge Graph** | Neo4j | 5.15 Community | ✅ Running |
-| **Vector Store** | Neo4j native | 5.13+ | ✅ Ready |
+| **Orchestration** | n8n | 2.26.4 (Latest Stable) | ✅ Running |
+| **Knowledge Graph** | Neo4j | 5.26-community | ✅ Running |
+| **Vector Store** | Neo4j native | 5.26-community | ✅ Ready |
 | **LLM (Primary)** | Gemini | Latest | ✅ Configured |
 | **LLM (Backup)** | OpenAI/Claude | Latest | ✅ Available |
-| **MCP Server** | Node.js + TypeScript | 18+ | ⏳ Next Phase |
-| **Diagram Gen** | PlantUML | Latest | ⏳ Next Phase |
+| **MCP Server** | Node.js + TypeScript | 18+ | ✅ Running |
+| **Diagram Gen** | PlantUML | Latest (monochrome false) | ✅ Running |
 
 ---
 
@@ -84,13 +86,13 @@ Insights & Strategy Report
 | Phase | Focus | Timeline | Status |
 |-------|-------|----------|--------|
 | **1** | Infrastructure Setup | Week 1-2 | ✅ Complete |
-| **2** | Data Ingestion Layer | Week 2-3 | ⏳ In Progress |
-| **3** | Knowledge Graph Population | Week 3-4 | 0% |
-| **4** | Custom MCP Server | Week 4-5 | 0% |
-| **5** | Vector Store & Embeddings | Week 5-6 | 0% |
-| **6** | Agentic RAG Layer | Week 6-7 | 0% |
-| **7** | Visualization & Analytics | Week 7-8 | 0% |
-| **8** | Optimization & QA | Week 8+ | 0% |
+| **2** | Data Ingestion Layer | Week 2-3 | ✅ Complete |
+| **3** | Knowledge Graph Population | Week 3-4 | ✅ Complete (680 nodes, 2122 edges) |
+| **4** | Custom MCP Server & UI | Week 4-5 | ✅ Complete |
+| **5** | Vector Store & Embeddings | Week 5-6 | ⏳ Planned |
+| **6** | Agentic RAG Layer | Week 6-7 | ⏳ Planned |
+| **7** | Visualization & Analytics | Week 7-8 | ⏳ Planned |
+| **8** | Optimization & QA | Week 8+ | ⏳ Planned |
 
 ---
 
