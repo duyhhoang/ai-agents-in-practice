@@ -1,9 +1,8 @@
-version: '3.8'
-
 services:
   neo4j:
     image: neo4j:5.26-community
     container_name: neo4j-supply-chain
+    hostname: neo4j
     restart: unless-stopped
     ports:
       - "7474:7474"  # HTTP (web console)
@@ -31,7 +30,6 @@ services:
     image: n8nio/n8n:latest
     container_name: n8n-compose
     restart: unless-stopped
-
     ports:
       - "5678:5678"
     environment:
@@ -40,9 +38,13 @@ services:
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
       - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
     volumes:
       - n8n_data:/home/node/.n8n
       - ./data-processors:/home/node/.n8n-files
+    depends_on:
+      neo4j:
+        condition: service_healthy
     networks:
       - supply-chain-network
 
@@ -57,4 +59,3 @@ volumes:
 networks:
   supply-chain-network:
     driver: bridge
-
