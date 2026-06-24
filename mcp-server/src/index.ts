@@ -740,8 +740,6 @@ if (useStdio) {
     next();
   });
 
-  // Serve static files from public directory
-  app.use(express.static(path.join(__dirname, "../public")));
 
   // Setup upload folder configuration
   const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, "../../data-processors");
