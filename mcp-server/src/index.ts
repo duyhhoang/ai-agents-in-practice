@@ -66,6 +66,224 @@ function convertNeo4jTypes(value: any): any {
   return value;
 }
 
+/**
+ * Generates a deterministic unit vector of 1536 dimensions seeded by a string hash.
+ * This is used as a local fallback for embedding generation.
+ */
+function getDeterministicMockEmbedding(text: string): number[] {
+  const embedding: number[] = [];
+  let seed = 0;
+  for (let i = 0; i < text.length; i++) {
+    seed = (seed << 5) - seed + text.charCodeAt(i);
+    seed |= 0;
+  }
+
+  let state = seed;
+  let sumOfSquares = 0;
+  for (let i = 0; i < 1536; i++) {
+    state = (Math.imul(state, 1664525) + 1013904223) | 0;
+    const val = state / 2147483648; // [-1, 1] range
+    embedding.push(val);
+    sumOfSquares += val * val;
+  }
+
+  const magnitude = Math.sqrt(sumOfSquares);
+  if (magnitude > 0) {
+    for (let i = 0; i < 1536; i++) {
+      embedding[i] /= magnitude;
+    }
+  } else {
+    embedding[0] = 1.0;
+  }
+  return embedding;
+}
+
+/**
+ * Generates embedding for a given text.
+ * Uses Google Gemini if GEMINI_API_KEY is defined, or defaults to a local deterministic unit vector.
+ */
+async function getEmbedding(text: string): Promise<number[]> {
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY
+        },
+        body: JSON.stringify({
+          model: "models/text-embedding-004",
+          content: { parts: [{ text }] }
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.embedding && Array.isArray(data.embedding.values)) {
+          return data.embedding.values;
+        }
+      }
+    } catch (err: any) {
+      console.warn("Gemini embedding API call failed, using deterministic fallback:", err.message);
+    }
+  }
+  return getDeterministicMockEmbedding(text);
+}
+
+/**
+ * Startup function to read files from data-processors and update ProcessedFile nodes in Neo4j with vector embeddings.
+ */
+export async function initializeEmbeddings(): Promise<void> {
+  console.log("[Embedding Init] Initializing vector embeddings...");
+  const driver = getNeo4jDriver();
+  const session = driver.session();
+  try {
+    const createIndexQuery = `
+      CREATE VECTOR INDEX file_embeddings IF NOT EXISTS
+      FOR (f:ProcessedFile) ON (f.embedding)
+      OPTIONS {indexConfig: {
+        \`vector.dimensions\`: 1536,
+        \`vector.similarity_function\`: 'cosine'
+      }};
+    `;
+    await session.run(createIndexQuery);
+    console.log("[Embedding Init] Vector index 'file_embeddings' verified.");
+
+    const result = await session.run("MATCH (f:ProcessedFile) RETURN f.name AS name");
+    const dbFiles = result.records.map(r => r.get("name") as string);
+    console.log(`[Embedding Init] Found ${dbFiles.length} ProcessedFile nodes in Neo4j.`);
+
+    const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, "../../data-processors");
+    let updatedCount = 0;
+
+    for (const fileName of dbFiles) {
+      const filePath = path.join(uploadDir, fileName);
+      if (fs.existsSync(filePath)) {
+        const text = fs.readFileSync(filePath, "utf-8");
+        const embedding = await getEmbedding(text);
+        
+        await session.run(
+          `
+          MATCH (f:ProcessedFile {name: $name})
+          SET f.embedding = $embedding, f.text = $text
+          `,
+          { name: fileName, embedding, text }
+        );
+        updatedCount++;
+      } else {
+        console.warn(`[Embedding Init] File ${fileName} from Neo4j DB does not exist on disk at ${filePath}`);
+      }
+    }
+    console.log(`[Embedding Init] Updated ${updatedCount} files with vector embeddings.`);
+  } catch (err: any) {
+    console.error("[Embedding Init] Error populating embeddings:", err.message);
+  } finally {
+    await session.close();
+  }
+}
+
+// Graph extraction helpers
+function isNeo4jNode(obj: any): boolean {
+  return obj && typeof obj === 'object' && Array.isArray(obj.labels) && typeof obj.properties === 'object';
+}
+
+function isNeo4jRelationship(obj: any): boolean {
+  return obj && typeof obj === 'object' && typeof obj.type === 'string' && typeof obj.properties === 'object' &&
+    ((obj.start !== undefined && obj.end !== undefined) || (obj.startNodeElementId !== undefined && obj.endNodeElementId !== undefined));
+}
+
+function getNeo4jId(obj: any): string {
+  if (obj.elementId) return String(obj.elementId);
+  if (obj.identity) {
+    if (typeof obj.identity.toNumber === 'function') return String(obj.identity.toNumber());
+    if (typeof obj.identity.low === 'number') return String(obj.identity.low);
+    return String(obj.identity);
+  }
+  return '';
+}
+
+function nodeToEvidenceNode(node: any): any {
+  const props = convertNeo4jTypes(node.properties) || {};
+  const id = props.actor_id || props.location_code || props.unit_id || props.material_id || props.process_id || props.id || getNeo4jId(node) || "unknown";
+  const label = node.labels[0] || "Entity";
+  const name = props.name || props.actor_name || props.location_name || props.material_name || props.serial_number || props.process_name || id;
+  return {
+    id,
+    label,
+    name,
+    type: label,
+    properties: props
+  };
+}
+
+function extractGraphFromRecords(records: any[]): any {
+  const nodesMap = new Map<string, any>();
+  const edgesMap = new Map<string, any>();
+  const internalIdToBusinessKey = new Map<string, string>();
+
+  const rawNodes: any[] = [];
+  const rawRels: any[] = [];
+
+  function traverse(val: any) {
+    if (val === null || val === undefined) return;
+    if (isNeo4jNode(val)) {
+      rawNodes.push(val);
+    } else if (isNeo4jRelationship(val)) {
+      rawRels.push(val);
+    } else if (Array.isArray(val)) {
+      val.forEach(traverse);
+    } else if (typeof val === 'object') {
+      if (val.segments && Array.isArray(val.segments)) {
+        val.segments.forEach((seg: any) => {
+          if (seg.start) rawNodes.push(seg.start);
+          if (seg.relationship) rawRels.push(seg.relationship);
+          if (seg.end) rawNodes.push(seg.end);
+        });
+      } else {
+        Object.values(val).forEach(traverse);
+      }
+    }
+  }
+
+  traverse(records);
+
+  rawNodes.forEach(node => {
+    const evidenceNode = nodeToEvidenceNode(node);
+    nodesMap.set(evidenceNode.id, evidenceNode);
+    const internalId = getNeo4jId(node);
+    if (internalId) {
+      internalIdToBusinessKey.set(internalId, evidenceNode.id);
+    }
+  });
+
+  rawRels.forEach(rel => {
+    const props = convertNeo4jTypes(rel.properties) || {};
+    const startInternalId = rel.startNodeElementId ? String(rel.startNodeElementId) :
+                            (rel.start ? (typeof rel.start.toNumber === 'function' ? String(rel.start.toNumber()) : String(rel.start)) : '');
+    const endInternalId = rel.endNodeElementId ? String(rel.endNodeElementId) :
+                          (rel.end ? (typeof rel.end.toNumber === 'function' ? String(rel.end.toNumber()) : String(rel.end)) : '');
+
+    const source = internalIdToBusinessKey.get(startInternalId) || startInternalId;
+    const target = internalIdToBusinessKey.get(endInternalId) || endInternalId;
+    
+    if (source && target) {
+      const type = rel.type || "RELATED_TO";
+      const edgeId = getNeo4jId(rel) || `${source}-${type}-${target}`;
+      edgesMap.set(edgeId, {
+        id: edgeId,
+        source,
+        target,
+        type,
+        properties: props
+      });
+    }
+  });
+
+  return {
+    nodes: Array.from(nodesMap.values()),
+    edges: Array.from(edgesMap.values())
+  };
+}
+
 // Define MCP Tools
 mcpServer.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
@@ -141,6 +359,18 @@ mcpServer.setRequestHandler(ListToolsRequestSchema, async () => {
             analysis_type: { type: "string", enum: ["bottleneck_analysis", "critical_path", "centrality"] }
           },
           required: ["analysis_type"]
+        }
+      },
+      {
+        name: "vector-search",
+        description: "Perform a vector similarity search over unstructured files (such as incident reports or quality audits)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            query_text: { type: "string", description: "The text query to search for" },
+            limit: { type: "number", description: "Maximum number of results to return (default: 5)" }
+          },
+          required: ["query_text"]
         }
       }
     ]
@@ -439,6 +669,33 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     } 
     
+    else if (name === "vector-search") {
+      const queryText = args?.query_text as string;
+      const limit = (args?.limit as number) || 5;
+
+      const embedding = await getEmbedding(queryText);
+      const query = `
+        CALL db.index.vector.queryNodes('file_embeddings', $limit, $embedding)
+        YIELD node, score
+        RETURN node.name AS filename, coalesce(node.text, node.name) AS content, score
+      `;
+
+      const session = driver.session();
+      try {
+        const result = await session.run(query, { limit, embedding });
+        const records = result.records.map(r => r.toObject());
+        const cleaned = convertNeo4jTypes(records);
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(cleaned, null, 2)
+          }]
+        };
+      } finally {
+        await session.close();
+      }
+    }
+    
     else {
       throw new Error(`Tool ${name} not found`);
     }
@@ -705,11 +962,62 @@ if (useStdio) {
   });
 
   // Ingestion file upload
-  app.post("/api/ingestion/upload", upload.single("file"), (req, res) => {
+  app.post(["/upload", "/api/upload", "/api/ingestion/upload"], upload.single("file"), async (req, res) => {
     if (!req.file) {
-      return res.status(400).send("No file uploaded.");
+      return res.status(400).json({ error: "No file uploaded." });
     }
-    res.send(`File ${req.file.originalname} uploaded successfully.`);
+
+    const filename = req.file.originalname;
+    console.log(`[Upload] File saved: ${filename}`);
+
+    const webhookUrl = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/trigger-extraction";
+    const startTime = Date.now();
+
+    try {
+      console.log(`[Upload] Triggering n8n pipeline: ${webhookUrl}`);
+      const n8nRes = await fetch(webhookUrl, { method: "GET" });
+      const duration = Date.now() - startTime;
+
+      if (!n8nRes.ok) {
+        throw new Error(`n8n webhook responded with status ${n8nRes.status}`);
+      }
+
+      const n8nData = await n8nRes.json().catch(() => ({}));
+      console.log(`[Upload] Ingestion completed in ${duration}ms:`, n8nData);
+
+      // Now, update embeddings for any files in Neo4j (including this newly uploaded one)
+      // to ensure vector search indices stay up-to-date!
+      await initializeEmbeddings();
+
+      const answer = `File **${filename}** uploaded and ingested successfully!\n\n**Ingestion Report:**\n- Pipeline Duration: ${(duration / 1000).toFixed(2)}s\n- Status: Ingestion complete\n- Files processed in batch: ${Array.isArray(n8nData) ? n8nData.length : 1}`;
+
+      res.json({
+        messageId: crypto.randomUUID(),
+        answer,
+        evidenceGraph: { nodes: [], edges: [] },
+        evidenceTrace: {
+          toolsUsed: [
+            {
+              id: "n8n_ingestion",
+              name: "n8n pipeline trigger",
+              status: "success",
+              durationMs: duration,
+              inputSummary: `Filename: ${filename}`,
+              outputSummary: `Processed successfully`
+            }
+          ],
+          cypherQueries: [],
+          accessedNodes: [],
+          sourceChunks: []
+        }
+      });
+    } catch (err: any) {
+      console.error(`[Upload Error]`, err.message);
+      res.status(500).json({
+        error: "Upload & Ingestion failed",
+        details: err.message
+      });
+    }
   });
 
   let isPipelineRunning = false;
@@ -788,22 +1096,50 @@ if (useStdio) {
   }
 
   // Multi-Agent Chat Strategy Assistant (Guided Cypher Generator + RAG + Multi-Agent Team)
-  app.post("/api/chat", async (req, res) => {
-    const { prompt } = req.body;
+  app.post(["/chat", "/api/chat"], async (req, res) => {
+    const prompt = req.body.question || req.body.prompt;
 
     if (!prompt) {
-      return res.status(400).json({ error: "Prompt is required" });
+      return res.status(400).json({ error: "question or prompt is required" });
     }
 
+    const driver = getNeo4jDriver();
+
     try {
-      console.log(`[Multi-Agent Chat] Received prompt: "${prompt}"`);
+      console.log(`[Multi-Agent Chat] Received question: "${prompt}"`);
       
+      // Step 0: Perform Vector Similarity Search (Unstructured RAG Context)
+      let vectorResults: any[] = [];
+      try {
+        const embedding = await getEmbedding(prompt);
+        const session = driver.session();
+        try {
+          const vecRes = await session.run(
+            `
+            CALL db.index.vector.queryNodes('file_embeddings', 3, $embedding)
+            YIELD node, score
+            RETURN node.name AS filename, coalesce(node.text, node.name) AS content, score
+            `,
+            { embedding }
+          );
+          vectorResults = vecRes.records.map(r => r.toObject());
+        } finally {
+          await session.close();
+        }
+      } catch (err) {
+        console.warn("Vector search failed during chat:", err);
+      }
+
+      const contextStr = vectorResults.length > 0 
+        ? "\n\nRetrieved Unstructured Document Context:\n" + vectorResults.map(r => `--- File: ${r.filename} (Similarity Score: ${r.score.toFixed(3)}) ---\n${r.content}`).join("\n\n")
+        : "";
+
       // Step 1: Coordinator Agent Plan Formulation
       const coordinatorPlanSystem = `You are the Coordinator of a supply chain multi-agent team.
-Based on the user's question, state your high-level strategy and what data we need to query from the graph database.
+Based on the user's question and any retrieved unstructured documents, state your high-level strategy and what data we need to query from the graph database.
 Keep it extremely brief (1-2 sentences max, no bullet points).`;
       
-      const coordinatorPlan = await callLLM(coordinatorPlanSystem, `User query: "${prompt}"`, 0.3, "low");
+      const coordinatorPlan = await callLLM(coordinatorPlanSystem, `User query: "${prompt}"${contextStr}`, 0.3, "low");
       console.log("[Agent: Coordinator] Plan:", coordinatorPlan);
 
       // Step 2: Database Agent (Cypher Specialist)
@@ -833,7 +1169,6 @@ Output ONLY the raw Cypher query inside a \`\`\`cypher code block. Do not write 
       let dbResults = null;
       let dbError = null;
       if (cypherQuery && !cypherQuery.toLowerCase().includes("delete") && !cypherQuery.toLowerCase().includes("create") && !cypherQuery.toLowerCase().includes("merge")) {
-        const driver = getNeo4jDriver();
         const session = driver.session();
         try {
           const queryRes = await session.run(cypherQuery);
@@ -849,54 +1184,119 @@ Output ONLY the raw Cypher query inside a \`\`\`cypher code block. Do not write 
 
       // Step 3: Operations Specialist analysis
       const opsSystem = `You are the Operations & Logistics Specialist.
-Analyze the user's question and the retrieved database records.
+Analyze the user's question, retrieved database records, and unstructured document context.
 Focus on lead times, process durations, bottleneck phases, transportation modes, and locations.
 Provide a concise bulleted summary of operational insights (1-3 bullets max).`;
       
       const opsPrompt = `User Query: "${prompt}"
-Retrieved Database Records: ${JSON.stringify(dbResults || (dbError ? `Error: ${dbError}` : "No records found"))}`;
+Retrieved Database Records: ${JSON.stringify(dbResults || (dbError ? `Error: ${dbError}` : "No records found"))}${contextStr}`;
       
       const opsAnalysis = await callLLM(opsSystem, opsPrompt, 0.5, "low");
       console.log("[Agent: Operations Specialist] Analysis:", opsAnalysis);
 
       // Step 4: Finance & Risk Specialist analysis
       const financeSystem = `You are the Finance & Risk Specialist.
-Analyze the user's question and the retrieved database records.
+Analyze the user's question, retrieved database records, and unstructured document context.
 Focus on cost distributions, spend optimization, single-source dependency risks, and financial efficiency.
 Provide a concise bulleted summary of financial/risk insights (1-3 bullets max).`;
       
       const financePrompt = `User Query: "${prompt}"
-Retrieved Database Records: ${JSON.stringify(dbResults || (dbError ? `Error: ${dbError}` : "No records found"))}`;
+Retrieved Database Records: ${JSON.stringify(dbResults || (dbError ? `Error: ${dbError}` : "No records found"))}${contextStr}`;
       
       const financeAnalysis = await callLLM(financeSystem, financePrompt, 0.5, "low");
       console.log("[Agent: Finance Specialist] Analysis:", financeAnalysis);
 
       // Step 5: Coordinator Final Synthesis
       const synthesisSystem = `You are the Lead Supply Chain Strategy Consultant.
-Synthesize the findings from the Operations Specialist and the Finance & Risk Specialist.
+Synthesize the findings from the Operations Specialist and the Finance & Risk Specialist, incorporating relevant insights from the unstructured documents.
 Write a premium, comprehensive strategic response to the user's question.
 Use tables and formatted markdown. Conclude with actionable recommendations.`;
 
       const synthesisPrompt = `User Question: "${prompt}"
 Database Results: ${JSON.stringify(dbResults || "None")}
 Operations Specialist Insights: ${opsAnalysis}
-Finance & Risk Specialist Insights: ${financeAnalysis}`;
+Finance & Risk Specialist Insights: ${financeAnalysis}${contextStr}`;
 
       const finalResponse = await callLLM(synthesisSystem, synthesisPrompt, 0.7, "high");
       console.log("[Agent: Coordinator] Final Response length:", finalResponse.length);
 
-      // Compile agent thoughts log
-      const agentThoughts = [
-        { agent: "Coordinator Agent", role: "plan", thought: coordinatorPlan },
-        { agent: "Database Agent", role: "db", thought: `Generated Cypher Query:\n\`\`\`cypher\n${cypherQuery}\n\`\`\`\nRetrieved ${dbResults ? dbResults.length : 0} matching records from Neo4j.` },
-        { agent: "Operations Specialist", role: "ops", thought: opsAnalysis },
-        { agent: "Finance & Risk Specialist", role: "finance", thought: financeAnalysis }
+      // Construct dynamic evidence graph
+      const evidenceGraph = dbResults ? extractGraphFromRecords(dbResults) : { nodes: [], edges: [] };
+
+      // Compile tools used trace log
+      const toolsUsed = [
+        {
+          id: "coordinator_plan",
+          name: "Coordinator Agent: Plan Formulation",
+          status: "success" as const,
+          inputSummary: prompt,
+          outputSummary: coordinatorPlan
+        },
+        {
+          id: "cypher_generator",
+          name: "Database Specialist: Cypher Generation",
+          status: dbError ? ("error" as const) : ("success" as const),
+          inputSummary: prompt,
+          outputSummary: `Generated Cypher Query:\n\`\`\`cypher\n${cypherQuery}\n\`\`\`\n` + (dbError ? `Error: ${dbError}` : `Retrieved ${dbResults ? dbResults.length : 0} matching records from Neo4j.`)
+        },
+        {
+          id: "ops_specialist",
+          name: "Operations Specialist Analysis",
+          status: "success" as const,
+          inputSummary: `Query: ${prompt}\nDatabase Results: ${JSON.stringify(dbResults || "None")}`,
+          outputSummary: opsAnalysis
+        },
+        {
+          id: "finance_specialist",
+          name: "Finance Specialist Analysis",
+          status: "success" as const,
+          inputSummary: `Query: ${prompt}\nDatabase Results: ${JSON.stringify(dbResults || "None")}`,
+          outputSummary: financeAnalysis
+        }
       ];
 
+      if (vectorResults.length > 0) {
+        toolsUsed.unshift({
+          id: "vector_search",
+          name: "Vector Search (Unstructured RAG)",
+          status: "success" as const,
+          inputSummary: prompt,
+          outputSummary: `Found ${vectorResults.length} matching unstructured documents.`
+        });
+      }
+
+      const sourceChunks = vectorResults.map((r, idx) => ({
+        id: `chunk_${idx}`,
+        documentName: r.filename || "Unknown Document",
+        text: r.content || ""
+      }));
+
+      const cypherQueries = cypherQuery ? [{ query: cypherQuery }] : [];
+
+      let tableColumns: string[] | undefined = undefined;
+      let tableRows: any[] | undefined = undefined;
+
+      if (dbResults && dbResults.length > 0) {
+        const cols = new Set<string>();
+        dbResults.forEach((row: any) => {
+          Object.keys(row).forEach(k => cols.add(k));
+        });
+        tableColumns = Array.from(cols);
+        tableRows = dbResults;
+      }
+
       res.json({
-        response: finalResponse,
-        cypher: cypherQuery,
-        agentThoughts
+        messageId: crypto.randomUUID(),
+        answer: finalResponse,
+        tableColumns,
+        tableRows,
+        evidenceGraph,
+        evidenceTrace: {
+          toolsUsed,
+          cypherQueries,
+          accessedNodes: evidenceGraph.nodes,
+          sourceChunks
+        }
       });
     } catch (err: any) {
       console.error("[Multi-Agent Chat] Error:", err.message);
@@ -936,11 +1336,18 @@ Finance & Risk Specialist Insights: ${financeAnalysis}`;
     }
   });
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 8000;
   const server = app.listen(port, () => {
     console.log(`Supply Chain MCP Server listening on http://localhost:${port}`);
     console.log(`SSE Route: http://localhost:${port}/sse`);
     console.log(`Message Route: http://localhost:${port}/messages`);
+    
+    // Initialize embeddings on startup
+    initializeEmbeddings().then(() => {
+      console.log("[Embedding Startup] Done initializing vector embeddings.");
+    }).catch(err => {
+      console.error("[Embedding Startup] Error initializing embeddings:", err);
+    });
   });
 
   // Graceful shutdown

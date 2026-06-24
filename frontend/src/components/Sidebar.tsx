@@ -1,10 +1,25 @@
-﻿import {
+import {
     FileText,
     GitBranch,
     LineChart,
     MessageSquarePlus,
     Settings,
 } from "lucide-react";
+
+type ChatSession = {
+  id: string;
+  title: string;
+  createdAt: string;
+};
+
+type Props = {
+    activeItem: string;
+    onItemClick: (label: string) => void;
+    chatSessions?: ChatSession[];
+    activeChatId?: string;
+    onNewChat?: () => void;
+    onSelectChat?: (chatId: string) => void;
+};
 
 const items = [
     { label: "New Chat", icon: MessageSquarePlus },
@@ -14,25 +29,26 @@ const items = [
     { label: "Settings", icon: Settings },
 ];
 
-type Props = {
-    activeItem: string;
-    onItemClick: (label: string) => void;
-};
-
-export default function Sidebar({ activeItem, onItemClick }: Props) {
+export default function Sidebar({ 
+    activeItem, 
+    onItemClick, 
+    chatSessions = [], 
+    activeChatId, 
+    onSelectChat 
+}: Props) {
     return (
-        <aside className="flex h-full flex-col bg-slate-800 p-4">
-            <div className="mb-8 flex items-center gap-3">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl p-1">
+        <aside className="flex h-full w-[260px] shrink-0 flex-col bg-slate-800 p-4 border-r border-slate-700">
+            <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl p-1 bg-slate-900/40">
                     <img
                         src="/supply-chain-logo-transparent.png"
                         alt="Supply Chain Analyst"
-                        className="h-16 w-16 object-contain"
+                        className="h-10 w-10 object-contain"
                     />
                 </div>
 
                 <div>
-                    <h1 className="font-semibold leading-tight">
+                    <h1 className="font-semibold text-sm leading-tight">
                         Supply Chain Analyst
                     </h1>
                 </div>
@@ -60,10 +76,37 @@ export default function Sidebar({ activeItem, onItemClick }: Props) {
                 })}
             </nav>
 
-            <div className="mt-auto rounded-2xl border border-slate-800 bg-slate-900/60 p-3">
-                <p className="text-xs font-medium text-slate-300">Phase 1</p>
-                <p className="mt-1 text-xs text-slate-500">
-                    Mock chat, mock graph, mock evidence trace.
+            {chatSessions.length > 0 && (
+                <div className="mt-6 flex-1 overflow-y-auto min-h-0 border-t border-slate-700/50 pt-4">
+                    <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                        Recent Chats
+                    </p>
+                    <div className="mt-2 space-y-1">
+                        {chatSessions.map((session) => {
+                            const isActive = session.id === activeChatId;
+                            return (
+                                <button
+                                    key={session.id}
+                                    onClick={() => onSelectChat?.(session.id)}
+                                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs truncate ${
+                                        isActive
+                                            ? "bg-slate-900 text-white font-medium"
+                                            : "text-slate-400 hover:bg-slate-900/50 hover:text-white"
+                                    }`}
+                                >
+                                    <MessageSquarePlus className="h-3 w-3 shrink-0 text-slate-500" />
+                                    <span className="truncate">{session.title}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            <div className="mt-auto rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                <p className="text-[10px] font-semibold text-slate-300 uppercase tracking-wide">TUM CIT Practice</p>
+                <p className="mt-1 text-[11px] text-slate-500 leading-normal">
+                    Multi-Agent RAG Consultant Platform powered by Neo4j & LLM.
                 </p>
             </div>
         </aside>
