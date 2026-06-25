@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import CytoscapeGraph from "./CytoscapeGraph";
 
 import type { EvidenceNode } from "@/types/evidence";
 
@@ -298,16 +299,30 @@ export default function GraphPanel({
     const nodeCount = positionedNodes.length;
     const edgeCount = visibleEdges.length;
 
+    const [viewMode, setViewMode] = useState<"interactive" | "circular">("interactive");
+
     return (
         <div className="flex h-full min-h-0 flex-col bg-slate-800 text-slate-100">
-            <header className="flex h-16 shrink-0 items-center justify-center border-b border-slate-600 px-6">
-                <div className="text-center">
+            <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-600 px-6">
+                <div className="flex-1" />
+                <div className="text-center flex-1">
                     <h2 className="text-sm font-semibold tracking-wide text-slate-100">
                         Knowledge Graph
                     </h2>
                     <p className="text-xs text-slate-400">
                         {nodeCount} nodes · {edgeCount} relationships
                     </p>
+                </div>
+                <div className="flex-1 flex justify-end">
+                    {nodeCount > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setViewMode(prev => prev === "interactive" ? "circular" : "interactive")}
+                            className="rounded-lg border border-slate-600 bg-slate-900/50 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 font-medium transition"
+                        >
+                            {viewMode === "interactive" ? "Circular Layout" : "Interactive Graph"}
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -324,6 +339,8 @@ export default function GraphPanel({
                             </p>
                         </div>
                     </div>
+                ) : viewMode === "interactive" ? (
+                    <CytoscapeGraph graph={normalizedGraph} onSelectNode={onSelectNode} />
                 ) : (
                     <svg
                         viewBox="0 0 1000 700"
