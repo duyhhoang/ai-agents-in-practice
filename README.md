@@ -1,121 +1,86 @@
-# GenAI Agents for Supply Chain Analysis
+# GenAI-Supported EV-Charger Supply Chain Lifecycle Consultant
 
 **University:** Technical University of Munich (TUM)  
 **Course:** AI Agents in Practice (Practical Course)  
 **Project:** 19 - GenAI-Agents for Supply Chain Analysis  
-**Student:** Vora Khushi, Hoang Duy (Information Systems B.Sc.)  
-**Status:** Phase 4/8 Complete - Next Phase: Phase 5 (Vector Store & Embeddings)
+**Students:** Khushi Vora, Duy Hoang (Information Systems B.Sc.)  
+**Status:** Completed (Phases 1-8 Consolidated)
 
 ---
 
-## 🎯 Project Goal
+## 🎯 Project Overview
 
-Build an **agentic data pipeline** that processes heterogeneous supply chain data (text, diagrams, CSVs) to:
-1. Extract key concepts and relationships
-2. Map to Neo4j knowledge graph
-3. Enable semantic analysis and bottleneck identification
-4. Support consultant-grade strategy insights
-
----
-
-## 📚 Documentation Navigation
-
-This project's documentation includes:
-
-1. **[README.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/README.md) (You are here)**: Project overview, goals, architecture, and current status.
-2. **[PROJECT_DOCUMENTATION.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/PROJECT_DOCUMENTATION.md)**: Main developer & operational guide covering Docker, Neo4j Graph schema, n8n ingestion logic, MCP API, and troubleshooting.
-3. **[NEXT_STEPS.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/NEXT_STEPS.md)**: Clear implementation guide for upcoming phases (Vector search, stateful agentic RAG, advanced visualization).
-4. **[SETUP_GUIDE.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/SETUP_GUIDE.md)**: Step-by-step guide for manually setting up Neo4j schema and CSV workflows.
-5. **[DATA_REFERENCE.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/DATA_REFERENCE.md)**: Detailed files description and Neo4j Cypher analytics queries.
+This platform implements an **agentic supply chain pipeline** that processes heterogeneous lifecycle data (CSV execution logs, transport spreadsheets, technician notes, incident logs, VDE quality audit reports) to:
+1. Extract semantic entities and relationships using a robust n8n double-LLM resolution workflow.
+2. Build an interactive **Neo4j Knowledge Graph** representing the EV-charger lifecycle.
+3. Index unstructured documents with a native Neo4j **Vector Similarity Search** for semantic RAG.
+4. Orchestrate a **Multi-Agent Consultant Team** (Coordinator, Database Specialist, Operations Auditor, Finance Risk Specialist) via Express & Next.js to deliver strategical supply chain consulting reports with interactive Cytoscape network diagrams.
 
 ---
 
-## 🏗️ Architecture Overview
+## 🏗️ Folder Structure
 
 ```text
-Input Data (CSV/PDF/Text/Images)
-    ↓
-Data Ingestion Layer (n8n)
-    ↓
-Extraction & Chunking
-    ↓
-Entity & Relationship Extraction (Gemini)
-    ↓
-Neo4j Knowledge Graph
-    ↓
-Vector Embeddings (Gemini API)
-    ↓
-MCP Server (Custom Tools)
-    ├── Graph Queries
-    ├── Subgraph Extraction
-    ├── Diagram Generation (PlantUML)
-    └── Analytics (Bottleneck Detection)
-    ↓
-Agentic RAG Loop
-    ↓
-Insights & Strategy Report
+├── data-processors/      # Folder containing raw CSVs, unstructured text reports, and PDFs
+├── frontend/             # Next.js React frontend dashboard (Port 3000)
+├── mcp-server/           # Custom Express backend server and MCP standard tools (Port 8000)
+├── n8n-workflows/        # Exported JSON and markdown workflow configurations (Port 5678)
+├── neo4j/                # Initialization Cypher queries and constraints scripts
+├── docker-compose.yml    # Docker services orchestration (Neo4j & n8n)
+├── README.md             # This folder-level index & deployment guide
+├── PROJECT_DOCUMENTATION.md # Academic master reference guide & university exam preparation Q&As
+└── walkthrough.md        # Operations walkthrough with screenshot and video verifications
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 Quick Start Guide
 
-| Layer | Technology | Version | Status |
-|-------|-----------|---------|--------|
-| **Orchestration** | n8n | 2.26.4 (Latest Stable) | ✅ Running |
-| **Knowledge Graph** | Neo4j | 5.26-community | ✅ Running |
-| **Vector Store** | Neo4j native | 5.26-community | ✅ Ready |
-| **LLM (Primary)** | Gemini | Latest | ✅ Configured |
-| **LLM (Backup)** | OpenAI/Claude | Latest | ✅ Available |
-| **MCP Server** | Node.js + TypeScript | 18+ | ✅ Running |
-| **Diagram Gen** | PlantUML | Latest (monochrome false) | ✅ Running |
+Follow these steps to deploy and run the entire platform on your local machine:
+
+### 1. Launch Docker Infrastructure (Neo4j & n8n)
+Start the background services using Docker Compose:
+```bash
+docker compose up -d
+```
+*Verification*: Ensure both containers are healthy:
+- Neo4j Web Console: http://localhost:7474 (credentials: `neo4j` / `neo4jPASSWORD`)
+- n8n Workflow Panel: http://localhost:5678 (workflow `07_LLM_Entity_Extraction_v3_HTTP` is active)
+
+### 2. Launch Express Backend Server
+Navigate to the `mcp-server` directory, install packages, and start the server:
+```bash
+cd mcp-server
+npm install
+powershell -ExecutionPolicy Bypass -Command "npx tsx src/index.ts"
+```
+*Expected Startup Logs*:
+```text
+Supply Chain MCP Server listening on http://localhost:8000
+[Embedding Init] Initializing vector embeddings...
+[Embedding Init] Vector index 'file_embeddings' verified.
+[Embedding Init] Found 12 ProcessedFile nodes in Neo4j.
+[Embedding Init] Updated 12 files with vector embeddings.
+[Embedding Startup] Done initializing vector embeddings.
+```
+
+### 3. Launch Next.js Frontend Dashboard
+In a new terminal window, navigate to the `frontend` directory, install packages, and start the dev server:
+```bash
+cd frontend
+npm install
+powershell -ExecutionPolicy Bypass -Command "npm run dev"
+```
+Direct Next.js run if shell wrappers fail:
+```bash
+node node_modules/next/dist/bin/next dev
+```
+*Access URL*: Open your browser and navigate to **http://localhost:3000** to interact with the console.
 
 ---
 
-## 🔑 Key Design Decisions
+## 📚 Essential Reading
 
-1. **Data Format Agnostic Approach:** The pipeline is designed to work with CSV, PDF, text, and images interchangeably. This provides future flexibility for production use.
-2. **Neo4j Native Vectors:** Using Neo4j 5.13+ built-in vector store instead of a separate vector database to simplify architecture and improve performance.
-3. **Custom MCP Server:** A custom implementation with 4 core tools (`graph-query`, `subgraph-extract`, `diagram-generate`, `analytics`) tailored for the supply chain domain.
-4. **Full Lifecycle Dataset:** We have opted to proceed with a full 25-process lifecycle scope (Manufacturing → Assembly → Distribution → Installation → Use → End-of-Life) as it provides a rich learning opportunity for multi-stage AI agents.
-
----
-
-## 🎯 Implementation Phases
-
-| Phase | Focus | Timeline | Status |
-|-------|-------|----------|--------|
-| **1** | Infrastructure Setup | Week 1-2 | ✅ Complete |
-| **2** | Data Ingestion Layer | Week 2-3 | ✅ Complete |
-| **3** | Knowledge Graph Population | Week 3-4 | ✅ Complete (680 nodes, 2122 edges) |
-| **4** | Custom MCP Server & UI | Week 4-5 | ✅ Complete |
-| **5** | Vector Store & Embeddings | Week 5-6 | ⏳ Planned |
-| **6** | Agentic RAG Layer | Week 6-7 | ⏳ Planned |
-| **7** | Visualization & Analytics | Week 7-8 | ⏳ Planned |
-| **8** | Optimization & QA | Week 8+ | ⏳ Planned |
-
----
-
-## 🔌 API Connections
-
-### Neo4j (Knowledge Graph)
-```
-Host: localhost
-Port: 7687 (Bolt)
-Auth: neo4j / neo4jPASSWORD
-Database: neo4j
-Browser: http://localhost:7474
-```
-
-### n8n (Orchestration)
-```
-URL: http://localhost:5678
-LLM: Gemini API (configured in credentials)
-Workflow Trigger: Manual or scheduled
-```
-
----
-
-## 🚀 Next Steps
-
-Please proceed to the [**SETUP_GUIDE.md**](./SETUP_GUIDE.md) to initialize the Neo4j schema and begin importing the data using n8n workflows.
+To understand the codebase in detail, prepare for university evaluations, and see system execution records, read these files in order:
+1. **[PROJECT_DOCUMENTATION.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/PROJECT_DOCUMENTATION.md)**: Explains the GraphRAG pipeline, data structure, double-LLM resolution logic, local fallback unit vector math, and lists **high-yield exam prep Q&As**.
+2. **[walkthrough.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/walkthrough.md)**: Displays browser screens and video recordings verifying that chat queries retrieve GraphRAG data and render interactive Cytoscape network diagrams.
