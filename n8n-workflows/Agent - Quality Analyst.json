@@ -1,0 +1,313 @@
+{
+  "name": "Agent - Quality Analyst",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "question"
+            },
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "selectedAgents",
+              "type": "array"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "55bb55a0-6931-41ed-97d5-2babb2c2511e",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = $json.question || \"\";\n\nconst query = `\nMATCH (n)\nWHERE \n  n:TestReport\n  OR n:AuditFinding\n  OR n:IncidentReport\n  OR n:MaintenanceEvent\n  OR any(k IN keys(n) WHERE\n    toLower(k) CONTAINS \"quality\"\n    OR toLower(k) CONTAINS \"test\"\n    OR toLower(k) CONTAINS \"defect\"\n    OR toLower(k) CONTAINS \"failure\"\n    OR toLower(k) CONTAINS \"inspection\"\n    OR toLower(k) CONTAINS \"audit\"\n    OR toLower(k) CONTAINS \"result\"\n  )\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN\n  coalesce(\n    n.test_report_id,\n    n.audit_id,\n    n.incident_id,\n    n.maintenance_id,\n    n.id\n  ) AS item_id,\n  labels(n)[0] AS item_type,\n  coalesce(\n    n.name,\n    n.description,\n    n.finding,\n    n.status,\n    n.result,\n    n.event_type,\n    n.incident_description,\n    n.id\n  ) AS item_name,\n  properties(n) AS properties,\n  type(r) AS relationship,\n  labels(connected) AS connected_labels,\n  coalesce(\n    connected.actor_name,\n    connected.name,\n    connected.unit_id,\n    connected.process_id,\n    connected.process_name,\n    connected.material_name,\n    connected.location_name,\n    connected.id\n  ) AS connected_entity\nLIMIT 100\n`;\n\nreturn [\n  {\n    json: {\n      agent: \"quality_analyst\",\n      domain: \"Quality Analyst\",\n      question,\n      query,\n      params: {},\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -64
+      ],
+      "id": "11a7a255-b240-4ccb-abce-de08848d15ca",
+      "name": "Build Quality Query"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3001/api/query",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    query: $json.query,\n    params: $json.params || {}\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        -64
+      ],
+      "id": "75e31497-b9a8-42c8-8387-71b46ed77491",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $json.results || [];\n\nlet question = \"\";\ntry {\n  question = $(\"Build Quality Query\").first().json.question || \"\";\n} catch (e) {\n  question = \"\";\n}\n\nconst qualityItems = rows.map((row) => ({\n  item_id: row.item_id || null,\n  item_type: row.item_type || null,\n  item_name: row.item_name || null,\n  properties: row.properties || {},\n  relationship: row.relationship || null,\n  connected_labels: row.connected_labels || [],\n  connected_entity: row.connected_entity || null,\n}));\n\nreturn [\n  {\n    json: {\n      agent: \"quality_analyst\",\n      domain: \"Quality Analyst\",\n      status: \"data_retrieved\",\n      question,\n      evidenceLabel: \"qualityItems\",\n      evidenceData: qualityItems,\n      rawResult: $json,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -64
+      ],
+      "id": "f9ce8009-53aa-48a7-8bff-9e59271060bb",
+      "name": "Format Quality Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const agent = $json.agent || \"quality_analyst\";\nconst domain = $json.domain || \"Quality Analyst\";\nconst question = $json.question || \"\";\nconst evidenceLabel = $json.evidenceLabel || \"qualityItems\";\nconst evidenceData = $json.evidenceData || [];\nconst rawResult = $json.rawResult || {};\n\nconst systemPrompt = `\nYou are a Quality Analyst Agent for a supply chain knowledge graph.\n\nYour job:\n- Analyze test reports, audit findings, incident reports, maintenance events, defects, failures, and inspection-related graph data.\n- Identify quality problems, recurring failure patterns, affected entities, and potential root causes.\n- Explain the operational and customer impact clearly.\n- Give practical quality improvement recommendations.\n- Do not invent facts.\n- If graph data is limited or missing quality fields, clearly say that.\n\nReturn ONLY valid JSON.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nQuality evidence:\n${JSON.stringify(evidenceData, null, 2)}\n\nRaw graph result:\n${JSON.stringify(rawResult, null, 2)}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"keyFindings\": [\"string\"],\n  \"qualityInsights\": [\n    {\n      \"id\": \"string\",\n      \"type\": \"string\",\n      \"name\": \"string\",\n      \"qualityIssue\": \"string\",\n      \"severity\": \"low | medium | high | unknown\",\n      \"insight\": \"string\"\n    }\n  ],\n  \"affectedEntities\": [\n    {\n      \"entity\": \"string\",\n      \"relationship\": \"string\",\n      \"impact\": \"string\"\n    }\n  ],\n  \"recommendations\": [\"string\"],\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      agent,\n      domain,\n      question,\n      evidenceLabel,\n      evidenceData,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.2,\n        max_tokens: 2048,\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -64
+      ],
+      "id": "3451482e-1179-4ddd-ae6c-c82bac110f98",
+      "name": "Build LLM Summary Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your-cluster-api-key-here"
+            },
+            {
+              "name": "Content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.llmPayload }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1440,
+        -64
+      ],
+      "id": "2b5f506e-9828-47b4-80dc-069e924a9eab",
+      "name": "LLM Quality Summary",
+      "credentials": {
+        "openAiApi": {
+          "id": "YPxI5FcVO2XRCV4r",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let outputStr = \"\";\n\nif ($json.choices?.[0]?.message?.content) {\n  outputStr = $json.choices[0].message.content;\n} else if ($json.text) {\n  outputStr = $json.text;\n} else if ($json.response) {\n  outputStr = $json.response;\n} else {\n  outputStr = JSON.stringify($json);\n}\n\noutputStr = outputStr\n  .replace(/<think>[\\s\\S]*?<\\/think>/gi, \"\")\n  .replace(/^\\s*```json/i, \"\")\n  .replace(/^\\s*```/i, \"\")\n  .replace(/```\\s*$/i, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(outputStr);\n} catch (e) {\n  parsed = {\n    answer: outputStr || \"The quality analyst could not generate a summary.\",\n    keyFindings: [],\n    qualityInsights: [],\n    affectedEntities: [],\n    recommendations: [],\n    confidence: \"low\",\n  };\n}\n\nlet context = {};\ntry {\n  context = $(\"Build LLM Summary Payload\").first().json;\n} catch (e) {\n  context = {};\n}\n\nreturn [\n  {\n    json: {\n      agent: \"quality_analyst\",\n      domain: \"Quality Analyst\",\n      status: \"completed\",\n      question: context.question || \"\",\n      answer: parsed.answer || \"\",\n      keyFindings: parsed.keyFindings || [],\n      qualityInsights: parsed.qualityInsights || [],\n      affectedEntities: parsed.affectedEntities || [],\n      recommendations: parsed.recommendations || [],\n      confidence: parsed.confidence || \"medium\",\n      evidence: {\n        qualityItems: context.evidenceData || [],\n      },\n      rawLlmOutput: parsed,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        -64
+      ],
+      "id": "04c2c050-4154-4b57-836c-e5642057a22f",
+      "name": "Parse Quality Summary"
+    },
+    {
+      "parameters": {
+        "jsCode": "const selectedAgents = $json.selectedAgents || [];\n\nconst shouldRun =\n  selectedAgents.includes(\"quality_analyst\") ||\n  selectedAgents.includes(\"all\");\n\nreturn [\n  {\n    json: {\n      ...$json,\n      shouldRun,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f8550bfc-8dcf-4a4a-8800-e853caa7afd0",
+      "name": "Should Run Quality Analyst"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bf3ccd4b-15e7-4f27-bb29-698b62277496",
+              "leftValue": "={{ $json.shouldRun }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a7d199fd-5be7-4501-9cee-5cf17eaab168",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      agent: \"quality_analyst\",\n      domain: \"Quality Analyst\",\n      status: \"skipped\",\n      question: $json.question || \"\",\n      answer: \"\",\n      keyFindings: [],\n      qualityInsights: [],\n      affectedEntities: [],\n      recommendations: [],\n      confidence: \"not_applicable\",\n      evidence: {},\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        112
+      ],
+      "id": "00c68f41-95b1-4ae9-ac6b-381e4ac08259",
+      "name": "Return Skipped Quality Analyst"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Should Run Quality Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Quality Query": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Format Quality Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Quality Result": {
+      "main": [
+        [
+          {
+            "node": "Build LLM Summary Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build LLM Summary Payload": {
+      "main": [
+        [
+          {
+            "node": "LLM Quality Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Quality Summary": {
+      "main": [
+        [
+          {
+            "node": "Parse Quality Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Run Quality Analyst": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Build Quality Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Skipped Quality Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0405c13b-72ac-46f8-a9ef-4266652f6943",
+  "meta": {
+    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
+  },
+  "nodeGroups": [],
+  "id": "TmZatFmBoIM3ZhDt",
+  "tags": []
+}
