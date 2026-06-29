@@ -1,0 +1,134 @@
+{
+  "name": "Agent - Manager",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "106ded77-4c99-4173-94b9-d610dbc9c198",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = $json.question || \"\";\nconst sessionId = $json.sessionId || \"default-session\";\nconst specialistResults = $json.specialistResults || [];\n\nconst compactResults = specialistResults.map((result) => {\n  return {\n    agent: result.agent || \"unknown_agent\",\n    domain: result.domain || \"\",\n    answer: result.answer || \"\",\n    keyFindings: result.keyFindings || [],\n    recommendations: result.recommendations || [],\n    confidence: result.confidence || \"unknown\",\n    evidenceSummary: result.evidence\n      ? Object.fromEntries(\n          Object.entries(result.evidence).map(([key, value]) => [\n            key,\n            Array.isArray(value) ? `${value.length} records` : \"available\",\n          ])\n        )\n      : {},\n  };\n});\n\nconst allRecommendations = [];\nconst allFindings = [];\n\nfor (const result of specialistResults) {\n  if (Array.isArray(result.recommendations)) {\n    allRecommendations.push(...result.recommendations);\n  }\n  if (Array.isArray(result.keyFindings)) {\n    allFindings.push(...result.keyFindings);\n  }\n}\n\nconst systemPrompt = `\nYou are the Supply Chain Manager Agent.\n\nYour job:\n- Combine specialist agent outputs into one clear executive answer.\n- Prioritize business impact.\n- Identify risks, bottlenecks, supplier issues, logistics issues, sustainability concerns, and quality concerns.\n- Give practical next actions.\n- Do not invent facts.\n- If specialist evidence is limited, clearly say that.\n- Return ONLY valid JSON.\n\nImportant output rules:\nFor evidenceGraph.nodes, every node must include:\n- id: string\n- name: string\n- type: string\n- properties: object\n\nFor evidenceGraph.edges, every edge must include:\n- id: string\n- source: string\n- target: string\n- type: string\n- properties: object\n\nStrict supplier classification rules:\n- Do not treat every Actor as a supplier.\n- Supplier means actor_role is \"supplier\" or \"manufacturer\", or the evidence includes a SUPPLIES relationship.\n- Recycling, waste, maintenance, testing, logistics, and person actors are not suppliers unless explicitly shown as suppliers.\n- If evidence contains Recycling Facility P or Waste Disposal Provider Q, describe them as recycling/waste service actors, not suppliers.\n- Use exact graph names. Do not rename or generalize entities.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nSpecialist agent results:\n${JSON.stringify(compactResults, null, 2)}\n\nAll key findings:\n${JSON.stringify(allFindings, null, 2)}\n\nAll recommendations:\n${JSON.stringify(allRecommendations, null, 2)}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"executiveSummary\": \"string\",\n  \"specialistSummary\": [\n    {\n      \"agent\": \"string\",\n      \"contribution\": \"string\",\n      \"confidence\": \"low | medium | high | unknown\"\n    }\n  ],\n  \"keyFindings\": [\"string\"],\n  \"riskLevel\": \"low | medium | high | unknown\",\n  \"recommendations\": [\"string\"],\n  \"nextActions\": [\"string\"],\n  \"evidenceGraph\": {\n    \"nodes\": [\n      {\n        \"id\": \"string\",\n        \"name\": \"string\",\n        \"type\": \"string\",\n        \"properties\": {}\n      }\n    ],\n    \"edges\": [\n      {\n        \"id\": \"string\",\n        \"source\": \"string\",\n        \"target\": \"string\",\n        \"type\": \"string\",\n        \"properties\": {}\n      }\n    ]\n  },\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      question,\n      sessionId,\n      specialistResults,\n      compactResults,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.2,\n        max_tokens: 4096,\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "25bfb2f9-4f29-488d-8443-edba08b5af63",
+      "name": "Build Manager LLM Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your-cluster-api-key-here"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.llmPayload }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e3881e72-b59d-4fa0-b65c-3a81692bc759",
+      "name": "LLM Manager Summary",
+      "credentials": {
+        "openAiApi": {
+          "id": "YPxI5FcVO2XRCV4r",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let outputStr = \"\";\n\nif ($json.choices?.[0]?.message?.content) {\n  outputStr = $json.choices[0].message.content;\n} else if ($json.text) {\n  outputStr = $json.text;\n} else if ($json.response) {\n  outputStr = $json.response;\n} else {\n  outputStr = JSON.stringify($json);\n}\n\noutputStr = outputStr\n  .replace(/<think>[\\s\\S]*?<\\/think>/gi, \"\")\n  .replace(/^\\s*```json/i, \"\")\n  .replace(/^\\s*```/i, \"\")\n  .replace(/```\\s*$/i, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(outputStr);\n} catch (e) {\n  parsed = {\n    answer: outputStr || \"The manager agent could not generate a final answer.\",\n    executiveSummary: \"\",\n    specialistSummary: [],\n    keyFindings: [],\n    riskLevel: \"unknown\",\n    recommendations: [],\n    nextActions: [],\n    evidenceGraph: {\n      nodes: [],\n      edges: [],\n    },\n    confidence: \"low\",\n  };\n}\n\nfunction normalizeEvidenceGraph(graph) {\n  const nodes = Array.isArray(graph?.nodes) ? graph.nodes : [];\n  const edges = Array.isArray(graph?.edges) ? graph.edges : [];\n\n  const normalizedNodes = nodes\n    .filter((n) => n && (n.id || n.name))\n    .map((n, index) => ({\n      id: String(n.id || `node_${index + 1}`),\n      name: String(n.name || n.id || `Node ${index + 1}`),\n      type: String(n.type || n.label || \"Entity\"),\n      properties:\n        n.properties && typeof n.properties === \"object\"\n          ? n.properties\n          : {},\n    }));\n\n  const normalizedEdges = edges\n    .filter((e) => e && (e.source || e.from) && (e.target || e.to))\n    .map((e, index) => ({\n      id: String(e.id || `edge_${index + 1}`),\n      source: String(e.source || e.from),\n      target: String(e.target || e.to),\n      type: String(e.type || e.relationship || \"RELATED_TO\"),\n      properties:\n        e.properties && typeof e.properties === \"object\"\n          ? e.properties\n          : {},\n    }));\n\n  return {\n    nodes: normalizedNodes,\n    edges: normalizedEdges,\n  };\n}\n\nlet context = {};\ntry {\n  context = $(\"Build Manager LLM Payload\").first().json;\n} catch (e) {\n  context = {};\n}\n\nreturn [\n  {\n    json: {\n      agent: \"manager_agent\",\n      domain: \"Supply Chain Manager\",\n      status: \"completed\",\n      question: context.question || \"\",\n      sessionId: context.sessionId || \"default-session\",\n      answer: parsed.answer || \"\",\n      executiveSummary: parsed.executiveSummary || \"\",\n      specialistSummary: parsed.specialistSummary || [],\n      keyFindings: parsed.keyFindings || [],\n      riskLevel: parsed.riskLevel || \"unknown\",\n      recommendations: parsed.recommendations || [],\n      nextActions: parsed.nextActions || [],\n      confidence: parsed.confidence || \"medium\",\n      evidenceGraph: normalizeEvidenceGraph(parsed.evidenceGraph),\n      specialistResults: context.specialistResults || [],\n      rawLlmOutput: parsed,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "bbe0c9fb-984a-4564-a41d-2439d3579538",
+      "name": "Parse Manager Answer"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Build Manager LLM Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Manager LLM Payload": {
+      "main": [
+        [
+          {
+            "node": "LLM Manager Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Manager Summary": {
+      "main": [
+        [
+          {
+            "node": "Parse Manager Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "a95098ed-b1b0-48ef-b0ac-3f61476f19f1",
+  "meta": {
+    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
+  },
+  "nodeGroups": [],
+  "id": "TnXOpXvOE0RExCg3",
+  "tags": []
+}
