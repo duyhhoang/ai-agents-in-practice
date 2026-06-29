@@ -1,0 +1,313 @@
+{
+  "name": "Agent - Risk Analyst",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "question"
+            },
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "selectedAgents",
+              "type": "array"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "609266be-bbc0-47d9-9166-9b6c8fb6207b",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = $json.question || \"\";\n\nconst query = `\nMATCH (n)\nWHERE \n  n:Risk \n  OR n:IncidentReport \n  OR n:AuditFinding \n  OR n:MaintenanceEvent \n  OR n:TestReport\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN \n  coalesce(\n    n.id,\n    n.risk_id,\n    n.incident_id,\n    n.audit_id,\n    n.test_report_id,\n    n.maintenance_id\n  ) AS item_id,\n  labels(n)[0] AS item_type,\n  coalesce(\n    n.name,\n    n.risk_name,\n    n.description,\n    n.finding,\n    n.incident_description,\n    n.event_type,\n    n.status,\n    n.id\n  ) AS item_name,\n  properties(n) AS properties,\n  type(r) AS relationship,\n  labels(connected) AS connected_labels,\n  coalesce(\n    connected.actor_name,\n    connected.name,\n    connected.unit_id,\n    connected.process_id,\n    connected.material_name,\n    connected.location_name,\n    connected.id\n  ) AS connected_entity\nLIMIT 100\n`;\n\nreturn [\n  {\n    json: {\n      agent: \"risk_analyst\",\n      domain: \"Risk Analyst\",\n      question,\n      query,\n      params: {},\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        -96
+      ],
+      "id": "dc417bc7-4bb4-4845-bbbe-ad735ef5a76f",
+      "name": "Build Risk Query"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3001/api/query",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    query: $json.query,\n    params: $json.params || {}\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "020955a7-954d-4ff2-af45-f9931d741549",
+      "name": "Call Graph API Query"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $json.results || [];\n\nlet question = \"\";\ntry {\n  question = $(\"Build Risk Query\").first().json.question || \"\";\n} catch (e) {\n  question = \"\";\n}\n\nconst riskItems = rows.map((row) => ({\n  item_id: row.item_id || null,\n  item_type: row.item_type || null,\n  item_name: row.item_name || null,\n  properties: row.properties || {},\n  relationship: row.relationship || null,\n  connected_labels: row.connected_labels || [],\n  connected_entity: row.connected_entity || null,\n}));\n\nreturn [\n  {\n    json: {\n      agent: \"risk_analyst\",\n      domain: \"Risk Analyst\",\n      status: \"data_retrieved\",\n      question,\n      evidenceLabel: \"riskItems\",\n      evidenceData: riskItems,\n      rawResult: $json,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -96
+      ],
+      "id": "1fcac96a-9dd6-4a42-9e01-785612e72321",
+      "name": "Format Risk Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const agent = $json.agent || \"risk_analyst\";\nconst domain = $json.domain || \"Risk Analyst\";\nconst question = $json.question || \"\";\nconst evidenceLabel = $json.evidenceLabel || \"riskItems\";\nconst evidenceData = $json.evidenceData || [];\nconst rawResult = $json.rawResult || {};\n\nconst systemPrompt = `\nYou are a Risk Analyst Agent for a supply chain knowledge graph.\n\nYour job:\n- Analyze risk, incident, audit, maintenance, and test-report data.\n- Identify risk patterns, affected entities, and possible bottlenecks.\n- Explain the business impact clearly.\n- Give practical mitigation recommendations.\n- Do not invent facts.\n- If the graph data is limited, clearly say that.\n\nStrict actor interpretation rules:\n- Not every Actor node is a supplier.\n- Only call an actor a supplier if actor_role is \"supplier\", actor_role is \"manufacturer\", or the relationship evidence shows SUPPLIES.\n- Actors with actor_origin = \"llm_extracted_actor\" should be described as extracted actors, service providers, facilities, technicians, or vendors depending on evidence.\n- Do not call Recycling Facility P or Waste Disposal Provider Q suppliers unless the graph evidence explicitly says they supply something.\n- Preserve exact names from the graph.\n\nReturn ONLY valid JSON.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nRisk evidence:\n${JSON.stringify(evidenceData, null, 2)}\n\nRaw graph result:\n${JSON.stringify(rawResult, null, 2)}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"keyFindings\": [\"string\"],\n  \"riskInsights\": [\n    {\n      \"id\": \"string\",\n      \"type\": \"string\",\n      \"name\": \"string\",\n      \"riskLevel\": \"low | medium | high | unknown\",\n      \"insight\": \"string\"\n    }\n  ],\n  \"affectedEntities\": [\n    {\n      \"entity\": \"string\",\n      \"relationship\": \"string\",\n      \"impact\": \"string\"\n    }\n  ],\n  \"recommendations\": [\"string\"],\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      agent,\n      domain,\n      question,\n      evidenceLabel,\n      evidenceData,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.2,\n        max_tokens: 2048,\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -96
+      ],
+      "id": "0667a4c1-3bb8-4efa-954e-b3778b74121d",
+      "name": "Build LLM Summary Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your-cluster-api-key-here"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.llmPayload }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1456,
+        -96
+      ],
+      "id": "3163f62c-3256-43f3-a114-1f25e96c7695",
+      "name": "LLM Risk Summary",
+      "credentials": {
+        "openAiApi": {
+          "id": "YPxI5FcVO2XRCV4r",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let outputStr = \"\";\n\nif ($json.choices?.[0]?.message?.content) {\n  outputStr = $json.choices[0].message.content;\n} else if ($json.text) {\n  outputStr = $json.text;\n} else if ($json.response) {\n  outputStr = $json.response;\n} else {\n  outputStr = JSON.stringify($json);\n}\n\noutputStr = outputStr\n  .replace(/<think>[\\s\\S]*?<\\/think>/gi, \"\")\n  .replace(/^\\s*```json/i, \"\")\n  .replace(/^\\s*```/i, \"\")\n  .replace(/```\\s*$/i, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(outputStr);\n} catch (e) {\n  parsed = {\n    answer: outputStr || \"The risk analyst could not generate a summary.\",\n    keyFindings: [],\n    riskInsights: [],\n    affectedEntities: [],\n    recommendations: [],\n    confidence: \"low\",\n  };\n}\n\nlet context = {};\ntry {\n  context = $(\"Build LLM Summary Payload\").first().json;\n} catch (e) {\n  context = {};\n}\n\nreturn [\n  {\n    json: {\n      agent: \"risk_analyst\",\n      domain: \"Risk Analyst\",\n      status: \"completed\",\n      question: context.question || \"\",\n      answer: parsed.answer || \"\",\n      keyFindings: parsed.keyFindings || [],\n      riskInsights: parsed.riskInsights || [],\n      affectedEntities: parsed.affectedEntities || [],\n      recommendations: parsed.recommendations || [],\n      confidence: parsed.confidence || \"medium\",\n      evidence: {\n        riskItems: context.evidenceData || [],\n      },\n      rawLlmOutput: parsed,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        -96
+      ],
+      "id": "2b41c9f2-a8ce-441d-b96c-0b100bb0ea2f",
+      "name": "Parse Risk Summary"
+    },
+    {
+      "parameters": {
+        "jsCode": "const selectedAgents = $json.selectedAgents || [];\n\nconst shouldRun =\n  selectedAgents.includes(\"risk_analyst\") ||\n  selectedAgents.includes(\"all\");\n\nreturn [\n  {\n    json: {\n      ...$json,\n      shouldRun,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a1b606d6-5d1d-4cf5-b5de-31c8baeb20e6",
+      "name": "Should Run Risk Analyst"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b02b566a-9737-4b78-9e3d-32a19e9e8c34",
+              "leftValue": "={{ $json.shouldRun }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "8c821052-4269-476a-89bc-be136097f8a3",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      agent: \"risk_analyst\",\n      domain: \"Risk Analyst\",\n      status: \"skipped\",\n      question: $json.question || \"\",\n      answer: \"\",\n      keyFindings: [],\n      recommendations: [],\n      confidence: \"not_applicable\",\n      evidence: {},\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        96
+      ],
+      "id": "dd9d32a1-b69a-4034-95bc-cc83196f4ab5",
+      "name": "Return Skipped Risk Analyst"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Should Run Risk Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Risk Query": {
+      "main": [
+        [
+          {
+            "node": "Call Graph API Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Graph API Query": {
+      "main": [
+        [
+          {
+            "node": "Format Risk Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Risk Result": {
+      "main": [
+        [
+          {
+            "node": "Build LLM Summary Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build LLM Summary Payload": {
+      "main": [
+        [
+          {
+            "node": "LLM Risk Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Risk Summary": {
+      "main": [
+        [
+          {
+            "node": "Parse Risk Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Run Risk Analyst": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Build Risk Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Skipped Risk Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "337567c6-bd9f-4de5-988b-ddf85ef531cc",
+  "meta": {
+    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
+  },
+  "nodeGroups": [],
+  "id": "IsImqnGly0WiqjeN",
+  "tags": []
+}
