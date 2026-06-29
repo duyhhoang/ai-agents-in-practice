@@ -1,0 +1,541 @@
+{
+  "name": "Chat Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\n\nconst question =\n  body.message ||\n  body.question ||\n  body.chatInput ||\n  body.prompt ||\n  \"\";\n\nconst sessionId = body.sessionId || \"default-session\";\n\nif (!question || !question.trim()) {\n  return [\n    {\n      json: {\n        error: true,\n        question: \"\",\n        sessionId,\n        answer: \"Please provide a question.\",\n        specialistResults: [],\n        evidenceGraph: {\n          nodes: [],\n          edges: [],\n        },\n      },\n    },\n  ];\n}\n\nreturn [\n  {\n    json: {\n      error: false,\n      question: question.trim(),\n      sessionId,\n      timestamp: new Date().toISOString(),\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "8fbd0076-8cfd-4ae2-b73a-295c9354f715",
+      "name": "Normalize Chat Input"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "82aca0a7-52f3-4596-b585-13f1f28529bc",
+      "name": "Chat Webhook",
+      "webhookId": "e643ee31-e8f5-4135-a542-39f71461bfd7"
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = $json.question || \"\";\nconst q = question.toLowerCase();\n\nconst selectedAgents = [];\n\nconst procurementKeywords = [\n  \"supplier\",\n  \"suppliers\",\n  \"purchase order\",\n  \"po\",\n  \"procurement\",\n  \"sourcing\",\n  \"vendor\",\n  \"lead time\",\n  \"material\",\n  \"materials\"\n];\n\nconst riskKeywords = [\n  \"risk\",\n  \"risky\",\n  \"delay\",\n  \"delayed\",\n  \"bottleneck\",\n  \"critical\",\n  \"failure\",\n  \"incident\",\n  \"audit\",\n  \"maintenance\"\n];\n\nconst logisticsKeywords = [\n  \"shipment\",\n  \"shipping\",\n  \"transport\",\n  \"route\",\n  \"delivery\",\n  \"freight\",\n  \"warehouse\",\n  \"location\",\n  \"logistics\"\n];\n\nconst sustainabilityKeywords = [\n  \"carbon\",\n  \"emission\",\n  \"emissions\",\n  \"co2\",\n  \"recycling\",\n  \"waste\",\n  \"sustainability\",\n  \"environment\",\n  \"environmental\"\n];\n\nconst qualityKeywords = [\n  \"quality\",\n  \"test\",\n  \"testing\",\n  \"defect\",\n  \"inspection\",\n  \"audit\",\n  \"report\"\n];\n\nconst runProcurement = procurementKeywords.some(k => q.includes(k));\nconst runRisk = riskKeywords.some(k => q.includes(k));\nconst runLogistics = logisticsKeywords.some(k => q.includes(k));\nconst runSustainability = sustainabilityKeywords.some(k => q.includes(k));\nconst runQuality = qualityKeywords.some(k => q.includes(k));\n\nif (runProcurement) selectedAgents.push(\"procurement_specialist\");\nif (runRisk) selectedAgents.push(\"risk_analyst\");\nif (runLogistics) selectedAgents.push(\"logistics_specialist\");\nif (runSustainability) selectedAgents.push(\"sustainability_analyst\");\nif (runQuality) selectedAgents.push(\"quality_analyst\");\n\n// fallback: if nothing matches, run manager with general context later\nif (selectedAgents.length === 0) {\n  selectedAgents.push(\"procurement_specialist\", \"risk_analyst\");\n}\n\nreturn [\n  {\n    json: {\n      ...$json,\n      selectedAgents,\n      runProcurement,\n      runRisk,\n      runLogistics,\n      runSustainability,\n      runQuality,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "142dab87-5051-4561-9f49-079a46073bd2",
+      "name": "Route Question"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "IsImqnGly0WiqjeN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/IsImqnGly0WiqjeN",
+          "cachedResultName": "Agent - Risk Analyst"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question": "={{ $(\"Normalize Chat Input\").first().json.question }}",
+            "sessionId": "={{ $(\"Normalize Chat Input\").first().json.sessionId }}",
+            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "selectedAgents",
+              "displayName": "selectedAgents",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        832,
+        0
+      ],
+      "id": "defc9211-fe89-42b4-a38e-76f64c9882be",
+      "name": "Run Risk Analyst"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "sfU2H5vLueRQIoGi",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/sfU2H5vLueRQIoGi",
+          "cachedResultName": "Agent - Logistics Specialist"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question": "={{ $(\"Normalize Chat Input\").first().json.question }}",
+            "sessionId": "={{ $(\"Normalize Chat Input\").first().json.sessionId }}",
+            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "selectedAgents",
+              "displayName": "selectedAgents",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "554124fc-662c-40f5-9c97-a473d175e77d",
+      "name": "Run Logistics Specialist"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "686Mgxmqt06FHz7D",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/686Mgxmqt06FHz7D",
+          "cachedResultName": "Agent - Sustainability Analyst"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sessionId": "={{ $(\"Normalize Chat Input\").first().json.sessionId }}",
+            "question": "={{ $(\"Normalize Chat Input\").first().json.question }}",
+            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "selectedAgents",
+              "displayName": "selectedAgents",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "a1c29aa9-f297-4347-ba19-e3be9b692889",
+      "name": "Run Sustainability Analyst"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "TmZatFmBoIM3ZhDt",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/TmZatFmBoIM3ZhDt",
+          "cachedResultName": "Agent - Quality Analyst"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question": "={{ $(\"Normalize Chat Input\").first().json.question }}",
+            "sessionId": "={{ $(\"Normalize Chat Input\").first().json.sessionId }}",
+            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "selectedAgents",
+              "displayName": "selectedAgents",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "ba0aaa8f-0d84-4a42-b987-1985445794a4",
+      "name": "Run Quality Analyst"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "TnXOpXvOE0RExCg3",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/TnXOpXvOE0RExCg3",
+          "cachedResultName": "Agent - Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1872,
+        0
+      ],
+      "id": "5e65f95b-2708-41b7-a5d3-8084825e49da",
+      "name": "Run Manager Agent"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "XE16kijrzbXIFjhy",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/XE16kijrzbXIFjhy",
+          "cachedResultName": "Agent - Procurement Specialist"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question": "={{ $(\"Normalize Chat Input\").first().json.question }}",
+            "sessionId": "={{ $(\"Normalize Chat Input\").first().json.sessionId }}",
+            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "selectedAgents",
+              "displayName": "selectedAgents",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "a7c16971-d87b-4203-a146-36cbdaa77e4c",
+      "name": "Run Procurement Specialist"
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = $(\"Normalize Chat Input\").first().json.question || \"\";\nconst sessionId = $(\"Normalize Chat Input\").first().json.sessionId || \"default-session\";\nconst selectedAgents = $(\"Route Question\").first().json.selectedAgents || [];\n\nfunction getNodeJson(nodeName) {\n  try {\n    return $(nodeName).first().json;\n  } catch (e) {\n    return {\n      agent: nodeName,\n      status: \"error\",\n      answer: `Could not read output from ${nodeName}`,\n      keyFindings: [],\n      recommendations: [],\n      confidence: \"low\",\n      error: e.message,\n    };\n  }\n}\n\nconst procurement = getNodeJson(\"Run Procurement Specialist\");\nconst risk = getNodeJson(\"Run Risk Analyst\");\nconst logistics = getNodeJson(\"Run Logistics Specialist\");\nconst sustainability = getNodeJson(\"Run Sustainability Analyst\");\nconst quality = getNodeJson(\"Run Quality Analyst\");\n\nconst allSpecialistResults = [\n  procurement,\n  risk,\n  logistics,\n  sustainability,\n  quality,\n].filter(Boolean);\n\nconst specialistResults = allSpecialistResults.filter(\n  (result) => result.status !== \"skipped\"\n);\n\nreturn [\n  {\n    json: {\n      question,\n      sessionId,\n      selectedAgents,\n      specialistResults,\n      allSpecialistResults,\n      timestamp: new Date().toISOString(),\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "f035cf1b-a2f3-4989-90f3-9aeeaf98935e",
+      "name": "Combine Specialist Results"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{\n  {\n    success: true,\n    answer: $json.answer || \"\",\n    executiveSummary: $json.executiveSummary || \"\",\n    keyFindings: $json.keyFindings || [],\n    recommendations: $json.recommendations || [],\n    nextActions: $json.nextActions || [],\n    riskLevel: $json.riskLevel || \"unknown\",\n    confidence: $json.confidence || \"medium\",\n    evidenceGraph: $json.evidenceGraph || {\n      nodes: [],\n      edges: []\n    },\n    specialistSummary: $json.specialistSummary || [],\n    specialistResults: $json.specialistResults || [],\n    question: $json.question || \"\",\n    sessionId: $json.sessionId || \"default-session\",\n    timestamp: new Date().toISOString()\n  }\n}}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2080,
+        0
+      ],
+      "id": "a8acc7bf-cbb3-4f29-aeba-9f8f34c2423d",
+      "name": "Respond to Frontend"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Normalize Chat Input": {
+      "main": [
+        [
+          {
+            "node": "Route Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Chat Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Question": {
+      "main": [
+        [
+          {
+            "node": "Run Procurement Specialist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Risk Analyst": {
+      "main": [
+        [
+          {
+            "node": "Run Logistics Specialist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Logistics Specialist": {
+      "main": [
+        [
+          {
+            "node": "Run Sustainability Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Sustainability Analyst": {
+      "main": [
+        [
+          {
+            "node": "Run Quality Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Quality Analyst": {
+      "main": [
+        [
+          {
+            "node": "Combine Specialist Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Procurement Specialist": {
+      "main": [
+        [
+          {
+            "node": "Run Risk Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Specialist Results": {
+      "main": [
+        [
+          {
+            "node": "Run Manager Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Manager Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Frontend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "a3030fe6-20fb-4570-8817-9bfe85e395fc",
+  "meta": {
+    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
+  },
+  "nodeGroups": [],
+  "id": "Rrwgv1CHsvjsPiVi",
+  "tags": []
+}
