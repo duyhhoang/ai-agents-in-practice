@@ -1,5 +1,5 @@
-﻿import AppShell from "@/components/AppShell";
+import ScalesDashboard from "@/components/scales/ScalesDashboard";
 
-export default function HomePage() {
-  return <AppShell />;
+export default function Home() {
+  return <ScalesDashboard />;
 }
