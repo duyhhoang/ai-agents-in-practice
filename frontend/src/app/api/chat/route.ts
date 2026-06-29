@@ -1,52 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { ChatResponse } from "@/types/evidence";
+
+type ChatRequestBody = {
+  message?: string;
+  question?: string;
+  sessionId?: string;
+};
+
+const N8N_CHAT_WEBHOOK_URL =
+  process.env.N8N_CHAT_WEBHOOK_URL || "http://localhost:5678/webhook/chat";
 
 export async function POST(request: NextRequest) {
-    try {
-        const body = await request.json();
+  try {
+    const body = (await request.json()) as ChatRequestBody;
 
-        const webhookUrl = process.env.N8N_CHAT_WEBHOOK_URL;
+    const message = body.message || body.question || "";
+    const sessionId = body.sessionId || "scales-command-session";
 
-        if (!webhookUrl) {
-            return NextResponse.json(
-                { error: "N8N_CHAT_WEBHOOK_URL is missing in .env.local" },
-                { status: 500 }
-            );
-        }
-
-        const n8nResponse = await fetch(webhookUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                question: body.question,
-                conversationId: body.conversationId ?? "default",
-            }),
-        });
-
-        if (!n8nResponse.ok) {
-            const errorText = await n8nResponse.text();
-
-            return NextResponse.json(
-                {
-                    error: "n8n chat webhook failed",
-                    details: errorText,
-                },
-                { status: 500 }
-            );
-        }
-
-        const data = (await n8nResponse.json()) as ChatResponse;
-
-        return NextResponse.json(data);
-    } catch (error) {
-        return NextResponse.json(
-            {
-                error: "Chat API failed",
-                details: error instanceof Error ? error.message : String(error),
-            },
-            { status: 500 }
-        );
+    if (!message.trim()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Message cannot be empty.",
+        },
+        { status: 400 }
+      );
     }
+
+    const n8nResponse = await fetch(N8N_CHAT_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: message.trim(),
+        question: message.trim(),
+        sessionId,
+      }),
+    });
+
+    const responseText = await n8nResponse.text();
+
+    let data: unknown;
+
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      data = {
+        success: false,
+        error: "n8n returned a non-JSON response.",
+        rawResponse: responseText,
+      };
+    }
+
+    if (!n8nResponse.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Chat Orchestrator request failed.",
+          status: n8nResponse.status,
+          details: data,
+        },
+        { status: n8nResponse.status }
+      );
+    }
+
+    return NextResponse.json(data);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown server error.";
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+      },
+      { status: 500 }
+    );
+  }
 }
