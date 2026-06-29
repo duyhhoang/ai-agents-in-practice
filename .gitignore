@@ -85,3 +85,11 @@ Neo4j-bfaf074a-Created-2026-05-28.txt
 .idea/
 .DS_Store
 Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/.env.local
+frontend/.env
