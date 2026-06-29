@@ -1,0 +1,313 @@
+{
+  "name": "Agent - Sustainability Analyst",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "question"
+            },
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "selectedAgents",
+              "type": "array"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b24b62ac-191c-4e60-b183-614eb84bfa30",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = $json.question || \"\";\n\nconst query = `\nMATCH (n)\nWHERE\n  n:Material\n  OR (\n    n:Actor AND (\n      toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"recycling\"\n      OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"recovery\"\n      OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"waste\"\n      OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"environment\"\n      OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"sustainability\"\n    )\n  )\n  OR any(k IN keys(n) WHERE \n    toLower(k) CONTAINS \"carbon\"\n    OR toLower(k) CONTAINS \"co2\"\n    OR toLower(k) CONTAINS \"emission\"\n    OR toLower(k) CONTAINS \"recycling\"\n    OR toLower(k) CONTAINS \"recycled\"\n    OR toLower(k) CONTAINS \"waste\"\n    OR toLower(k) CONTAINS \"environment\"\n    OR toLower(k) CONTAINS \"sustainability\"\n  )\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN\n  coalesce(\n    n.material_id,\n    n.actor_id,\n    n.unit_id,\n    n.process_id,\n    n.location_code,\n    n.id\n  ) AS item_id,\n  labels(n)[0] AS item_type,\n  coalesce(\n    n.material_name,\n    n.actor_name,\n    n.name,\n    n.process_name,\n    n.location_name,\n    n.serial_number,\n    n.id\n  ) AS item_name,\n  properties(n) AS properties,\n  type(r) AS relationship,\n  labels(connected) AS connected_labels,\n  coalesce(\n    connected.actor_name,\n    connected.name,\n    connected.unit_id,\n    connected.process_id,\n    connected.process_name,\n    connected.material_name,\n    connected.location_name,\n    connected.id\n  ) AS connected_entity\nLIMIT 100\n`;\n\nreturn [\n  {\n    json: {\n      agent: \"sustainability_analyst\",\n      domain: \"Sustainability Analyst\",\n      question,\n      query,\n      params: {},\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "cc9ada74-ab80-4d2e-873d-5c1a0e9cad2a",
+      "name": "Build Sustainability Query"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3001/api/query",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    query: $json.query,\n    params: $json.params || {}\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        848,
+        -96
+      ],
+      "id": "c824ab02-36af-4dfb-a54f-12478fd25a02",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $json.results || [];\n\nlet question = \"\";\ntry {\n  question = $(\"Build Sustainability Query\").first().json.question || \"\";\n} catch (e) {\n  question = \"\";\n}\n\nconst sustainabilityItems = rows.map((row) => ({\n  item_id: row.item_id || null,\n  item_type: row.item_type || null,\n  item_name: row.item_name || null,\n  properties: row.properties || {},\n  relationship: row.relationship || null,\n  connected_labels: row.connected_labels || [],\n  connected_entity: row.connected_entity || null,\n}));\n\nreturn [\n  {\n    json: {\n      agent: \"sustainability_analyst\",\n      domain: \"Sustainability Analyst\",\n      status: \"data_retrieved\",\n      question,\n      evidenceLabel: \"sustainabilityItems\",\n      evidenceData: sustainabilityItems,\n      rawResult: $json,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -96
+      ],
+      "id": "297c4f0d-c5d0-4de8-bb6d-9bf5849b2399",
+      "name": "Format Sustainability Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const agent = $json.agent || \"sustainability_analyst\";\nconst domain = $json.domain || \"Sustainability Analyst\";\nconst question = $json.question || \"\";\nconst evidenceLabel = $json.evidenceLabel || \"sustainabilityItems\";\nconst evidenceData = $json.evidenceData || [];\nconst rawResult = $json.rawResult || {};\n\nconst systemPrompt = `\nYou are a Sustainability Analyst Agent for a supply chain knowledge graph.\n\nYour job:\n- Analyze sustainability, material, carbon, emissions, recycling, and waste-related graph data.\n- Identify environmental impact patterns, high-carbon areas, recycling opportunities, and material dependencies.\n- Explain the business and ESG impact clearly.\n- Give practical sustainability recommendations.\n- Do not invent facts.\n- If graph data is limited or missing sustainability fields, clearly say that.\n\nReturn ONLY valid JSON.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nSustainability evidence:\n${JSON.stringify(evidenceData, null, 2)}\n\nRaw graph result:\n${JSON.stringify(rawResult, null, 2)}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"keyFindings\": [\"string\"],\n  \"sustainabilityInsights\": [\n    {\n      \"id\": \"string\",\n      \"type\": \"string\",\n      \"name\": \"string\",\n      \"impactArea\": \"carbon | emissions | recycling | waste | material_dependency | unknown\",\n      \"insight\": \"string\"\n    }\n  ],\n  \"environmentalConcerns\": [\n    {\n      \"concern\": \"string\",\n      \"evidence\": \"string\",\n      \"severity\": \"low | medium | high | unknown\"\n    }\n  ],\n  \"recommendations\": [\"string\"],\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      agent,\n      domain,\n      question,\n      evidenceLabel,\n      evidenceData,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.2,\n        max_tokens: 2048,\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        -96
+      ],
+      "id": "b76a761d-8eaa-49f6-945c-73d01866723a",
+      "name": "Build LLM Summary Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your-cluster-api-key-here"
+            },
+            {
+              "name": "Content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.llmPayload }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1440,
+        -96
+      ],
+      "id": "72a9b987-cd72-4104-9fcc-bd6c7b837e0b",
+      "name": "LLM Sustainability Summary",
+      "credentials": {
+        "openAiApi": {
+          "id": "YPxI5FcVO2XRCV4r",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let outputStr = \"\";\n\nif ($json.choices?.[0]?.message?.content) {\n  outputStr = $json.choices[0].message.content;\n} else if ($json.text) {\n  outputStr = $json.text;\n} else if ($json.response) {\n  outputStr = $json.response;\n} else {\n  outputStr = JSON.stringify($json);\n}\n\noutputStr = outputStr\n  .replace(/<think>[\\s\\S]*?<\\/think>/gi, \"\")\n  .replace(/^\\s*```json/i, \"\")\n  .replace(/^\\s*```/i, \"\")\n  .replace(/```\\s*$/i, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(outputStr);\n} catch (e) {\n  parsed = {\n    answer: outputStr || \"The sustainability analyst could not generate a summary.\",\n    keyFindings: [],\n    sustainabilityInsights: [],\n    environmentalConcerns: [],\n    recommendations: [],\n    confidence: \"low\",\n  };\n}\n\nlet context = {};\ntry {\n  context = $(\"Build LLM Summary Payload\").first().json;\n} catch (e) {\n  context = {};\n}\n\nreturn [\n  {\n    json: {\n      agent: \"sustainability_analyst\",\n      domain: \"Sustainability Analyst\",\n      status: \"completed\",\n      question: context.question || \"\",\n      answer: parsed.answer || \"\",\n      keyFindings: parsed.keyFindings || [],\n      sustainabilityInsights: parsed.sustainabilityInsights || [],\n      environmentalConcerns: parsed.environmentalConcerns || [],\n      recommendations: parsed.recommendations || [],\n      confidence: parsed.confidence || \"medium\",\n      evidence: {\n        sustainabilityItems: context.evidenceData || [],\n      },\n      rawLlmOutput: parsed,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        -96
+      ],
+      "id": "0a3980d5-ccc5-4bf2-87b8-2c9ca96fb7a4",
+      "name": "Parse Sustainability Summary"
+    },
+    {
+      "parameters": {
+        "jsCode": "const selectedAgents = $json.selectedAgents || [];\n\nconst shouldRun =\n  selectedAgents.includes(\"sustainability_analyst\") ||\n  selectedAgents.includes(\"all\");\n\nreturn [\n  {\n    json: {\n      ...$json,\n      shouldRun,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c8cbe0be-8003-4d13-99a6-fdf68ae8ad89",
+      "name": "Should Run Sustainability Analyst"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a7bfaf5d-0764-4e85-8757-a4ab100106f7",
+              "leftValue": "={{ $json.shouldRun }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b1264ab6-678a-4723-bbdb-935159c53e63",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      agent: \"sustainability_analyst\",\n      domain: \"Sustainability Analyst\",\n      status: \"skipped\",\n      question: $json.question || \"\",\n      answer: \"\",\n      keyFindings: [],\n      sustainabilityInsights: [],\n      environmentalConcerns: [],\n      recommendations: [],\n      confidence: \"not_applicable\",\n      evidence: {},\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        128
+      ],
+      "id": "6a14ec68-fdbe-40ec-9d2a-a69c58d35fb0",
+      "name": "Return Skipped Sustainability Analyst"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Should Run Sustainability Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Sustainability Query": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Format Sustainability Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Sustainability Result": {
+      "main": [
+        [
+          {
+            "node": "Build LLM Summary Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build LLM Summary Payload": {
+      "main": [
+        [
+          {
+            "node": "LLM Sustainability Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Sustainability Summary": {
+      "main": [
+        [
+          {
+            "node": "Parse Sustainability Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Run Sustainability Analyst": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Build Sustainability Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Skipped Sustainability Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ffd80b30-ca6d-43a3-8977-bbfe4c76a764",
+  "meta": {
+    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
+  },
+  "nodeGroups": [],
+  "id": "686Mgxmqt06FHz7D",
+  "tags": []
+}
