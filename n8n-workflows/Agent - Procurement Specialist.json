@@ -1,0 +1,314 @@
+{
+  "name": "Agent - Procurement Specialist",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "question"
+            },
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "selectedAgents",
+              "type": "array"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "c3a4e3f0-730f-462e-a169-bb0413f4da82",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = $json.question || \"\";\n\nconst query = `\nMATCH (a:Actor)\nWHERE \n  coalesce(a.is_canonical_actor, false) = true\n  AND (\n    toLower(coalesce(a.actor_role, \"\")) IN [\"supplier\", \"manufacturer\"]\n    OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"supplier\"\n    OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"materials\"\n    OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"manufacturing\"\n    OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"cable\"\n    OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"coating\"\n    OR EXISTS {\n      MATCH (a)-[:SUPPLIES]-()\n    }\n  )\nOPTIONAL MATCH (a)-[r]-(connected)\nRETURN \n  a.actor_id AS supplier_id,\n  coalesce(a.display_name, a.actor_name, a.name) AS supplier_name,\n  a.region AS region,\n  a.actor_origin AS actor_origin,\n  a.actor_role AS actor_role,\n  labels(connected) AS connected_labels,\n  coalesce(\n    connected.display_name,\n    connected.actor_name,\n    connected.name,\n    connected.unit_id,\n    connected.process_id,\n    connected.material_id,\n    connected.location_name,\n    connected.id\n  ) AS connected_entity,\n  type(r) AS relationship,\n  properties(connected) AS connected_properties\nORDER BY supplier_id\nLIMIT 100\n`;\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      domain: \"Procurement Specialist\",\n      question,\n      query,\n      params: {},\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        -112
+      ],
+      "id": "574c323a-2504-412e-9531-d967481028bf",
+      "name": "Build Procurement Query"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3001/api/query",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    query: $json.mcpArguments.query,\n    params: $json.mcpArguments.params || {}\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1424,
+        -112
+      ],
+      "id": "13952df3-1989-4a2a-9013-1072dff2e436",
+      "name": "Call MCP graph-query"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $json.results || [];\n\nlet question = \"\";\ntry {\n  question =\n    $(\"When Executed by Another Workflow\").first().json.question ||\n    $(\"Build Procurement Query\").first().json.question ||\n    \"\";\n} catch (e) {\n  question = \"\";\n}\n\nconst suppliers = rows.map((row) => ({\n  supplier_id: row.supplier_id || null,\n  supplier_name: row.supplier_name || null,\n  connected_labels: row.connected_labels || [],\n  connected_entity: row.connected_entity || null,\n  relationship: row.relationship || null,\n}));\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      status: \"data_retrieved\",\n      question,\n      summary: \"Procurement specialist retrieved supplier-related entities and relationships.\",\n      suppliers,\n      rawResult: $json,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        -112
+      ],
+      "id": "debecbc1-7ff4-4953-8e7b-617ae8c48420",
+      "name": "Format Procurement Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = $json.question || \"\";\nconst suppliers = $json.suppliers || [];\nconst rawResult = $json.rawResult || {};\n\nconst systemPrompt = `\nYou are a Procurement Specialist Agent for a supply chain knowledge graph.\n\nYour job:\n- Analyze supplier-related graph data.\n- Explain procurement relevance clearly.\n- Identify key supplier connections.\n- Highlight risks or gaps if visible.\n- Give practical next actions.\n\nDo not invent data. Only use the provided supplier data.\nIf the data is limited, clearly say that.\nReturn ONLY valid JSON.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nSupplier data:\n${JSON.stringify(suppliers, null, 2)}\n\nRaw query result:\n${JSON.stringify(rawResult, null, 2)}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"keyFindings\": [\"string\"],\n  \"supplierInsights\": [\n    {\n      \"supplier_id\": \"string\",\n      \"supplier_name\": \"string\",\n      \"insight\": \"string\"\n    }\n  ],\n  \"recommendations\": [\"string\"],\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      question,\n      suppliers,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.2,\n        max_tokens: 2048,\n      },\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        -112
+      ],
+      "id": "3cb71f9a-5277-46f5-af69-757cd948a269",
+      "name": "Build LLM Summary Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your-cluster-api-key-here"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.llmPayload }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2016,
+        -112
+      ],
+      "id": "4fd46321-a85a-4f25-97fe-39474ce13f14",
+      "name": "HTTP Request",
+      "credentials": {
+        "openAiApi": {
+          "id": "YPxI5FcVO2XRCV4r",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let outputStr = \"\";\n\nif ($json.choices?.[0]?.message?.content) {\n  outputStr = $json.choices[0].message.content;\n} else if ($json.text) {\n  outputStr = $json.text;\n} else if ($json.response) {\n  outputStr = $json.response;\n} else {\n  outputStr = JSON.stringify($json);\n}\n\n// Remove thinking tags and markdown fences if model adds them\noutputStr = outputStr\n  .replace(/<think>[\\s\\S]*?<\\/think>/gi, \"\")\n  .replace(/^\\s*```json/i, \"\")\n  .replace(/^\\s*```/i, \"\")\n  .replace(/```\\s*$/i, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(outputStr);\n} catch (e) {\n  parsed = {\n    answer: outputStr || \"The procurement specialist could not generate a summary.\",\n    keyFindings: [],\n    supplierInsights: [],\n    recommendations: [],\n    confidence: \"low\",\n  };\n}\n\nlet question = \"\";\nlet suppliers = [];\n\ntry {\n  question = $(\"Build LLM Summary Payload\").first().json.question || \"\";\n  suppliers = $(\"Build LLM Summary Payload\").first().json.suppliers || [];\n} catch (e) {}\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      status: \"completed\",\n      question,\n      answer: parsed.answer || \"\",\n      keyFindings: parsed.keyFindings || [],\n      supplierInsights: parsed.supplierInsights || [],\n      recommendations: parsed.recommendations || [],\n      confidence: parsed.confidence || \"medium\",\n      evidence: {\n        suppliers,\n      },\n      rawLlmOutput: parsed,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        -112
+      ],
+      "id": "81fb64d3-3363-4679-b4f8-b22c1789cf5b",
+      "name": "Parse LLM Summary"
+    },
+    {
+      "parameters": {
+        "jsCode": "const selectedAgents = $json.selectedAgents || [];\n\nconst shouldRun =\n  selectedAgents.includes(\"procurement_specialist\") ||\n  selectedAgents.includes(\"all\");\n\nreturn [\n  {\n    json: {\n      ...$json,\n      shouldRun,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "aff7bf03-f4ef-4e5c-9e00-10cdbe32bbda",
+      "name": "Should Run Procurement Specialist"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4382d970-2b83-465c-9c0c-3e453162f6b9",
+              "leftValue": "={{ $json.shouldRun }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        976,
+        0
+      ],
+      "id": "b429dac6-bb2e-439f-9fd6-14d3c7212e4b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      domain: \"Procurement Specialist\",\n      status: \"skipped\",\n      question: $json.question || \"\",\n      answer: \"\",\n      keyFindings: [],\n      recommendations: [],\n      confidence: \"not_applicable\",\n      evidence: {},\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        144
+      ],
+      "id": "875da61b-4f02-42be-a32f-2db9b32f6398",
+      "name": "Return Skipped Procurement Specialist"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Should Run Procurement Specialist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Procurement Query": {
+      "main": [
+        [
+          {
+            "node": "Call MCP graph-query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call MCP graph-query": {
+      "main": [
+        [
+          {
+            "node": "Format Procurement Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Procurement Result": {
+      "main": [
+        [
+          {
+            "node": "Build LLM Summary Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build LLM Summary Payload": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Run Procurement Specialist": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Build Procurement Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Skipped Procurement Specialist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3b80c9c2-c5ac-472d-aa30-41e15e0efb2c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
+  },
+  "nodeGroups": [],
+  "id": "XE16kijrzbXIFjhy",
+  "tags": []
+}
