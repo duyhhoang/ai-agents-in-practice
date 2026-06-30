@@ -1,0 +1,494 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "183b2fe3-9658-4f2b-b956-92c0a8d69338",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "path": "trigger-extraction",
+        "options": {}
+      },
+      "id": "webhook-trigger-uuid",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        432
+      ],
+      "webhookId": "trigger-extraction-webhook"
+    },
+    {
+      "parameters": {
+        "resource": "graphDb",
+        "cypherQuery": "CALL {\n  MATCH (f:ProcessedFile)\n  RETURN collect({name: f.name, hash: f.hash}) AS files\n}\nCALL {\n  MATCH (n) WHERE n.hash IS NOT NULL\n  RETURN collect(distinct n.hash) AS hashes\n}\nRETURN files AS existing_files, hashes AS existing_hashes"
+      },
+      "id": "b2d2abfc-e207-47fc-b3c0-3a182a849e18",
+      "name": "Fetch Ingested Entities",
+      "type": "n8n-nodes-neo4j.neo4j",
+      "typeVersion": 1,
+      "position": [
+        48,
+        352
+      ],
+      "credentials": {
+        "neo4jApi": {
+          "id": "Yi9tAMAJmHhdQ9Kw",
+          "name": "Neo4j account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/*",
+        "options": {}
+      },
+      "id": "b2ef3d31-e5d0-4eff-a471-b2a543da6dcb",
+      "name": "Read Data File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\nconst BATCH_SIZE = 5;\n\nfunction getHash(str) {\n  let hash = 0;\n  for (let i = 0; i < str.length; i++) {\n    const char = str.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return (hash >>> 0).toString(16);\n}\n\nconst existingFiles = new Map();\nconst existingRowHashes = new Set();\ntry {\n  const fetchNode = $('Fetch Ingested Entities').first()?.json || {};\n  const files = fetchNode.existing_files || [];\n  files.forEach(item => {\n    if (item && item.name) existingFiles.set(item.name, item.hash || '');\n  });\n  const hashes = fetchNode.existing_hashes || [];\n  hashes.forEach(h => {\n    if (h) existingRowHashes.add(h);\n  });\n} catch (e) {\n  console.warn('Could not read existing files or hashes:', e);\n}\n\nfunction parseCSV(text) {\n  const lines = text.split(/\\r?\\n/);\n  if (lines.length === 0) return [];\n  const headers = parseCSVLine(lines[0]);\n  const rows = [];\n  for (let i = 1; i < lines.length; i++) {\n    if (!lines[i].trim()) continue;\n    const values = parseCSVLine(lines[i]);\n    const row = {};\n    headers.forEach((header, idx) => { row[header] = values[idx] || ''; });\n    rows.push(row);\n  }\n  return rows;\n}\n\nfunction parseCSVLine(line) {\n  const result = [];\n  let current = '';\n  let inQuotes = false;\n  for (let i = 0; i < line.length; i++) {\n    const char = line[i];\n    if (char === '\"') { inQuotes = !inQuotes; }\n    else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; }\n    else { current += char; }\n  }\n  result.push(current.trim());\n  return result;\n}\n\nconst entityRules = `IMPORTANT ENTITY RESOLUTION RULES:\n1. CANONICAL IDs: Use these exact IDs for known actors: A1=Steel Supplier Alpha, A2=Plastic Materials Corp, A3=Asian Injection Molding, A4=Global Sea Freight, A5=Electronics Manufacturing, A6=Certified Cable Works, A7=Industrial Coating GmbH, A8=EuroCharge Assembly, A9=VDE Testing Services, A10=TransLogistics EU, A11=Civil Works Services, A12=Installation Partners, A13=EuroCharge Network, A14=Field Maintenance Pro, A15=European Recycling, A16=Materials Recovery Inc, A17=Waste Management EU\n2. LOCATIONS: LOC_GER=Germany, LOC_IND=India, LOC_VIE=Vietnam, LOC_SIN=Singapore, LOC_CZE=Czech Republic, LOC_POL=Poland, LOC_HUN=Hungary, LOC_BEL=Belgium, LOC_NET=Netherlands, LOC_FRA=France, LOC_AUT=Austria, LOC_SWI=Switzerland, LOC_ITA=Italy, LOC_SPA=Spain, LOC_EUR=Europe. Map cities to their country.\n3. PROCESS IDs: For Process entities, ALWAYS use the compound ID format <unit_id>_<process_id> (e.g., EVC-2024-0001_P01) as their canonical_id. Never use just 'P01' or 'P02' alone.\n4. NEW ENTITIES: If NOT in lists above, generate NEW IDs: Actors=A<n> (from A18), Locations=LOC_<3-LETTER>, ChargingStations=EVC-<year>-<n>, Materials=MAT_<n>\n5. ENTITY MERGING: Variations of same name (e.g. 'Germany' and 'DE') get SAME ID.\n6. PROPERTIES: Extract ALL relevant fields/attributes from the raw record and include them in the 'properties' dictionary of the entity or relationship (e.g. cost_eur, duration_days, start_date, completion_date, status, serial_number, product_variant, manufacture_date, country, distance_km, carbon_kg_co2_eq). Keep key names exactly as they appear in the raw records.\n\nEntity types: Actor, Location, ChargingStation, Process, Material, Risk, MaintenanceEvent, TestReport, IncidentReport, AuditFinding\nRelationship types: LOCATED_IN, EXECUTED_BY, UNDERGOES, SUPPLIES, USES_MATERIAL, TESTED_BY, MAINTAINED_BY, RELATED_TO, MITIGATES, CAUSED_BY, DETECTED_IN\n\nOUTPUT FORMAT (JSON):\nYou MUST output ONLY a valid JSON object with no markdown:\n{\n  \"entities\": [\n    { \"entity_type\": \"Actor\", \"canonical_id\": \"A1\", \"properties\": { \"name\": \"Steel Supplier Alpha\", \"country\": \"Germany\" } }\n  ],\n  \"relationships\": [\n    { \"from_type\": \"Actor\", \"from_id\": \"A1\", \"relationship_type\": \"LOCATED_IN\", \"to_type\": \"Location\", \"to_id\": \"LOC_GER\", \"properties\": {} }\n  ]\n}`;\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  if (!item.binary) continue;\n  \n  for (const [key, binaryData] of Object.entries(item.binary)) {\n    const fileName = binaryData.fileName || 'unknown';\n    \n    if (!/^\\d{2}_.*\\.(csv|txt|md)$/.test(fileName)) {\n      console.log(`Skipping non-data file: ${fileName}`);\n      continue;\n    }\n\n    const ext = fileName.split('.').pop().toLowerCase();\n    const buffer = await this.helpers.getBinaryDataBuffer(i, key);\n    const text = buffer.toString('utf-8');\n    const fileHash = getHash(text);\n    \n    // File-level cache check\n    if (existingFiles.has(fileName)) {\n      const storedFileHash = existingFiles.get(fileName);\n      if (!storedFileHash || storedFileHash === fileHash) {\n        console.log(`Skipping file ${fileName} (cache hit).`);\n        continue;\n      }\n    }\n\n    if (ext === 'csv') {\n      const allRows = parseCSV(text);\n      let newBatchesCount = 0;\n      \n      // BATCH rows into groups of BATCH_SIZE\n      for (let batchStart = 0; batchStart < allRows.length; batchStart += BATCH_SIZE) {\n        const batch = allRows.slice(batchStart, batchStart + BATCH_SIZE);\n        const batchTexts = batch.map((row, idx) => {\n          const rowText = Object.entries(row)\n            .filter(([k, v]) => v !== null && v !== undefined && v !== '')\n            .map(([k, v]) => `${k}: ${v}`)\n            .join('\\n');\n          return `--- Row ${batchStart + idx + 1} ---\\n${rowText}`;\n        });\n        \n        // Use the hash of the batch content to identify it uniquely\n        const batchHash = getHash(batchTexts.join('|||'));\n        \n        // Check if this batch is already ingested\n        if (existingRowHashes.has(batchHash)) {\n          console.log(`Skipping batch ${batchStart+1}-${batchStart+batch.length} of file ${fileName} (cache hit).`);\n          continue;\n        }\n        \n        newBatchesCount++;\n        const prompt = `Analyze these ${batch.length} supply chain records from file ${fileName} (rows ${batchStart+1}-${batchStart+batch.length}):\\n\\n${batchTexts.join('\\n\\n')}\\n\\n${entityRules}`;\n        \n        results.push({\n          json: {\n            fileName: fileName,\n            fileType: ext,\n            batchStart: batchStart + 1,\n            batchEnd: batchStart + batch.length,\n            batchSize: batch.length,\n            prompt: prompt,\n            rowHash: batchHash,\n            fileHash: fileHash\n          }\n        });\n      }\n      console.log(`File ${fileName}: ${allRows.length} total rows -> ${newBatchesCount} new/changed batches to process.`);\n    } else {\n      // Unstructured files: send as single item\n      const docHash = getHash(text);\n      if (existingRowHashes.has(docHash)) {\n        console.log(`Unstructured file ${fileName} already ingested. Skipping.`);\n        continue;\n      }\n      const prompt = `Analyze this supply chain unstructured document from file ${fileName}:\\n${text}\\n\\n${entityRules}`;\n      results.push({\n        json: {\n          fileName: fileName,\n          fileType: ext,\n          prompt: prompt,\n          rowHash: docHash,\n          fileHash: fileHash\n        }\n      });\n    }\n  }\n}\n\nconsole.log(`Total items to process: ${results.length}`);\nreturn results;"
+      },
+      "id": "565aa57d-ecf1-4efa-acd2-f8a8bdfbb462",
+      "name": "Extract File Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "loop-raw-items-uuid",
+      "name": "Loop Raw Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        720,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "graphDb",
+        "cypherQuery": "CALL { MATCH (a:Actor) RETURN collect({id: a.actor_id, name: a.actor_name}) AS actors }\nCALL { MATCH (l:Location) RETURN collect({code: l.location_code, name: l.location_name, country: l.country}) AS locations }\nCALL { MATCH (cs:ChargingStation) RETURN collect({id: cs.unit_id, model: cs.model}) AS stations }\nCALL { MATCH (m:Material) RETURN collect({id: m.material_id, name: m.material_name}) AS materials }\nRETURN actors AS db_actors, locations AS db_locations, stations AS db_stations, materials AS db_materials"
+      },
+      "id": "fetch-db-state-uuid",
+      "name": "Fetch DB State",
+      "type": "n8n-nodes-neo4j.neo4j",
+      "typeVersion": 1,
+      "position": [
+        944,
+        352
+      ],
+      "credentials": {
+        "neo4jApi": {
+          "id": "Yi9tAMAJmHhdQ9Kw",
+          "name": "Neo4j account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Authorization\": \"Bearer your-cluster-api-key-here\", \"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "llm-call-1-uuid",
+      "name": "LLM Call 1: Create Prompt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1392,
+        352
+      ],
+      "settings": {
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 10000
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Authorization\": \"Bearer your-cluster-api-key-here\", \"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "llm-call-2-uuid",
+      "name": "LLM Call 2: Extract Entities",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1840,
+        352
+      ],
+      "settings": {
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 10000
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst queries = [];\n\nfor (const item of items) {\n  let outputStr = item.json.text || '';\n  if (!outputStr && item.json.choices && item.json.choices[0] && item.json.choices[0].message) {\n    outputStr = item.json.choices[0].message.content || '';\n  }\n  \n  // Skip error/empty responses\n  if (!outputStr || outputStr.trim() === '') {\n    console.warn('Empty LLM response, skipping');\n    continue;\n  }\n  \n  // Strip thinking tags if present\n  outputStr = outputStr.replace(/<think>[\\s\\S]*?<\\/think>/gi, '').trim();\n  \n  // Clean markdown backticks\n  outputStr = outputStr.replace(/^\\s*```(json)?/mi, '').replace(/```\\s*$/m, '').trim();\n  \n  let output = {};\n  try {\n    output = JSON.parse(outputStr);\n  } catch(e) {\n    const jsonMatch = outputStr.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      try {\n        output = JSON.parse(jsonMatch[0]);\n      } catch(e2) {\n        console.warn('Failed to parse JSON output from LLM:', e2.message);\n        continue;\n      }\n    } else {\n      console.warn('No JSON found in LLM output');\n      continue;\n    }\n  }\n\n  const entities = output.entities || [];\n  const relationships = output.relationships || [];\n  \n  let fileName = 'unknown';\n  let rowHash = '';\n  let fileHash = '';\n  try {\n    const rawItem = $('Loop Raw Items').item.json;\n    fileName = rawItem.fileName || 'unknown';\n    rowHash = rawItem.rowHash || '';\n    fileHash = rawItem.fileHash || '';\n  } catch(e) {\n    console.warn('Could not read from Loop Raw Items:', e);\n  }\n\n  const clauses = [];\n  let varIdx = 0;\n\n  for (const entity of entities) {\n    const label = entity.entity_type;\n    const id = entity.canonical_id;\n    const props = entity.properties || {};\n    \n    if (!label || !id) continue;\n    \n    const v = `n${varIdx++}`;\n    const setParts = Object.entries(props)\n      .filter(([k, val]) => val !== null && val !== undefined && val !== '')\n      .map(([k, val]) => {\n        const safeKey = k.replace(/`/g, '\\\\`');\n        if (typeof val === 'number' || typeof val === 'boolean') {\n          return `${v}.\\`${safeKey}\\` = ${val}`;\n        }\n        const safeVal = String(val).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\n        return `${v}.\\`${safeKey}\\` = '${safeVal}'`;\n      });\n    setParts.push(`${v}.ingested_at = datetime('${new Date().toISOString()}')`);\n    setParts.push(`${v}.source_file = '${fileName}'`);\n    setParts.push(`${v}.hash = '${rowHash || fileHash}'`);\n    \n    const idField = label === 'Actor' ? 'actor_id' :\n                   label === 'Location' ? 'location_code' :\n                   label === 'ChargingStation' ? 'unit_id' :\n                   label === 'Process' ? 'process_id' :\n                   label === 'Material' ? 'material_id' : 'id';\n    \n    const safeId = String(id).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\n    clauses.push(`MERGE (${v}:${label} {${idField}: '${safeId}'}) SET ${setParts.join(', ')}`);\n  }\n\n  for (const rel of relationships) {\n    if (!rel.from_type || !rel.from_id || !rel.to_type || !rel.to_id || !rel.relationship_type) continue;\n    \n    const fromField = rel.from_type === 'Actor' ? 'actor_id' :\n                      rel.from_type === 'Location' ? 'location_code' :\n                      rel.from_type === 'ChargingStation' ? 'unit_id' :\n                      rel.from_type === 'Process' ? 'process_id' :\n                      rel.from_type === 'Material' ? 'material_id' : 'id';\n    const toField = rel.to_type === 'Actor' ? 'actor_id' :\n                    rel.to_type === 'Location' ? 'location_code' :\n                    rel.to_type === 'ChargingStation' ? 'unit_id' :\n                    rel.to_type === 'Process' ? 'process_id' :\n                    rel.to_type === 'Material' ? 'material_id' : 'id';\n    \n    const relProps = rel.properties || {};\n    const relSetParts = [];\n    const relVar = `r${varIdx++}`;\n    const fromVar = `a${varIdx++}`;\n    const toVar = `b${varIdx++}`;\n\n    Object.entries(relProps)\n      .filter(([k, val]) => val !== null && val !== undefined)\n      .forEach(([k, val]) => {\n        const safeKey = k.replace(/`/g, '\\\\`');\n        if (typeof val === 'number' || typeof val === 'boolean') {\n          relSetParts.push(`${relVar}.\\`${safeKey}\\` = ${val}`);\n        } else {\n          const safeVal = String(val).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\n          relSetParts.push(`${relVar}.\\`${safeKey}\\` = '${safeVal}'`);\n        }\n      });\n    relSetParts.push(`${relVar}.ingested_at = datetime('${new Date().toISOString()}')`);\n    relSetParts.push(`${relVar}.source_file = '${fileName}'`);\n    \n    const setClause = relSetParts.length > 0 ? ' SET ' + relSetParts.join(', ') : '';\n    const safeFromId = String(rel.from_id).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\n    const safeToId = String(rel.to_id).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\n    \n    clauses.push(`WITH 1 AS dummy MATCH (${fromVar}:${rel.from_type} {${fromField}: '${safeFromId}'}) MATCH (${toVar}:${rel.to_type} {${toField}: '${safeToId}'}) MERGE (${fromVar})-[${relVar}:${rel.relationship_type}]->(${toVar})${setClause}`);\n  }\n\n  if (clauses.length > 0) {\n    const fullQuery = clauses.join('\\n') + '\\nRETURN 1 AS ok';\n    queries.push({ json: { queryType: 'batch', cypher: fullQuery } });\n  }\n}\n\nif (queries.length === 0) {\n  queries.push({ json: { queryType: 'noop', cypher: 'RETURN 1 AS ok' } });\n}\n\nreturn queries;"
+      },
+      "id": "aa9a85a4-c81b-4613-81fe-6a2dd39e0904",
+      "name": "Build Cypher Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "graphDb",
+        "cypherQuery": "={{ $json.cypher }}"
+      },
+      "id": "45700a87-eca1-456d-9b64-9369f1359e1d",
+      "name": "Execute in Neo4j",
+      "type": "n8n-nodes-neo4j.neo4j",
+      "typeVersion": 1,
+      "position": [
+        2288,
+        352
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "neo4jApi": {
+          "id": "Yi9tAMAJmHhdQ9Kw",
+          "name": "Neo4j account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { status: \"success\" } }];"
+      },
+      "id": "merge-results-uuid",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2512,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const loopItems = $('Loop Raw Items').all();\nconst llm1Items = $('LLM Call 1: Create Prompt').all();\nconst llm2Items = $('LLM Call 2: Extract Entities').all();\n\nconst failedFiles = new Set();\n\n// Check LLM 1 errors\nfor (let i = 0; i < llm1Items.length; i++) {\n  const item = llm1Items[i];\n  if (item.json.error) {\n    const loopJson = loopItems[i]?.json || {};\n    if (loopJson.fileName) failedFiles.add(loopJson.fileName);\n  }\n}\n\n// Check LLM 2 errors\nfor (let i = 0; i < llm2Items.length; i++) {\n  const item = llm2Items[i];\n  if (item.json.error || !item.json.choices || !item.json.choices[0] || !item.json.choices[0].message || !item.json.choices[0].message.content) {\n    const loopJson = loopItems[i]?.json || {};\n    if (loopJson.fileName) failedFiles.add(loopJson.fileName);\n  }\n}\n\nconst items = $('Extract File Content').all();\nconst uniqueFiles = [];\nconst seen = new Set();\nfor (const item of items) {\n  const json = item.json;\n  if (json.fileName && json.fileHash && !seen.has(json.fileName) && !failedFiles.has(json.fileName)) {\n    seen.add(json.fileName);\n    uniqueFiles.push({ name: json.fileName, hash: json.fileHash });\n  }\n}\nif (uniqueFiles.length === 0) {\n  return [{ json: { query: \"RETURN 1 AS ok\" } }];\n}\nconst mapStrings = uniqueFiles.map(f => `{name: '${f.name.replace(/'/g, \"\\\\'\")}', hash: '${f.hash}'}`).join(\", \");\nconst query = `UNWIND [${mapStrings}] AS f MERGE (file:ProcessedFile {name: f.name}) SET file.hash = f.hash, file.ingested_at = datetime() RETURN file.name`;\nreturn [{ json: { query } }];"
+      },
+      "id": "build-file-cache-queries-uuid",
+      "name": "Build File Cache Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "graphDb",
+        "cypherQuery": "={{ $json.query }}"
+      },
+      "id": "update-file-cache-status-uuid",
+      "name": "Update File Cache Status",
+      "type": "n8n-nodes-neo4j.neo4j",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        160
+      ],
+      "credentials": {
+        "neo4jApi": {
+          "id": "Yi9tAMAJmHhdQ9Kw",
+          "name": "Neo4j account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "status",
+              "name": "status",
+              "value": "LLM entity extraction completed",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "419fc448-3d8f-4285-9670-a90ec9427065",
+      "name": "Import Complete",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1392,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const prompt = $('Loop Raw Items').item.json.prompt || \"\";\nconst db_actors = $json.db_actors || [];\nconst db_locations = $json.db_locations || [];\nconst db_stations = $json.db_stations || [];\nconst db_materials = $json.db_materials || [];\n\nconst payload = {\n  model: \"google/gemma-4-31B-it\",\n  messages: [\n    {\n      role: \"system\",\n      content: \"You are a database entity resolution assistant for a supply chain knowledge graph. Your task is to analyze raw input records and the existing database entities, and generate mapping instructions for an extraction LLM. Decide which names match existing entities and must map to those IDs, and which require generating new IDs according to the rules (Actors=A<n>, Locations=LOC_<3-LETTER>, ChargingStations=EVC-<year>-<n>, Materials=MAT_<n>, Processes=<unit_id>_<process_id>). Output ONLY a bulleted list of mapping rules, no markdown code block wrapper, no conversational text.\"\n    },\n    {\n      role: \"user\",\n      content: `Raw Record:\\n${prompt}\\n\\nExisting DB Entities:\\n- Actors: ${JSON.stringify(db_actors)}\\n- Locations: ${JSON.stringify(db_locations)}\\n- Stations: ${JSON.stringify(db_stations)}\\n- Materials: ${JSON.stringify(db_materials)}`\n    }\n  ],\n  temperature: 0.1,\n  max_tokens: 4096\n};\n\nreturn [{ json: payload }];"
+      },
+      "id": "prepare-llm-1-payload-uuid",
+      "name": "Prepare LLM 1 Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const llm1_output = $json.choices && $json.choices[0] && $json.choices[0].message && $json.choices[0].message.content ? $json.choices[0].message.content : \"\";\nconst prompt = $('Loop Raw Items').item.json.prompt || \"\";\n\nconst payload = {\n  model: \"google/gemma-4-31B-it\",\n  messages: [\n    {\n      role: \"system\",\n      content: \"You are a precise supply chain knowledge graph entity extractor. Extract ALL entities and relationships from the input. Use the provided Mapping Instructions to resolve canonical IDs. Extract all attributes (e.g. cost_eur, duration_days, start_date, completion_date, status, serial_number, product_variant, manufacture_date, country, distance_km, carbon_kg_co2_eq) in the properties dictionary using the raw record field names as keys. Output ONLY valid JSON conforming strictly to the schema (no markdown backticks, no thinking tags). Schema: {\\\"entities\\\": [{\\\"entity_type\\\": \\\"Actor\\\"|\\\"Location\\\"|\\\"ChargingStation\\\"|\\\"Process\\\"|\\\"Material\\\"|\\\"Risk\\\"|\\\"MaintenanceEvent\\\"|\\\"TestReport\\\"|\\\"IncidentReport\\\"|\\\"AuditFinding\\\", \\\"canonical_id\\\": \\\"ID\\\", \\\"properties\\\": {\\\"name\\\": \\\"...\\\", ...}}], \\\"relationships\\\": [{\\\"from_type\\\": \\\"...\\\", \\\"from_id\\\": \\\"...\\\", \\\"relationship_type\\\": \\\"LOCATED_IN\\\"|\\\"EXECUTED_BY\\\"|\\\"UNDERGOES\\\"|\\\"SUPPLIES\\\"|\\\"USES_MATERIAL\\\"|\\\"TESTED_BY\\\"|\\\"MAINTAINED_BY\\\"|\\\"RELATED_TO\\\", \\\"to_type\\\": \\\"...\\\", \\\"to_id\\\": \\\"...\\\", \\\"properties\\\": {}}]}\"\n    },\n    {\n      role: \"user\",\n      content: `Mapping Instructions:\\n${llm1_output}\\n\\nRaw Record to Extract:\\n${prompt}`\n    }\n  ],\n  temperature: 0.1,\n  max_tokens: 8192\n};\n\nreturn [{ json: payload }];"
+      },
+      "id": "prepare-llm-2-payload-uuid",
+      "name": "Prepare LLM 2 Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        352
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Fetch Ingested Entities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Ingested Entities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Ingested Entities": {
+      "main": [
+        [
+          {
+            "node": "Read Data File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Data File": {
+      "main": [
+        [
+          {
+            "node": "Extract File Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract File Content": {
+      "main": [
+        [
+          {
+            "node": "Loop Raw Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Raw Items": {
+      "main": [
+        [
+          {
+            "node": "Build File Cache Queries",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch DB State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch DB State": {
+      "main": [
+        [
+          {
+            "node": "Prepare LLM 1 Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Call 1: Create Prompt": {
+      "main": [
+        [
+          {
+            "node": "Prepare LLM 2 Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Call 2: Extract Entities": {
+      "main": [
+        [
+          {
+            "node": "Build Cypher Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Cypher Queries": {
+      "main": [
+        [
+          {
+            "node": "Execute in Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute in Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Results": {
+      "main": [
+        [
+          {
+            "node": "Loop Raw Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build File Cache Queries": {
+      "main": [
+        [
+          {
+            "node": "Update File Cache Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update File Cache Status": {
+      "main": [
+        [
+          {
+            "node": "Import Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare LLM 1 Payload": {
+      "main": [
+        [
+          {
+            "node": "LLM Call 1: Create Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare LLM 2 Payload": {
+      "main": [
+        [
+          {
+            "node": "LLM Call 2: Extract Entities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "795ff76ade5e734a99f2adb3c586c3485c1b0441404936a3336efd3be3e316c0"
+  }
+}
