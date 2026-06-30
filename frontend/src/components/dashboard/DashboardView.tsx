@@ -9,7 +9,9 @@ import {
   Clock, 
   DollarSign, 
   CheckCircle2, 
-  AlertCircle 
+  AlertCircle,
+  HelpCircle,
+  X
 } from "lucide-react";
 
 type Stat = {
@@ -36,6 +38,7 @@ export default function DashboardView() {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [lifecycle, setLifecycle] = useState<ProcessStep[]>([]);
   const [loadingLifecycle, setLoadingLifecycle] = useState(false);
+  const [selectedStep, setSelectedStep] = useState<ProcessStep | null>(null);
 
   // Fetch db stats dynamically
   useEffect(() => {
@@ -105,6 +108,7 @@ export default function DashboardView() {
 
     async function fetchLifecycle() {
       setLoadingLifecycle(true);
+      setSelectedStep(null);
       try {
         const query = `
           MATCH (cs:ChargingStation {unit_id: $unitId})-[:UNDERGOES]->(p:Process)
@@ -140,142 +144,214 @@ export default function DashboardView() {
   }, [selectedUnit]);
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-8">
+    <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <div className="text-xs uppercase tracking-[0.4em] text-cyan-300">Operational Overview</div>
-        <h1 className="text-4xl font-black tracking-widest text-white mt-1">LIFECYCLE DASHBOARD</h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-[#0065bd] font-bold">Operational Overview</div>
+          <h1 className="text-2xl font-extrabold text-slate-900 mt-1">LIFECYCLE DASHBOARD</h1>
+        </div>
+        <div className="group relative flex items-center gap-1.5 text-slate-400 hover:text-slate-600 cursor-pointer">
+          <HelpCircle size={16} />
+          <span className="text-xs">Dashboard Help</span>
+          <div className="pointer-events-none absolute right-0 top-6 z-50 w-72 rounded-lg border border-slate-200 bg-white p-3 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-slate-600 leading-normal">
+            This dashboard outlines high-level metrics of the active supply chain network. Use the dropdown to choose a Charging Station and inspect its sequential processes. Click on any step to open the inspector panel.
+          </div>
+        </div>
       </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
-          icon={<Activity className="text-emerald-400" size={20} />}
+          icon={<Activity className="text-[#0065bd]" size={18} />}
           label="Charging Stations"
           value={loadingStats ? "..." : stats.stations.toString()}
-          glowColor="green"
         />
         <StatCard
-          icon={<Layers className="text-cyan-400" size={20} />}
+          icon={<Layers className="text-emerald-600" size={18} />}
           label="Processes Logged"
           value={loadingStats ? "..." : stats.processes.toString()}
-          glowColor="blue"
         />
         <StatCard
-          icon={<Users className="text-purple-400" size={20} />}
+          icon={<Users className="text-purple-600" size={18} />}
           label="Supply Chain Actors"
           value={loadingStats ? "..." : stats.actors.toString()}
-          glowColor="purple"
         />
         <StatCard
-          icon={<MapPin className="text-amber-400" size={20} />}
+          icon={<MapPin className="text-amber-600" size={18} />}
           label="Global Locations"
           value={loadingStats ? "..." : stats.locations.toString()}
-          glowColor="yellow"
         />
       </div>
 
       {/* Tracer & Timeline Section */}
-      <div className="rounded-3xl border border-cyan-400/20 bg-slate-950/70 p-6 backdrop-blur-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-cyan-400/10 pb-6 mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-wider flex items-center gap-2">
-              <Activity className="text-cyan-400 animate-pulse" size={22} />
-              End-to-End Unit Lifecycle Tracer
-            </h2>
-            <p className="text-xs text-cyan-100/60 mt-1">
-              Select a physical EV charging unit to retrieve its structured processes path.
-            </p>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+        
+        {/* Left Side: Timeline */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5 mb-5">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                <Activity className="text-[#0065bd]" size={18} />
+                End-to-End Unit Lifecycle Tracer
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Select a physical EV charging unit to retrieve its structured processes path. Click any card to inspect.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Select Unit:</span>
+              <select
+                value={selectedUnit}
+                onChange={(e) => setSelectedUnit(e.target.value)}
+                className="h-9 bg-white border border-slate-200 rounded-lg px-3 text-xs font-mono text-slate-800 outline-none focus:border-[#0065bd] focus:ring-1 focus:ring-[#0065bd] transition"
+              >
+                {units.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {unit}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-cyan-300 uppercase tracking-widest">Select Unit:</span>
-            <select
-              value={selectedUnit}
-              onChange={(e) => setSelectedUnit(e.target.value)}
-              className="h-10 bg-black/60 border border-cyan-400/30 rounded-xl px-4 text-xs font-mono text-cyan-50 outline-none focus:border-cyan-300 transition"
-            >
-              {units.map((unit) => (
-                <option key={unit} value={unit}>
-                  {unit}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+          {/* Timeline Body */}
+          {loadingLifecycle ? (
+            <div className="h-64 flex items-center justify-center text-slate-400 font-mono text-xs">
+              Querying Graph Databases...
+            </div>
+          ) : lifecycle.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-slate-400 font-mono text-xs">
+              No processes logged for this unit.
+            </div>
+          ) : (
+            <div className="relative pl-6 border-l border-slate-200 space-y-4 ml-4 py-1">
+              {lifecycle.map((step) => {
+                const isCompleted = step.status?.toLowerCase() === "completed";
+                const isSelected = selectedStep?.process_id === step.process_id;
 
-        {/* Timeline Body */}
-        {loadingLifecycle ? (
-          <div className="h-64 flex items-center justify-center text-cyan-100/50 font-mono text-xs">
-            Querying Graph Databases...
-          </div>
-        ) : lifecycle.length === 0 ? (
-          <div className="h-64 flex items-center justify-center text-cyan-100/50 font-mono text-xs">
-            No processes logged for this unit.
-          </div>
-        ) : (
-          <div className="relative pl-6 sm:pl-8 border-l border-cyan-400/20 space-y-6 ml-4 sm:ml-6 py-2">
-            {lifecycle.map((step, idx) => {
-              const isCompleted = step.status?.toLowerCase() === "completed";
-              return (
-                <div key={step.process_id} className="relative">
-                  {/* Circle Indicator */}
-                  <span className={`absolute -left-[31px] sm:-left-[39px] top-1.5 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full border bg-black shadow-[0_0_8px_rgba(34,211,238,0.15)] ${
-                    isCompleted ? "border-emerald-400 text-emerald-400" : "border-amber-400 text-amber-400"
-                  }`}>
-                    <span className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${
-                      isCompleted ? "bg-emerald-500" : "bg-amber-500"
-                    }`} />
-                  </span>
+                return (
+                  <div key={step.process_id} className="relative">
+                    {/* Circle Indicator */}
+                    <span className={`absolute -left-[31px] top-3 flex h-4 w-4 items-center justify-center rounded-full border bg-white shadow-sm transition-all duration-200 ${
+                      isCompleted ? "border-emerald-500" : "border-amber-500"
+                    }`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${
+                        isCompleted ? "bg-emerald-500" : "bg-amber-500"
+                      }`} />
+                    </span>
 
-                  {/* Step Card */}
-                  <div className="rounded-2xl border border-cyan-400/10 bg-slate-900/30 p-4 hover:border-cyan-400/30 hover:bg-slate-900/60 transition duration-300">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-cyan-400/5 pb-2 mb-3">
-                      <div>
-                        <span className="text-[10px] font-mono font-bold text-cyan-300 uppercase tracking-widest">{step.process_id}</span>
-                        <h4 className="text-sm font-bold text-white tracking-wide mt-0.5">{step.process_name}</h4>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                          isCompleted ? "bg-emerald-950/50 text-emerald-400 border border-emerald-400/30" : "bg-amber-950/50 text-amber-400 border border-amber-400/30"
-                        }`}>
-                          {step.status || "UNKNOWN"}
-                        </span>
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-950/50 text-slate-300 border border-slate-700/50 uppercase tracking-wider">
-                          {step.phase || "UNKNOWN"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
-                      <div>
-                        <span className="text-[10px] text-cyan-100/40 uppercase tracking-wider block">Duration</span>
-                        <div className="flex items-center gap-1.5 mt-1 text-cyan-100 font-bold">
-                          <Clock size={12} className="text-cyan-400" />
-                          <span>{step.duration} days</span>
+                    {/* Step Card */}
+                    <div 
+                      onClick={() => setSelectedStep(step)}
+                      className={`cursor-pointer rounded-xl border p-4 transition duration-200 text-left ${
+                        isSelected 
+                          ? "border-[#0065bd] bg-[#0065bd]/5 shadow-sm" 
+                          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2 mb-2">
+                        <div>
+                          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">{step.process_id}</span>
+                          <h4 className="text-sm font-bold text-slate-800 tracking-tight mt-0.5">{step.process_name}</h4>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            isCompleted ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-amber-50 text-amber-700 border border-amber-100"
+                          }`}>
+                            {step.status || "UNKNOWN"}
+                          </span>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wider">
+                            {step.phase || "UNKNOWN"}
+                          </span>
                         </div>
                       </div>
-                      <div>
-                        <span className="text-[10px] text-cyan-100/40 uppercase tracking-wider block">Cost</span>
-                        <div className="flex items-center gap-1.5 mt-1 text-cyan-100 font-bold">
-                          <DollarSign size={12} className="text-cyan-400" />
-                          <span>{step.cost?.toLocaleString() || 0} EUR</span>
+
+                      <div className="grid grid-cols-3 gap-4 text-xs font-mono text-slate-600">
+                        <div>
+                          <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Duration</span>
+                          <span className="font-semibold text-slate-700">{step.duration} days</span>
                         </div>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-[10px] text-cyan-100/40 uppercase tracking-wider block">Executed By</span>
-                        <div className="flex items-center gap-1.5 mt-1 text-cyan-100 font-bold">
-                          <Users size={12} className="text-cyan-400" />
-                          <span className="truncate">{step.actor || "Internal Resources / Unassigned"}</span>
+                        <div>
+                          <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Cost</span>
+                          <span className="font-semibold text-slate-700">{step.cost?.toLocaleString() || 0} EUR</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Actor</span>
+                          <span className="font-semibold text-slate-700 truncate block">{step.actor || "Unassigned"}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Right Side: Step Details Inspector */}
+        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col h-fit">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+              Process Detail Inspector
+            </h3>
+            {selectedStep && (
+              <button 
+                onClick={() => setSelectedStep(null)}
+                className="text-slate-400 hover:text-slate-600 p-0.5 rounded-lg hover:bg-slate-100 transition"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
-        )}
+
+          {selectedStep ? (
+            <div className="space-y-4">
+              <div>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 uppercase tracking-wider">
+                  {selectedStep.phase || "Phase Unassigned"}
+                </span>
+                <h4 className="text-md font-bold text-slate-900 mt-2">{selectedStep.process_name}</h4>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">ID: {selectedStep.process_id}</p>
+              </div>
+
+              <div className="space-y-2 border-t border-slate-100 pt-3 text-xs">
+                <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono">
+                  <span className="text-slate-400">Status</span>
+                  <span className={`font-semibold ${selectedStep.status?.toLowerCase() === "completed" ? "text-emerald-600" : "text-amber-600"}`}>
+                    {selectedStep.status || "Unknown"}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono">
+                  <span className="text-slate-400">Duration</span>
+                  <span className="font-semibold text-slate-800">{selectedStep.duration} days</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono">
+                  <span className="text-slate-400">Operational Cost</span>
+                  <span className="font-semibold text-slate-800">{selectedStep.cost?.toLocaleString() || 0} EUR</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono">
+                  <span className="text-slate-400">Assigned Actor</span>
+                  <span className="font-semibold text-slate-800">{selectedStep.actor || "Internal Resources"}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono">
+                  <span className="text-slate-400">Target Unit</span>
+                  <span className="font-semibold text-slate-800">{selectedUnit}</span>
+                </div>
+              </div>
+
+              <div className="mt-2 rounded-xl bg-slate-50 border border-slate-100 p-3 text-xs text-slate-500 leading-normal">
+                <div className="font-bold text-slate-700 text-[10px] uppercase tracking-wider mb-1">Knowledge Notes</div>
+                This step was parsed from standard audit logs. S.C.A.L.E.S. automatically estimates bottlenecks and risk factors based on these duration and cost benchmarks.
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-10 px-4 text-slate-400 text-xs font-mono">
+              Click any process node or card on the left to inspect its detailed parameters and logs.
+            </div>
+          )}
+        </aside>
       </div>
     </div>
   );
@@ -284,30 +360,21 @@ export default function DashboardView() {
 function StatCard({
   icon,
   label,
-  value,
-  glowColor
+  value
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
-  glowColor: "green" | "blue" | "purple" | "yellow";
 }) {
-  const glows = {
-    green: "hover:border-emerald-400/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]",
-    blue: "hover:border-cyan-400/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)]",
-    purple: "hover:border-purple-400/50 hover:shadow-[0_0_20px_rgba(167,139,250,0.15)]",
-    yellow: "hover:border-amber-400/50 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]"
-  };
-
   return (
-    <div className={`rounded-3xl border border-cyan-400/10 bg-slate-950/60 p-5 backdrop-blur-xl transition-all duration-300 ${glows[glowColor]}`}>
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-100/50">{label}</span>
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/40 border border-cyan-400/5">
+        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{label}</span>
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 border border-slate-100">
           {icon}
         </div>
       </div>
-      <div className="mt-3 text-3xl font-black text-white">{value}</div>
+      <div className="mt-2 text-2xl font-bold text-slate-900">{value}</div>
     </div>
   );
 }
