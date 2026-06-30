@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
 
     const message = body.message || body.question || "";
     const sessionId = body.sessionId || "scales-command-session";
+    const reasoning = (body as any).reasoning || "low";
+    const ragLimit = (body as any).ragLimit || 3;
 
     if (!message.trim()) {
       return NextResponse.json(
@@ -35,6 +37,8 @@ export async function POST(request: NextRequest) {
         message: message.trim(),
         question: message.trim(),
         sessionId,
+        reasoning,
+        ragLimit
       }),
     });
 

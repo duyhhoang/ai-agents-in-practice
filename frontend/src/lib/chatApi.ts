@@ -26,6 +26,23 @@ export type ChatResponse = {
     nodes: EvidenceGraphNode[];
     edges: EvidenceGraphEdge[];
   };
+  evidenceTrace?: {
+    toolsUsed?: {
+      id: string;
+      name: string;
+      status: string;
+      inputSummary?: string;
+      outputSummary?: string;
+    }[];
+    cypherQueries?: {
+      query: string;
+    }[];
+    sourceChunks?: {
+      id: string;
+      documentName: string;
+      text: string;
+    }[];
+  };
   specialistSummary?: unknown[];
   specialistResults?: unknown[];
   question?: string;
@@ -42,6 +59,13 @@ export async function sendChatMessage(
     throw new Error("Message cannot be empty.");
   }
 
+  let reasoning = "low";
+  let ragLimit = 3;
+  if (typeof window !== "undefined") {
+    reasoning = window.localStorage.getItem("scales_reasoning_level") || "low";
+    ragLimit = Number(window.localStorage.getItem("scales_rag_limit")) || 3;
+  }
+
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: {
@@ -50,6 +74,8 @@ export async function sendChatMessage(
     body: JSON.stringify({
       message: message.trim(),
       sessionId,
+      reasoning,
+      ragLimit
     }),
   });
 
