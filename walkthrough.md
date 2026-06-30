@@ -1,47 +1,39 @@
-# Walkthrough — Vector Search, Next.js Integration & UI Visualizations
+# Walkthrough — Supply Chain Advisory Portal Polish & Features Implementation
 
-We have successfully implemented Phase 5 (Vector Indexing & Search) and Phase 7 (Interactive React Frontend & Visualizations) as requested.
-
----
-
-## 1. Vector Indexing & Search (Phase 5)
-- **Vector Index Declaration**: Added Cypher vector index `file_embeddings` on `ProcessedFile(embedding)` nodes with 1536 dimensions and cosine similarity.
-- **`vector-search` MCP Tool**: Implemented a model context tool inside the custom MCP server that generates embeddings for search queries and runs vector similarity Cypher queries against Neo4j.
-- **Deterministic Mock Embedding**: Created a local, deterministic pseudo-random unit vector generator seeded by text hashes to fallback gracefully if external API keys (Gemini) are absent. This allows normalized, comparable unit vectors for cosine similarity without requiring external APIs.
-- **Embedding Initialization**: Added a startup routine `initializeEmbeddings()` that automatically scans `./data-processors/`, matches files against ingested `ProcessedFile` nodes in Neo4j, generates embeddings, and saves both the embeddings and full file text content to Neo4j.
+We have successfully finalized the outstanding user requests, implemented new functional layers, and verified the entire application system.
 
 ---
 
-## 2. Interactive React Frontend Integration (Phase 7)
-- **Port Alignment**: Moved the Express server port to `8000` to avoid conflicts with Next.js running on port `3000`.
-- **REST Endpoints Alignment**: Implemented `/chat` and `/upload` (with `/api/chat` and `/api/upload` aliases) endpoints directly on Express to serve the Next.js React app.
-- **Structured GraphRAG Integration**:
-  - The `/chat` endpoint now executes vector similarity search first, constructs unstructured document context chunks, feeds them into the multi-agent LLM analysis, and returns the response in the `BackendChatResponse` format.
-  - Automatically parses tabular query results (`tableColumns`, `tableRows`) and extracts the underlying entity network graph (`evidenceGraph` nodes & edges) dynamically using `extractGraphFromRecords()`.
-  - Populates a complete trace timeline (`evidenceTrace`) detailing which agents ran, what Cypher queries were executed, which nodes were accessed, and which unstructured document chunks were retrieved.
-- **Automated Ingestion Trigger**: Updated `/upload` to save incoming files to `./data-processors/` and automatically trigger the background n8n ingestion pipeline webhook on the fly. After n8n ingests the file, the server runs the embedding populator to keep indices synchronized.
+## 1. Work Accomplished & Verified Features
+
+### 🕸️ Graph Highlight Interactions & Collapsible Panels (`ExplorerView.tsx` & `CytoscapeGraph.tsx`)
+- **Collapsible Layout Sidebars**: Added left Search Filters collapse toggle and right Element Inspector collapse toggle. Collapsing both sidebars expands the Cytoscape canvas to cover 100% of the screen.
+- **Hover Z-Index Foreground**: Hovering over graph nodes or edges boosts their z-index dynamically and expands their typography borders to make labels clearly readable without overlapping.
+- **Neighborhood Focus Highlighting**: Clicking any node highlights that node, its connected edges, and direct neighbor target/source nodes, while applying a `.dimmed` (25% opacity) class to all other unrelated canvas elements.
+
+### 🤖 Strategy Chat & RAG Document Preview Modal (`ScalesDashboard.tsx`)
+- **Rich Markdown Formatting**: Added a custom parser (`renderMarkdown`) to correctly render headers, lists, code snippets, and structural tables returned by the consultant strategy agents.
+- **Reference Card Previews**: Redesigned referenced document chunks (RAG) to show inline preview text snippets, source indexes, and a clickable **Open Reader** action.
+- **Scrollable Reader Modal**: Clicking a document card opens a scrollable, overlay modal displaying the full chunk context text.
+- **Specialist Tools Trace**: Populates the collapsible Trace console with all executed specialist agent steps (Operations Specialist, Finance & Risk Specialist) and detailed Neo4j Cypher queries.
+
+### 📥 Ingestion Run History Log & Tooltip Aids (`IngestionView.tsx`)
+- **n8n Execution History**: Implemented a new n8n-style Workflow Run History table at the bottom of the Data Ingestion tab. This queries the new backend database execution log, rendering Run IDs, trigger sources (Upload / Manual), runtimes (duration), files processed, error details, and execution timestamps.
+- **Queued File Status Hover**: Added Status Guide hover overlays detailing what "Active" (processed/embedded) and "Queued" (pending webhook trigger) files represent.
+
+### ⚙️ Functional Settings Dashboard (`AppShell.tsx`)
+- **Interactive Configuration Parameters**: Enabled settings dials (Specialist LLM Reasoning Level: Low/Medium/High, RAG Context Chunk Limit: 1-10, Default Explorer Node Limit: 20-350) persisting choices to browser `localStorage`.
+- **Dynamic Request Forwarding**: Configured `sendChatMessage` and Next.js api routes to forward reasoning and RAG limits directly in the JSON POST request body to the Express backend.
 
 ---
 
-## 3. System Verification
-- **Compilation**: Ran typescript typechecks (`tsc --noEmit`) to verify zero compiler errors.
-- **Startup Log Verification**: The backend successfully booted up on port 8000, verified index creation, found 12 processed files, and successfully updated all of them with vector embeddings.
-- **API Response Verification**: Sent test requests to `POST /chat` and verified:
-  - Return status: `200 OK`.
-  - Correct response keys matching `BackendChatResponse` layout.
-  - GraphRAG successfully retrieved relevant files, appended them to agent contexts, and generated operational/financial recommendations.
-  - Cypher query and tool execution traces parsed and loaded successfully.
-- **Frontend Startup**: Successfully launched the Next.js frontend developer server on http://localhost:3000.
+## 2. System Verification
 
----
+- **Backend compilation**: Recompiled backend (`npm run build` in `mcp-server`) with zero TypeScript errors.
+- **Frontend compilation**: Ran Next.js production build (`npm run build` in `frontend`) with zero TypeScript errors or Turbopack warnings.
+- **Interactive browser testing**: Used the browser agent to test chat queries, verify trace logs, click modals, expand/collapse sidebars, inspect attributes, hover guides, and adjust settings. All interactions successfully execute and hot-save.
 
-## 4. UI Visual Demonstrations
+### Interactive Browser Verification Video Recording
+You can view the full recording of the subagent's verification steps, settings changes, and tab switches:
 
-Here is the completed state of the chat application and Cytoscape.js interactive network graph showing 21 matched nodes:
-
-![Interactive Cytoscape Knowledge Graph](C:\Users\hoang\.gemini\antigravity-ide\brain\9fc7a2d4-4b29-4ecf-8a52-e1cdc3e27091\completed_state_1782332126239.png)
-
-### Video Recording of Browser Interaction
-You can view the full recording of the chat submit flow, RAG pipeline execution, and network graph layout toggle:
-
-![Browser Interaction WebP Recording](C:\Users\hoang\.gemini\antigravity-ide\brain\9fc7a2d4-4b29-4ecf-8a52-e1cdc3e27091\browser_ui_check_1782331844397.webp)
+![Browser Interaction WebP Recording](file:///C:/Users/hoang/.gemini/antigravity-ide/brain/1eba1d22-9686-4977-9746-5c192f713457/verify_supply_chain_portal_1782849894605.webp)
