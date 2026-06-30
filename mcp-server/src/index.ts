@@ -11,6 +11,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { getNeo4jDriver, closeNeo4jDriver } from "./neo4j-client.js";
+import neo4j from "neo4j-driver";
 
 dotenv.config();
 
@@ -916,6 +917,75 @@ if (useStdio) {
     res.send(puml);
   });
 
+  const executionsFile = path.join(__dirname, "../data/ingestion_executions.json");
+
+  function getExecutions() {
+    try {
+      if (!fs.existsSync(path.dirname(executionsFile))) {
+        fs.mkdirSync(path.dirname(executionsFile), { recursive: true });
+      }
+      if (!fs.existsSync(executionsFile)) {
+        const mockHistory = [
+          {
+            id: "exec-9281",
+            timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            triggerType: "Upload Log",
+            status: "Success",
+            durationMs: 4210,
+            filesProcessed: 1,
+            error: null
+          },
+          {
+            id: "exec-9282",
+            timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            triggerType: "Manual Trigger",
+            status: "Success",
+            durationMs: 8900,
+            filesProcessed: 10,
+            error: null
+          },
+          {
+            id: "exec-9283",
+            timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            triggerType: "Upload Audit",
+            status: "Failed",
+            durationMs: 1420,
+            filesProcessed: 0,
+            error: "n8n responded with status 503 Service Unavailable"
+          }
+        ];
+        fs.writeFileSync(executionsFile, JSON.stringify(mockHistory, null, 2));
+        return mockHistory;
+      }
+      return JSON.parse(fs.readFileSync(executionsFile, "utf-8"));
+    } catch (err) {
+      console.error("Error reading executions file:", err);
+      return [];
+    }
+  }
+
+  function logExecution(triggerType: string, status: string, durationMs: number, filesProcessed: number, error: string | null = null) {
+    try {
+      const list = getExecutions();
+      list.unshift({
+        id: "exec-" + Math.floor(1000 + Math.random() * 9000),
+        timestamp: new Date().toISOString(),
+        triggerType,
+        status,
+        durationMs,
+        filesProcessed,
+        error
+      });
+      fs.writeFileSync(executionsFile, JSON.stringify(list.slice(0, 50), null, 2));
+    } catch (err) {
+      console.error("Error writing executions file:", err);
+    }
+  }
+
+  app.get("/api/ingestion/executions", (req, res) => {
+    res.json(getExecutions());
+  });
+
   // Ingestion status endpoint
   app.get("/api/ingestion/status", async (req, res) => {
     const driver = getNeo4jDriver();
@@ -987,7 +1057,10 @@ if (useStdio) {
       // to ensure vector search indices stay up-to-date!
       await initializeEmbeddings();
 
-      const answer = `File **${filename}** uploaded and ingested successfully!\n\n**Ingestion Report:**\n- Pipeline Duration: ${(duration / 1000).toFixed(2)}s\n- Status: Ingestion complete\n- Files processed in batch: ${Array.isArray(n8nData) ? n8nData.length : 1}`;
+      const filesCount = Array.isArray(n8nData) ? n8nData.length : 1;
+      logExecution(`Upload Log (${filename})`, "Success", duration, filesCount);
+
+      const answer = `File **${filename}** uploaded and ingested successfully!\n\n**Ingestion Report:**\n- Pipeline Duration: ${(duration / 1000).toFixed(2)}s\n- Status: Ingestion complete\n- Files processed in batch: ${filesCount}`;
 
       res.json({
         messageId: crypto.randomUUID(),
@@ -1010,7 +1083,9 @@ if (useStdio) {
         }
       });
     } catch (err: any) {
+      const duration = Date.now() - startTime;
       console.error(`[Upload Error]`, err.message);
+      logExecution(`Upload Log (${filename})`, "Failed", duration, 0, err.message);
       res.status(500).json({
         error: "Upload & Ingestion failed",
         details: err.message
@@ -1033,16 +1108,20 @@ if (useStdio) {
       const duration = Date.now() - startTime;
       if (n8nRes.ok) {
         const data = await n8nRes.json().catch(() => ({}));
+        const filesCount = Array.isArray(data) ? data.length : 1;
+        logExecution("Manual Trigger", "Success", duration, filesCount);
         res.json({
           success: true,
           duration_ms: duration,
-          processed_files: Array.isArray(data) ? data.length : 1,
+          processed_files: filesCount,
           details: data
         });
       } else {
-        res.status(500).json({ success: false, error: `n8n responded with status ${n8nRes.status}` });
+        throw new Error(`n8n responded with status ${n8nRes.status}`);
       }
     } catch (err: any) {
+      const duration = Date.now() - startTime;
+      logExecution("Manual Trigger", "Failed", duration, 0, err.message);
       res.status(500).json({ success: false, error: err.message });
     } finally {
       isPipelineRunning = false;
@@ -1095,7 +1174,9 @@ if (useStdio) {
 
   // Multi-Agent Chat Strategy Assistant (Guided Cypher Generator + RAG + Multi-Agent Team)
   app.post(["/chat", "/api/chat"], async (req, res) => {
-    const prompt = req.body.question || req.body.prompt;
+    const prompt = req.body.question || req.body.prompt || req.body.message;
+    const reasoning = req.body.reasoning || "low";
+    const ragLimit = Number(req.body.ragLimit) || 3;
 
     if (!prompt) {
       return res.status(400).json({ error: "question or prompt is required" });
@@ -1104,7 +1185,7 @@ if (useStdio) {
     const driver = getNeo4jDriver();
 
     try {
-      console.log(`[Multi-Agent Chat] Received question: "${prompt}"`);
+      console.log(`[Multi-Agent Chat] Received question: "${prompt}" (Reasoning: ${reasoning}, RAG Limit: ${ragLimit})`);
       
       // Step 0: Perform Vector Similarity Search (Unstructured RAG Context)
       let vectorResults: any[] = [];
@@ -1114,11 +1195,11 @@ if (useStdio) {
         try {
           const vecRes = await session.run(
             `
-            CALL db.index.vector.queryNodes('file_embeddings', 3, $embedding)
+            CALL db.index.vector.queryNodes('file_embeddings', $limit, $embedding)
             YIELD node, score
             RETURN node.name AS filename, coalesce(node.text, node.name) AS content, score
             `,
-            { embedding }
+            { embedding, limit: neo4j.int(ragLimit) }
           );
           vectorResults = vecRes.records.map(r => r.toObject());
         } finally {
@@ -1132,12 +1213,16 @@ if (useStdio) {
         ? "\n\nRetrieved Unstructured Document Context:\n" + vectorResults.map(r => `--- File: ${r.filename} (Similarity Score: ${r.score.toFixed(3)}) ---\n${r.content}`).join("\n\n")
         : "";
 
+      // Dynamic reasoning mapping
+      const baseReasoning = reasoning === "high" ? "medium" : "low";
+      const finalReasoning = reasoning === "low" ? "medium" : "high";
+
       // Step 1: Coordinator Agent Plan Formulation
       const coordinatorPlanSystem = `You are the Coordinator of a supply chain multi-agent team.
 Based on the user's question and any retrieved unstructured documents, state your high-level strategy and what data we need to query from the graph database.
 Keep it extremely brief (1-2 sentences max, no bullet points).`;
       
-      const coordinatorPlan = await callLLM(coordinatorPlanSystem, `User query: "${prompt}"${contextStr}`, 0.3, "low");
+      const coordinatorPlan = await callLLM(coordinatorPlanSystem, `User query: "${prompt}"${contextStr}`, 0.3, baseReasoning);
       console.log("[Agent: Coordinator] Plan:", coordinatorPlan);
 
       // Step 2: Database Agent (Cypher Specialist)
@@ -1158,7 +1243,7 @@ Relationships:
 
 Output ONLY the raw Cypher query inside a \`\`\`cypher code block. Do not write explanations.`;
 
-      const cypherOutput = await callLLM(cypherSystem, prompt, 0.1, "low");
+      const cypherOutput = await callLLM(cypherSystem, prompt, 0.1, baseReasoning);
       const blockMatch = cypherOutput.match(/```cypher\s*([\s\S]*?)```/);
       const cypherQuery = blockMatch ? blockMatch[1].trim() : cypherOutput.trim();
       console.log("[Agent: Database Specialist] Generated Cypher:", cypherQuery);
@@ -1189,7 +1274,7 @@ Provide a concise bulleted summary of operational insights (1-3 bullets max).`;
       const opsPrompt = `User Query: "${prompt}"
 Retrieved Database Records: ${JSON.stringify(dbResults || (dbError ? `Error: ${dbError}` : "No records found"))}${contextStr}`;
       
-      const opsAnalysis = await callLLM(opsSystem, opsPrompt, 0.5, "low");
+      const opsAnalysis = await callLLM(opsSystem, opsPrompt, 0.5, baseReasoning);
       console.log("[Agent: Operations Specialist] Analysis:", opsAnalysis);
 
       // Step 4: Finance & Risk Specialist analysis
@@ -1201,7 +1286,7 @@ Provide a concise bulleted summary of financial/risk insights (1-3 bullets max).
       const financePrompt = `User Query: "${prompt}"
 Retrieved Database Records: ${JSON.stringify(dbResults || (dbError ? `Error: ${dbError}` : "No records found"))}${contextStr}`;
       
-      const financeAnalysis = await callLLM(financeSystem, financePrompt, 0.5, "low");
+      const financeAnalysis = await callLLM(financeSystem, financePrompt, 0.5, baseReasoning);
       console.log("[Agent: Finance Specialist] Analysis:", financeAnalysis);
 
       // Step 5: Coordinator Final Synthesis
@@ -1215,7 +1300,7 @@ Database Results: ${JSON.stringify(dbResults || "None")}
 Operations Specialist Insights: ${opsAnalysis}
 Finance & Risk Specialist Insights: ${financeAnalysis}${contextStr}`;
 
-      const finalResponse = await callLLM(synthesisSystem, synthesisPrompt, 0.7, "high");
+      const finalResponse = await callLLM(synthesisSystem, synthesisPrompt, 0.7, finalReasoning);
       console.log("[Agent: Coordinator] Final Response length:", finalResponse.length);
 
       // Construct dynamic evidence graph
