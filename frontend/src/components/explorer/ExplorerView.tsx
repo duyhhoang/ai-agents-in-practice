@@ -4,27 +4,58 @@ import { useEffect, useState, useMemo } from "react";
 import { 
   Network, 
   Search, 
-  Settings, 
   Info, 
-  Maximize2, 
-  LayoutGrid, 
-  FileCode 
+  FileCode,
+  Play,
+  AlertTriangle,
+  X,
+  HelpCircle,
+  SlidersHorizontal,
+  Pointer,
+  BoxSelect,
+  ChevronLeft,
+  ChevronRight,
+  Sliders
 } from "lucide-react";
 import CytoscapeGraph from "../graph/CytoscapeGraph";
+import clsx from "clsx";
 
 import type { EvidenceNode, EvidenceEdge, EvidenceGraph } from "@/types/evidence";
 
-export default function ExplorerView() {
+type ExplorerViewProps = {
+  isActive?: boolean;
+};
+
+export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
   const [search, setSearch] = useState("");
-  const [depth, setDepth] = useState(2);
   const [graph, setGraph] = useState<EvidenceGraph>({ nodes: [], edges: [] });
   const [loading, setLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<EvidenceNode | null>(null);
+  const [focusedNodeId, setFocusedNodeId] = useState<string>("");
   
-  // PlantUML modal state
-  const [pumlCode, setPumlCode] = useState("");
-  const [showPumlModal, setShowPumlModal] = useState(false);
-  const [loadingPuml, setLoadingPuml] = useState(false);
+  // Custom Cypher console & Search mode state
+  const [searchMode, setSearchMode] = useState<"amateur" | "cypher">("amateur");
+  const [customCypher, setCustomCypher] = useState(
+    "MATCH (n) WHERE NOT n:ProcessedFile OPTIONAL MATCH (n)-[r]-(m) WHERE NOT m:ProcessedFile RETURN n, r, m LIMIT 80"
+  );
+  const [cypherError, setCypherError] = useState("");
+  
+  // Guided search parameters (Data-Agnostic)
+  const [dbLabels, setDbLabels] = useState<string[]>([]);
+  const [amateurType, setAmateurType] = useState("All");
+  const [amateurTerm, setAmateurTerm] = useState("");
+  const [resultLimit, setResultLimit] = useState(80);
+
+  // Layout & Mouse Mode controls
+  const [layoutName, setLayoutName] = useState<"directed" | "organic" | "circle">("organic");
+  const [mouseMode, setMouseMode] = useState<"pan" | "select">("pan");
+
+  // Collapsible view sidebars
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(false);
+
+  // Client-side filtering of categories (Data-Agnostic)
+  const [hiddenLabels, setHiddenLabels] = useState<Set<string>>(new Set());
 
   // Client-side parser for Neo4j JSON results returned from /api/query
   function parseNeo4jRecords(results: any[]): EvidenceGraph {
@@ -109,45 +140,51 @@ export default function ExplorerView() {
     };
   }
 
-  // Load the graph from the backend
-  async function loadGraph(searchVal = "") {
-    setLoading(true);
-    setSelectedNode(null);
+  // Load database labels on mount for Guided Search dropdown
+  async function fetchDbLabels() {
     try {
-      let query = "";
-      let params: Record<string, any> = {};
-
-      if (searchVal.trim()) {
-        params.search = `(?i).*${searchVal.trim()}.*`;
-        query = `
-          MATCH (n)
-          WHERE NOT n:ProcessedFile AND (
-            n.actor_name =~ $search OR 
-            n.location_name =~ $search OR 
-            n.material_name =~ $search OR 
-            n.process_name =~ $search OR 
-            n.unit_id =~ $search OR
-            n.actor_id =~ $search OR
-            n.material_id =~ $search
-          )
-          OPTIONAL MATCH (n)-[r]-(m)
-          WHERE NOT m:ProcessedFile
-          RETURN n, r, m LIMIT 150
-        `;
-      } else {
-        query = `
-          MATCH (n)
-          WHERE NOT n:ProcessedFile
-          OPTIONAL MATCH (n)-[r]-(m)
-          WHERE NOT m:ProcessedFile
-          RETURN n, r, m LIMIT 120
-        `;
-      }
-
       const res = await fetch("/api/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, params })
+        body: JSON.stringify({ query: "CALL db.labels() YIELD label RETURN label" })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.results) {
+          const labels = data.results
+            .map((r: any) => r.label as string)
+            .filter((l: string) => l && l !== "ProcessedFile");
+          setDbLabels(labels);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to retrieve db labels for guided dropdown:", err);
+    }
+  }
+
+  // Load graph from Cypher query
+  async function runQuery(queryText: string) {
+    setLoading(true);
+    setCypherError("");
+    setSelectedNode(null);
+    setFocusedNodeId("");
+
+    // Read-only safety validation
+    const forbidden = ["create", "merge", "delete", "set", "remove", "drop", "detach"];
+    const lowerQuery = queryText.toLowerCase();
+    for (const word of forbidden) {
+      if (new RegExp(`\\b${word}\\b`).test(lowerQuery)) {
+        setCypherError(`Warning: Modifying keyword '${word}' detected. Cypher query explorer is read-only.`);
+        setLoading(false);
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch("/api/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: queryText })
       });
 
       if (res.ok) {
@@ -155,241 +192,565 @@ export default function ExplorerView() {
         if (data.results) {
           const parsed = parseNeo4jRecords(data.results);
           setGraph(parsed);
+        } else if (data.error) {
+          setCypherError(data.error);
         }
+      } else {
+        const data = await res.json().catch(() => null);
+        setCypherError(data?.error || data?.details || `HTTP error ${res.status}`);
       }
-    } catch (err) {
-      console.error("Failed to load network graph:", err);
+    } catch (err: any) {
+      console.error("Failed to run Cypher:", err);
+      setCypherError(err.message || "Connection error.");
     } finally {
       setLoading(false);
     }
   }
 
+  // Executes amateur guided query compilation
+  function handleAmateurSearch(e: React.FormEvent) {
+    e.preventDefault();
+    let query = "";
+    const term = amateurTerm.trim();
+    
+    if (!term) {
+      if (amateurType === "All") {
+        query = `MATCH (n) WHERE NOT n:ProcessedFile OPTIONAL MATCH (n)-[r]-(m) WHERE NOT m:ProcessedFile RETURN n, r, m LIMIT ${resultLimit}`;
+      } else {
+        query = `MATCH (n:${amateurType}) OPTIONAL MATCH (n)-[r]-(m) WHERE NOT m:ProcessedFile RETURN n, r, m LIMIT ${resultLimit}`;
+      }
+    } else {
+      const escapedTerm = term.replace(/'/g, "\\'");
+      const searchRegex = `(?i).*${escapedTerm}.*`;
+      
+      if (amateurType === "All") {
+        query = `
+          MATCH (n)
+          WHERE NOT n:ProcessedFile AND (
+            n.actor_name =~ '${searchRegex}' OR 
+            n.location_name =~ '${searchRegex}' OR 
+            n.material_name =~ '${searchRegex}' OR 
+            n.process_name =~ '${searchRegex}' OR 
+            n.unit_id =~ '${searchRegex}' OR
+            n.actor_id =~ '${searchRegex}' OR
+            n.material_id =~ '${searchRegex}' OR
+            n.process_id =~ '${searchRegex}' OR
+            n.name =~ '${searchRegex}'
+          )
+          OPTIONAL MATCH (n)-[r]-(m)
+          WHERE NOT m:ProcessedFile
+          RETURN n, r, m LIMIT ${resultLimit}
+        `;
+      } else {
+        const searchFields = 
+          amateurType === "ChargingStation" ? ["n.unit_id", "n.serial_number", "n.product_variant"] :
+          amateurType === "Process" ? ["n.process_name", "n.process_id", "n.lifecycle_phase"] :
+          amateurType === "Actor" ? ["n.actor_name", "n.actor_id"] :
+          amateurType === "Location" ? ["n.location_name", "n.location_code"] :
+          amateurType === "Material" ? ["n.material_name", "n.material_id"] :
+          amateurType === "Transport" ? ["n.transport_id"] : ["n.name"];
+        
+        const whereClause = searchFields.map(f => `${f} =~ '${searchRegex}'`).join(" OR ");
+        query = `
+          MATCH (n:${amateurType})
+          WHERE ${whereClause}
+          OPTIONAL MATCH (n)-[r]-(m)
+          WHERE NOT m:ProcessedFile
+          RETURN n, r, m LIMIT ${resultLimit}
+        `;
+      }
+    }
+    runQuery(query);
+  }
+
+  // Load configuration defaults and dynamic labels query
   useEffect(() => {
-    loadGraph();
+    fetchDbLabels();
+    let defaultLimit = 80;
+    if (typeof window !== "undefined") {
+      defaultLimit = Number(window.localStorage.getItem("scales_explorer_limit")) || 80;
+      setResultLimit(defaultLimit);
+    }
+    const initialCypher = `MATCH (n) WHERE NOT n:ProcessedFile OPTIONAL MATCH (n)-[r]-(m) WHERE NOT m:ProcessedFile RETURN n, r, m LIMIT ${defaultLimit}`;
+    setCustomCypher(initialCypher);
+    runQuery(initialCypher);
   }, []);
 
-  function handleSearchSubmit(e: React.FormEvent) {
+  const handleConsoleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loadGraph(search);
-  }
+    runQuery(customCypher);
+  };
 
-  // Generate PlantUML code via /api/diagram
-  async function handleGeneratePlantUML() {
-    if (graph.nodes.length === 0) return;
-    setLoadingPuml(true);
-    setShowPumlModal(true);
-    try {
-      const res = await fetch("/api/diagram", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nodes: graph.nodes,
-          relationships: graph.edges
-        })
-      });
-      if (res.ok) {
-        const text = await res.text();
-        setPumlCode(text);
+  // Client-side filtering of graph nodes and edges based on hidden categories
+  const filteredGraph = useMemo(() => {
+    const nodes = graph.nodes.filter(n => {
+      return !hiddenLabels.has(n.type);
+    });
+
+    const nodeIds = new Set(nodes.map(n => n.id));
+    const edges = graph.edges.filter(
+      e => nodeIds.has(e.source) && nodeIds.has(e.target)
+    );
+
+    return { nodes, edges };
+  }, [graph, hiddenLabels]);
+
+  // Extract unique labels present in the active graph dynamically (data-agnostic layout)
+  const activeLabels = useMemo(() => {
+    const labels = new Set<string>();
+    graph.nodes.forEach(n => {
+      if (n.type) labels.add(n.type);
+    });
+    return Array.from(labels).sort();
+  }, [graph.nodes]);
+
+  // Sidebar list search filtering matching visible nodes
+  const sidebarSearchNodes = useMemo(() => {
+    if (!search.trim()) return filteredGraph.nodes;
+    const term = search.toLowerCase();
+    return filteredGraph.nodes.filter(
+      n => n.name.toLowerCase().includes(term) || (n.id && n.id.toLowerCase().includes(term))
+    );
+  }, [filteredGraph.nodes, search]);
+
+  const toggleTypeVisibility = (label: string) => {
+    setHiddenLabels((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
       } else {
-        setPumlCode("Failed to generate PlantUML diagram from backend.");
+        next.add(label);
       }
-    } catch (err: any) {
-      setPumlCode(`Error: ${err.message}`);
-    } finally {
-      setLoadingPuml(false);
-    }
-  }
+      return next;
+    });
+  };
 
-  // Legend list helper
-  const legendItems = [
-    { label: "Station", color: "bg-[#22c55e]" },
-    { label: "Process", color: "bg-[#0891b2]" },
-    { label: "Actor", color: "bg-[#a78bfa]" },
-    { label: "Location", color: "bg-[#16a34a]" },
-    { label: "Material", color: "bg-[#f97316]" },
-    { label: "Transport", color: "bg-[#8b5cf6]" }
-  ];
+  const handleSidebarNodeClick = (node: EvidenceNode) => {
+    setSelectedNode(node);
+    setFocusedNodeId(node.id);
+  };
+
+  // Node coloring function
+  const typeColors: Record<string, string> = {
+    ChargingStation: "bg-[#22c55e] border-[#16a34a]",
+    Process: "bg-[#0891b2] border-[#0891b2]",
+    Actor: "bg-[#a78bfa] border-[#8b5cf6]",
+    Location: "bg-[#16a34a] border-[#15803d]",
+    Material: "bg-[#f97316] border-[#ea580c]",
+    Transport: "bg-[#8b5cf6] border-[#7c3aed]",
+    Supplier: "bg-[#2563eb] border-[#1d4ed8]"
+  };
 
   return (
-    <div className="flex h-screen w-full min-h-0 flex-col bg-[#020617] text-cyan-50">
-      {/* Top Header Controls */}
-      <header className="flex h-20 shrink-0 items-center justify-between border-b border-cyan-400/20 bg-slate-950/70 px-8 backdrop-blur-xl">
+    <div className="flex h-screen w-full min-h-0 flex-col bg-slate-50 text-slate-800">
+      {/* Header Controls */}
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 shadow-sm">
         <div>
-          <div className="text-xs uppercase tracking-[0.4em] text-cyan-300">Database Topology</div>
-          <h1 className="text-2xl font-black tracking-widest text-white mt-0.5">NETWORK EXPLORER</h1>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#0065bd]">Database Topology</div>
+          <h1 className="text-xl font-bold text-slate-900">NETWORK EXPLORER</h1>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-3">
-          <div className="relative h-10 w-64">
-            <input
-              type="text"
-              placeholder="Search actors, stations, materials..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-full w-full rounded-xl border border-cyan-400/20 bg-black/40 pl-10 pr-4 text-xs text-cyan-50 placeholder:text-cyan-100/30 outline-none focus:border-cyan-300 transition"
-            />
-            <Search className="absolute left-3.5 top-3 text-cyan-100/30" size={14} />
+        <div className="flex items-center gap-4">
+          <div className="group relative flex items-center gap-1.5 text-slate-400 hover:text-slate-600 cursor-pointer">
+            <HelpCircle size={16} />
+            <span className="text-xs">Explorer Help</span>
+            <div className="pointer-events-none absolute right-0 top-6 z-50 w-72 rounded-lg border border-slate-200 bg-white p-3 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-slate-600 leading-normal font-sans font-normal">
+              This explorer visualizes the supply chain network database directly. Use the left column to search nodes, toggle category visibility filters, or execute queries. Click any node to inspect its attributes.
+            </div>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex h-10 items-center gap-2 rounded-xl border border-cyan-300/40 bg-cyan-400/15 px-4 text-xs font-bold text-cyan-100 hover:bg-cyan-400/25 transition disabled:opacity-40"
-          >
-            Apply Search
-          </button>
-
-          <button
-            type="button"
-            onClick={handleGeneratePlantUML}
-            disabled={loading || graph.nodes.length === 0}
-            className="flex h-10 items-center gap-2 rounded-xl border border-cyan-400/20 bg-slate-900/40 px-4 text-xs font-semibold text-cyan-100 hover:bg-slate-900/80 transition disabled:opacity-40"
-          >
-            <FileCode size={14} />
-            PlantUML
-          </button>
-        </form>
+        </div>
       </header>
 
       {/* Main split dashboard area */}
-      <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1fr_360px] min-h-0">
-        {/* Left Side: Graph Canvas */}
-        <div className="relative h-full w-full flex flex-col bg-slate-950/20">
+      <div className="flex-1 flex min-h-0 relative">
+        
+        {/* Left Side: Search, Filters & Cypher Console (Collapsible) */}
+        <aside className={clsx(
+          "shrink-0 bg-white flex flex-col gap-4 overflow-y-auto shadow-sm transition-all duration-300 relative",
+          sidebarCollapsed ? "w-0 border-r-0 opacity-0 overflow-hidden p-0" : "w-[320px] border-r border-slate-200 p-4"
+        )}>
+          {/* Guided Search vs Cypher toggle */}
+          <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold shrink-0">
+            <button
+              onClick={() => { setSearchMode("amateur"); setCypherError(""); }}
+              className={`flex-1 py-1 rounded-md text-center transition ${
+                searchMode === "amateur" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              Guided Search
+            </button>
+            <button
+              onClick={() => { setSearchMode("cypher"); setCypherError(""); }}
+              className={`flex-1 py-1 rounded-md text-center transition ${
+                searchMode === "cypher" ? "bg-white text-[#0065bd] shadow-sm" : "text-slate-500 hover:text-[#0065bd]"
+              }`}
+            >
+              Cypher Console
+            </button>
+          </div>
+
+          {/* Search Inputs based on mode */}
+          {searchMode === "amateur" ? (
+            <form onSubmit={handleAmateurSearch} className="space-y-3 border-b border-slate-100 pb-4 shrink-0">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Guided Query Parameters</h3>
+                <div className="group relative cursor-pointer text-slate-400 hover:text-slate-600">
+                  <HelpCircle size={14} />
+                  <div className="pointer-events-none absolute left-6 -top-4 z-50 w-52 rounded-lg border border-slate-200 bg-white p-2.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[10px] text-slate-500 font-sans font-normal leading-normal normal-case">
+                    Guided Search automatically compiles node types, search terms, and limit parameters into Cypher queries behind the scenes.
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Node Category</span>
+                <select
+                  value={amateurType}
+                  onChange={(e) => setAmateurType(e.target.value)}
+                  className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 px-2 text-xs text-slate-800 outline-none focus:border-[#0065bd] transition"
+                >
+                  <option value="All">All Categories</option>
+                  {dbLabels.map((lbl) => (
+                    <option key={lbl} value={lbl}>
+                      {lbl}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Search Term</span>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Enter keywords (e.g. Munich)..."
+                    value={amateurTerm}
+                    onChange={(e) => setAmateurTerm(e.target.value)}
+                    className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-800 outline-none focus:border-[#0065bd] transition"
+                  />
+                </div>
+              </div>
+
+              {/* Slider Result Limit Control */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase">
+                  <span>Fetch limit</span>
+                  <span>{resultLimit} nodes</span>
+                </div>
+                <input
+                  type="range"
+                  min="20"
+                  max="350"
+                  step="10"
+                  value={resultLimit}
+                  onChange={(e) => setResultLimit(Number(e.target.value))}
+                  className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0065bd]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[#0065bd] text-white text-xs font-bold hover:bg-[#005293] transition disabled:opacity-40"
+              >
+                <Search size={12} /> Apply Search
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleConsoleSubmit} className="flex flex-col gap-2 border-b border-slate-100 pb-4 shrink-0">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
+                  <FileCode size={13} className="text-[#0065bd]" />
+                  Cypher Console
+                </h3>
+                <button
+                  type="submit"
+                  disabled={loading || !customCypher.trim()}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#0065bd] text-white text-[10px] font-bold hover:bg-[#005293] transition disabled:opacity-40"
+                >
+                  <Play size={8} /> Execute
+                </button>
+              </div>
+
+              <textarea
+                value={customCypher}
+                onChange={(e) => setCustomCypher(e.target.value)}
+                className="h-32 w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 font-mono text-[10px] text-slate-700 outline-none focus:border-[#0065bd] transition resize-none leading-normal"
+                placeholder="MATCH (n) RETURN n LIMIT 50..."
+              />
+            </form>
+          )}
+
+          {/* Database error reports */}
+          {cypherError && (
+            <div className="rounded-lg bg-rose-50 border border-rose-100 p-2.5 text-[10px] text-rose-600 leading-normal flex items-start gap-1 max-h-24 overflow-y-auto shrink-0">
+              <AlertTriangle size={12} className="shrink-0 mt-0.5" />
+              <span>{cypherError}</span>
+            </div>
+          )}
+
+          {/* Node Search & List selection */}
+          <div className="space-y-2 border-b border-slate-100 pb-3 shrink-0">
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Canvas Node List</h3>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Filter catalog list..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-800 outline-none focus:border-[#0065bd] transition"
+              />
+              <Search className="absolute left-2.5 top-2.5 text-slate-400" size={12} />
+            </div>
+            
+            {/* Matching nodes list */}
+            <div className="max-h-[140px] overflow-y-auto border border-slate-100 rounded-lg bg-slate-50/50 p-1.5 text-xs font-mono space-y-1">
+              {sidebarSearchNodes.length === 0 ? (
+                <div className="text-[10px] text-slate-400 text-center py-2">No matching nodes in canvas</div>
+              ) : (
+                sidebarSearchNodes.map(node => (
+                  <div
+                    key={node.id}
+                    onClick={() => handleSidebarNodeClick(node)}
+                    className={`cursor-pointer px-2 py-1 rounded text-[11px] truncate transition ${
+                      focusedNodeId === node.id 
+                        ? "bg-[#0065bd] text-white font-semibold" 
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
+                  >
+                    <span className="text-[9px] font-bold opacity-60 uppercase mr-1.5">[{node.type}]</span>
+                    {node.name}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Data-Agnostic Visibility Checkbox Filters */}
+          <div className="space-y-2 pb-2 shrink-0">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Canvas Category Toggle</h3>
+              <div className="group relative cursor-pointer text-slate-400 hover:text-slate-600">
+                <HelpCircle size={14} />
+                <div className="pointer-events-none absolute left-6 -top-4 z-50 w-52 rounded-lg border border-slate-200 bg-white p-2.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[10px] text-slate-500 font-sans font-normal leading-normal normal-case">
+                  Displays only the categories currently fetched and visible on the canvas. Hides or shows nodes on the screen without re-querying the database.
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs font-medium">
+              {activeLabels.length === 0 ? (
+                <span className="text-[10px] text-slate-400 italic col-span-2">No nodes on canvas</span>
+              ) : (
+                activeLabels.map((lbl) => {
+                  const colorClass = typeColors[lbl] || "bg-slate-400 border-slate-500";
+                  return (
+                    <label 
+                      key={lbl} 
+                      className="flex items-center gap-1.5 cursor-pointer text-slate-600 hover:text-slate-900 transition"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!hiddenLabels.has(lbl)}
+                        onChange={() => toggleTypeVisibility(lbl)}
+                        className="rounded text-[#0065bd] focus:ring-[#0065bd] border-slate-300 h-3.5 w-3.5"
+                      />
+                      <span className={`h-2.5 w-2.5 rounded-full ${colorClass} border border-black/10`} />
+                      <span>{lbl}</span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </aside>
+
+        {/* Toggle Left Sidebar Button */}
+        <button 
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-30 h-8 w-6 bg-white border border-slate-200 border-l-0 rounded-r-lg flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-sm transition hover:bg-slate-50 cursor-pointer"
+          title={sidebarCollapsed ? "Expand Search Filters" : "Collapse Search Filters"}
+        >
+          {sidebarCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+        </button>
+
+        {/* Center: Graph Canvas */}
+        <div className="flex-1 relative h-full bg-slate-100 flex flex-col min-w-0">
+          {/* Top Canvas Toolbar (Layout & Mouse Selection Controls) */}
+          <div className="shrink-0 flex items-center justify-between bg-white border-b border-slate-200 p-2.5 px-4 z-20">
+            {/* Interactive Layout Selection */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Layout:</span>
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
+                <button
+                  onClick={() => setLayoutName("organic")}
+                  className={`px-3 py-1 rounded-md transition ${
+                    layoutName === "organic" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                  }`}
+                  title="Force-directed organic cose layout"
+                >
+                  Organic
+                </button>
+                <button
+                  onClick={() => setLayoutName("directed")}
+                  className={`px-3 py-1 rounded-md transition ${
+                    layoutName === "directed" ? "bg-white text-[#0065bd] shadow-sm" : "text-slate-500 hover:text-[#0065bd]"
+                  }`}
+                  title="Directed hierarchical layout (top-down)"
+                >
+                  Top-Down
+                </button>
+                <button
+                  onClick={() => setLayoutName("circle")}
+                  className={`px-3 py-1 rounded-md transition ${
+                    layoutName === "circle" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                  }`}
+                  title="Circular nodes layout"
+                >
+                  Circular
+                </button>
+              </div>
+            </div>
+
+            {/* Mouse Selection Tools */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Interaction Tool:</span>
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
+                <button
+                  onClick={() => setMouseMode("pan")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition ${
+                    mouseMode === "pan" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                  }`}
+                  title="Drag on canvas to pan, drag on node to move"
+                >
+                  <Pointer size={11} />
+                  <span>Pan & Move</span>
+                </button>
+                <button
+                  onClick={() => setMouseMode("select")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition ${
+                    mouseMode === "select" ? "bg-white text-[#0065bd] shadow-sm" : "text-slate-500 hover:text-[#0065bd]"
+                  }`}
+                  title="Drag on background to draw selection marquee"
+                >
+                  <BoxSelect size={11} />
+                  <span>Box Select</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Legend and stats panel overlay */}
-          <div className="absolute left-5 top-5 z-20 rounded-2xl border border-cyan-400/15 bg-slate-950/90 p-4 backdrop-blur-xl pointer-events-auto flex flex-col gap-3 max-w-[280px]">
-            <div className="border-b border-cyan-400/10 pb-2">
-              <h3 className="text-[10px] uppercase tracking-[0.25em] font-bold text-cyan-300">Graph Statistics</h3>
-              <p className="text-xs text-white font-mono mt-1 font-bold">
-                {loading ? "Refreshing..." : `${graph.nodes.length} nodes · ${graph.edges.length} relationships`}
+          <div className="absolute left-4 top-14 z-20 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-md pointer-events-auto flex flex-col gap-2 max-w-[240px]">
+            <div className="border-b border-slate-100 pb-1.5">
+              <h3 className="text-[9px] uppercase tracking-wider font-bold text-[#0065bd]">Graph Summary</h3>
+              <p className="text-xs text-slate-700 font-mono mt-0.5 font-bold">
+                {loading ? "Refreshing..." : `${filteredGraph.nodes.length} nodes · ${filteredGraph.edges.length} relationships`}
               </p>
             </div>
-            <div>
-              <h4 className="text-[9px] uppercase tracking-[0.2em] font-bold text-cyan-100/50 mb-2">Legend</h4>
-              <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                {legendItems.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5 text-cyan-100/70">
-                    <span className={`h-2 w-2 rounded-full ${item.color}`} />
-                    <span>{item.label}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="text-[10px] text-slate-500 font-sans leading-normal">
+              {mouseMode === "pan" 
+                ? "Drag canvas to pan. Drag nodes to move. Click to inspect."
+                : "Drag cursor to draw a box and select multiple nodes simultaneously."}
             </div>
           </div>
 
           {/* Cytoscape view canvas */}
-          <div className="flex-1 h-full w-full">
+          <div className="flex-1 min-h-0 w-full relative">
             {loading ? (
-              <div className="h-full w-full flex items-center justify-center font-mono text-xs text-cyan-100/40">
-                Traversing Neo4j database records...
+              <div className="absolute inset-0 flex items-center justify-center font-mono text-xs text-slate-400 bg-slate-50/70 z-10">
+                <div className="flex items-center gap-2 bg-white px-4 py-3 rounded-lg border border-slate-200 shadow-sm">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0065bd] border-t-transparent" />
+                  <span>Querying database: rendering graph...</span>
+                </div>
               </div>
-            ) : graph.nodes.length === 0 ? (
-              <div className="h-full w-full flex items-center justify-center px-8 text-center">
-                <div className="rounded-3xl border border-cyan-400/15 bg-slate-950/60 px-7 py-6 backdrop-blur-xl">
-                  <p className="text-sm font-bold text-white">No elements matched.</p>
-                  <p className="mt-1.5 text-xs text-cyan-100/50 leading-relaxed font-mono">
-                    Alter search criteria and click Apply Search.
+            ) : filteredGraph.nodes.length === 0 ? (
+              <div className="h-full w-full flex items-center justify-center px-6 text-center bg-slate-50">
+                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <p className="text-sm font-bold text-slate-800">No nodes in view.</p>
+                  <p className="mt-1 text-xs text-slate-500 leading-normal max-w-xs font-sans">
+                    Use Guided Search or Cypher Console to fetch nodes, or toggle visible labels.
                   </p>
                 </div>
               </div>
             ) : (
-              <CytoscapeGraph graph={graph} onSelectNode={setSelectedNode} />
+              <CytoscapeGraph 
+                graph={filteredGraph} 
+                onSelectNode={setSelectedNode} 
+                selectedNodeId={focusedNodeId}
+                isActive={isActive}
+                mouseMode={mouseMode}
+                layoutName={layoutName}
+              />
             )}
           </div>
         </div>
 
-        {/* Right Side: Properties Panel */}
-        <aside className="border-l border-cyan-400/20 bg-slate-950/50 p-6 flex flex-col h-full overflow-y-auto">
-          <h2 className="text-sm font-bold text-cyan-300 uppercase tracking-widest flex items-center gap-2 border-b border-cyan-400/10 pb-4 mb-4 shrink-0">
-            <Info size={16} />
-            Element Properties
-          </h2>
+        {/* Toggle Right Sidebar Button */}
+        <button 
+          onClick={() => setInspectorCollapsed(!inspectorCollapsed)}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-30 h-8 w-6 bg-white border border-slate-200 border-r-0 rounded-l-lg flex items-center justify-center text-slate-400 hover:text-slate-700 shadow-sm transition hover:bg-slate-50 cursor-pointer"
+          title={inspectorCollapsed ? "Expand Inspector" : "Collapse Inspector"}
+        >
+          {inspectorCollapsed ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
+        </button>
+
+        {/* Right Side: Properties Panel (Collapsible) */}
+        <aside className={clsx(
+          "shrink-0 bg-white flex flex-col h-full overflow-y-auto shadow-sm transition-all duration-300 relative",
+          inspectorCollapsed ? "w-0 border-l-0 opacity-0 overflow-hidden p-0" : "w-[320px] border-l border-slate-200 p-5"
+        )}>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 shrink-0">
+            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <Info size={16} className="text-[#0065bd]" />
+              Element Inspector
+            </h2>
+            {selectedNode && (
+              <button 
+                onClick={() => { setSelectedNode(null); setFocusedNodeId(""); }}
+                className="text-slate-400 hover:text-slate-600 p-0.5 rounded-lg hover:bg-slate-100 transition"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
 
           {selectedNode ? (
-            <div className="space-y-6 flex-1 min-h-0">
+            <div className="space-y-5 flex-1 min-h-0">
               <div>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-950/40 text-cyan-400 border border-cyan-400/25 uppercase tracking-wider">
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 uppercase tracking-wider">
                   {selectedNode.type}
                 </span>
-                <h3 className="text-xl font-extrabold text-white mt-3 tracking-wide">{selectedNode.name}</h3>
-                <p className="text-xs text-cyan-100/40 font-mono mt-1 break-all">ID: {selectedNode.id}</p>
+                <h3 className="text-md font-bold text-slate-900 mt-2 tracking-tight">{selectedNode.name}</h3>
+                <p className="text-[10px] text-slate-400 font-mono mt-0.5 break-all">ID: {selectedNode.id}</p>
               </div>
 
-              <div className="border-t border-cyan-400/10 pt-4">
-                <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-300 mb-3">Attributes</h4>
-                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+              <div className="border-t border-slate-100 pt-3">
+                <h4 className="text-[10px] uppercase tracking-wider font-bold text-[#0065bd] mb-2.5">Database Attributes</h4>
+                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
                   {selectedNode.properties && Object.keys(selectedNode.properties).length > 0 ? (
                     Object.entries(selectedNode.properties).map(([key, val]) => (
-                      <div key={key} className="rounded-xl border border-cyan-400/5 bg-black/20 p-3 font-mono text-[11px] leading-relaxed">
-                        <span className="text-cyan-400 block text-[9px] uppercase tracking-wider mb-0.5">{key}</span>
-                        <span className="text-white break-words">
+                      <div key={key} className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 font-mono text-[10px] leading-normal">
+                        <span className="text-[#0065bd] block text-[9px] font-bold uppercase tracking-wider mb-0.5">{key}</span>
+                        <span className="text-slate-800 break-all font-semibold">
                           {val === null || val === undefined ? "—" : String(val)}
                         </span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs font-mono text-cyan-100/35">No properties associated with this node.</p>
+                    <p className="text-xs font-mono text-slate-400">No properties associated with this node.</p>
                   )}
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-center p-4">
-              <div className="text-cyan-100/40 font-mono text-xs">
-                Click any node on the Cytoscape canvas to inspect its database attributes.
+              <div className="text-slate-400 text-xs font-mono leading-relaxed">
+                Click any node on the Cytoscape canvas or search index in the sidebar to inspect database attributes.
               </div>
             </div>
           )}
         </aside>
       </div>
-
-      {/* PlantUML Modal */}
-      {showPumlModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-6 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl rounded-3xl border border-cyan-400/30 bg-[#020617] p-6 shadow-[0_0_50px_rgba(34,211,238,0.2)]">
-            <div className="flex items-center justify-between border-b border-cyan-400/10 pb-4 mb-4">
-              <h3 className="text-lg font-bold text-white tracking-wider">Generated PlantUML Code</h3>
-              <button
-                onClick={() => setShowPumlModal(false)}
-                className="rounded-full border border-cyan-400/20 px-3 py-1 text-xs text-cyan-100 hover:bg-slate-900 transition"
-              >
-                Close
-              </button>
-            </div>
-            
-            {loadingPuml ? (
-              <div className="h-96 flex items-center justify-center font-mono text-xs text-cyan-100/40">
-                Compiling Node relations to PlantUML syntax...
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <textarea
-                  readOnly
-                  value={pumlCode}
-                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                  className="w-full h-96 rounded-2xl border border-cyan-400/10 bg-black/60 p-4 font-mono text-xs text-cyan-100 outline-none focus:border-cyan-400/30 transition resize-none"
-                />
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(pumlCode);
-                      alert("PlantUML code copied to clipboard!");
-                    }}
-                    className="flex h-10 items-center gap-2 rounded-xl border border-cyan-300/40 bg-cyan-400/15 px-4 text-xs font-bold text-cyan-100 hover:bg-cyan-400/25 transition"
-                  >
-                    Copy to Clipboard
-                  </button>
-                  <button
-                    onClick={() => setShowPumlModal(false)}
-                    className="flex h-10 items-center gap-2 rounded-xl border border-cyan-400/20 bg-slate-900/40 px-4 text-xs font-semibold text-cyan-100 hover:bg-slate-900/80 transition"
-                  >
-                    Done
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
