@@ -220,8 +220,8 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
         query = `MATCH (n:${amateurType}) OPTIONAL MATCH (n)-[r]-(m) WHERE NOT m:ProcessedFile RETURN n, r, m LIMIT ${resultLimit}`;
       }
     } else {
-      const escapedTerm = term.replace(/'/g, "\\'");
-      const searchRegex = `(?i).*${escapedTerm}.*`;
+      const sanitizedTerm = term.replace(/[\\^$*+?.()|[\]{}]/g, "\\$&").replace(/'/g, "\\'");
+      const searchRegex = `(?i).*${sanitizedTerm}.*`;
       
       if (amateurType === "All") {
         query = `

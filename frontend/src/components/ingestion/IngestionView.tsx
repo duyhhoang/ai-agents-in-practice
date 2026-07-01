@@ -30,7 +30,7 @@ type ExecutionRun = {
   id: string;
   timestamp: string;
   triggerType: string;
-  status: "Success" | "Failed";
+  status: "Success" | "Failed" | "Running";
   durationMs: number;
   filesProcessed: number;
   error: string | null;
@@ -340,20 +340,21 @@ export default function IngestionView() {
                   <tbody>
                     {executions.map((exec, idx) => {
                       const isSuccess = exec.status === "Success";
+                      const isRunning = exec.status === "Running";
                       return (
                         <tr 
                           key={exec.id || idx}
                           className="border-b border-slate-200/50 hover:bg-slate-100/50 transition cursor-help"
-                          title={exec.error ? `Error details: ${exec.error}` : "Workflow execution succeeded."}
+                          title={exec.error ? `Error details: ${exec.error}` : isRunning ? "Workflow execution currently running in n8n" : "Workflow execution succeeded."}
                         >
                           <td className="p-3 text-slate-900 font-bold">
                             #{exec.id}
                           </td>
-                          <td className="p-3 text-slate-600 font-medium">
+                          <td className="p-3 text-slate-700 font-semibold truncate max-w-[200px]" title={exec.triggerType}>
                             {exec.triggerType}
                           </td>
                           <td className="p-3 text-slate-500">
-                            {(exec.durationMs / 1000).toFixed(2)}s
+                            {isRunning ? "In progress..." : `${(exec.durationMs / 1000).toFixed(2)}s`}
                           </td>
                           <td className="p-3 text-slate-500">
                             {exec.filesProcessed} file{exec.filesProcessed !== 1 ? "s" : ""}
@@ -363,6 +364,10 @@ export default function IngestionView() {
                               <span className="inline-flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider">
                                 Success
                               </span>
+                            ) : isRunning ? (
+                              <span className="inline-flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 uppercase tracking-wider animate-pulse">
+                                Running
+                              </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-100 uppercase tracking-wider">
                                 Failed
@@ -370,7 +375,7 @@ export default function IngestionView() {
                             )}
                           </td>
                           <td className="p-3 text-slate-400 text-[10px]">
-                            {new Date(exec.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(exec.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                           </td>
                         </tr>
                       );
