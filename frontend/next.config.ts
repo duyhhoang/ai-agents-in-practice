@@ -5,8 +5,20 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/:path*",
-        destination: "http://localhost:8000/api/:path*",
+        source: "/api/query",
+        destination: "http://localhost:8000/api/query",
+      },
+      {
+        source: "/api/health",
+        destination: "http://localhost:8000/api/health",
+      },
+      {
+        source: "/api/subgraph",
+        destination: "http://localhost:8000/api/subgraph",
+      },
+      {
+        source: "/api/ingestion/:path*",
+        destination: "http://localhost:8000/api/ingestion/:path*",
       },
       {
         source: "/upload",

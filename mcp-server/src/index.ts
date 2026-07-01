@@ -6,6 +6,7 @@ import path from "path";
 import multer from "multer";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
+import { execSync } from "child_process";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -759,15 +760,9 @@ if (useStdio) {
   });
   const upload = multer({ storage });
 
-  // Helper to compute Java-like string hashCode as unsigned 32-bit hex
+  // Helper to compute MD5 string hash
   function getHash(str: string): string {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return (hash >>> 0).toString(16);
+    return crypto.createHash("md5").update(str).digest("hex");
   }
 
   // Health check endpoint
@@ -806,8 +801,11 @@ if (useStdio) {
 
     // Check LLM cluster
     const inferenceUrl = process.env.INFERENCE_BASE_URL || "http://131.159.60.153:3000/inference";
+    const apiKey = process.env.CLUSTER_API_KEY;
     try {
-      const llmRes = await fetch(`${inferenceUrl}/models`, { signal: AbortSignal.timeout(5000) });
+      const headers: Record<string, string> = {};
+      if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+      const llmRes = await fetch(`${inferenceUrl}/models`, { headers, signal: AbortSignal.timeout(5000) });
       health.services.llm_cluster = { status: llmRes.ok ? "ok" : "error", message: `HTTP ${llmRes.status}` };
     } catch {
       health.services.llm_cluster = { status: "offline", message: "Cannot reach LLM inference cluster" };
@@ -817,13 +815,33 @@ if (useStdio) {
     res.status(httpStatus).json(health);
   });
 
-  // Generic query endpoint for the frontend
+  // Generic query endpoint for the frontend (with read-only enforcement)
   app.post("/api/query", async (req, res) => {
-    const { query, params } = req.body;
+    const { query, params, allow_write } = req.body;
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ error: "Query must be a valid string." });
+    }
+
+    // Block mutating Cypher queries unless explicitly authorized
+    const mutatingKeywords = ["CREATE", "MERGE", "DELETE", "SET", "REMOVE", "DROP", "DETACH"];
+    const upperQuery = query.toUpperCase();
+    const hasMutation = mutatingKeywords.some(keyword => new RegExp(`\\b${keyword}\\b`).test(upperQuery));
+
+    if (hasMutation && !allow_write) {
+      return res.status(403).json({
+        error: "Forbidden: Mutating Cypher operations (CREATE, MERGE, DELETE, SET, etc.) are blocked on /api/query for database security."
+      });
+    }
+
     const driver = getNeo4jDriver();
     const session = driver.session();
     try {
-      const result = await session.run(query, params || {});
+      let result;
+      if (hasMutation && allow_write) {
+        result = await session.executeWrite(tx => tx.run(query, params || {}));
+      } else {
+        result = await session.executeRead(tx => tx.run(query, params || {}));
+      }
       const records = result.records.map(r => r.toObject());
       const cleaned = convertNeo4jTypes(records);
       res.json({ results: cleaned });
@@ -983,7 +1001,42 @@ if (useStdio) {
   }
 
   app.get("/api/ingestion/executions", (req, res) => {
-    res.json(getExecutions());
+    try {
+      const cmd = `docker exec n8n-compose node -e "const { DatabaseSync } = require('node:sqlite'); const db = new DatabaseSync('/home/node/.n8n/database.sqlite'); const rows = db.prepare('SELECT e.id, e.workflowId, w.name AS workflowName, e.status, e.mode AS triggerType, e.startedAt, e.stoppedAt FROM execution_entity e LEFT JOIN workflow_entity w ON e.workflowId = w.id ORDER BY e.id DESC LIMIT 50').all(); console.log(JSON.stringify(rows));"`;
+      const stdout = execSync(cmd, { timeout: 4000, encoding: "utf-8" });
+      const rawList = JSON.parse(stdout.trim());
+
+      const formatted = rawList.map((row: any) => {
+        const startTime = row.startedAt ? new Date(row.startedAt).getTime() : Date.now();
+        const stopTime = row.stoppedAt ? new Date(row.stoppedAt).getTime() : startTime;
+        const durationMs = Math.max(0, stopTime - startTime);
+
+        const statusMap: Record<string, "Success" | "Failed"> = {
+          success: "Success",
+          error: "Failed",
+          crashed: "Failed",
+        };
+
+        const triggerSource = row.workflowName
+          ? `${row.workflowName} (${row.triggerType})`
+          : `n8n (${row.triggerType})`;
+
+        return {
+          id: String(row.id),
+          timestamp: row.startedAt ? new Date(row.startedAt).toISOString() : new Date().toISOString(),
+          triggerType: triggerSource,
+          status: statusMap[row.status] || (row.status === "running" ? "Running" : "Failed"),
+          durationMs,
+          filesProcessed: 1,
+          error: row.status === "error" || row.status === "crashed" ? `n8n execution ${row.id} status: ${row.status}` : null
+        };
+      });
+
+      res.json(formatted);
+    } catch (err: any) {
+      console.warn("Failed to query n8n execution database via docker exec, using fallback:", err.message);
+      res.json(getExecutions());
+    }
   });
 
   // Ingestion status endpoint
@@ -993,10 +1046,16 @@ if (useStdio) {
     try {
       const dbRes = await session.run("MATCH (f:ProcessedFile) RETURN f.name AS name, f.hash AS hash");
       const processedMap = new Map<string, string>();
+      const processedHashes = new Set<string>();
       dbRes.records.forEach(r => {
         const name = r.get("name");
         const hash = r.get("hash");
-        processedMap.set(name, hash);
+        if (name) {
+          processedMap.set(name.toLowerCase(), hash || "");
+        }
+        if (hash) {
+          processedHashes.add(hash);
+        }
       });
 
       if (!fs.existsSync(uploadDir)) {
@@ -1006,13 +1065,14 @@ if (useStdio) {
       const resultList = [];
 
       for (const file of files) {
-        if (!/^\d{2}_.*\.(csv|txt|md)$/.test(file)) continue;
+        if (!/\.(csv|txt|md|json)$/i.test(file)) continue;
         const filePath = path.join(uploadDir, file);
         const stats = fs.statSync(filePath);
+        if (!stats.isFile()) continue;
+
         const text = fs.readFileSync(filePath, "utf-8");
         const hash = getHash(text);
-        const dbHash = processedMap.get(file);
-        const processed = !!dbHash && dbHash === hash;
+        const processed = processedMap.has(file.toLowerCase()) || processedHashes.has(hash);
 
         resultList.push({
           name: file,
@@ -1165,11 +1225,12 @@ if (useStdio) {
     });
 
     if (!res.ok) {
-      throw new Error(`LLM call failed with status ${res.status}`);
+      const errText = await res.text().catch(() => "");
+      throw new Error(`LLM call failed with status ${res.status}: ${errText.slice(0, 150)}`);
     }
 
     const data = await res.json();
-    return data.choices[0].message.content || "";
+    return data?.choices?.[0]?.message?.content || "No output generated by LLM.";
   }
 
   // Multi-Agent Chat Strategy Assistant (Guided Cypher Generator + RAG + Multi-Agent Team)
