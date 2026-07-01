@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -240,6 +241,13 @@ export default function ScalesDashboard() {
   const [expandedTraceIdx, setExpandedTraceIdx] = useState<Record<number, boolean>>({});
   // Copy state for Cypher query copy button
   const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  // Auto-scroll ref
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   useEffect(() => {
     setMissionLog([
@@ -501,8 +509,13 @@ export default function ScalesDashboard() {
                         : "border-slate-200 bg-white text-slate-800"
                     )}
                   >
-                    <div className="mb-2 text-[9px] uppercase tracking-wider text-slate-400 font-mono font-bold">
-                      {isUser ? "User Consultation Query" : "S.C.A.L.E.S. Advisor"}
+                    <div className="mb-2 flex items-center justify-between gap-2 text-[9px] uppercase tracking-wider text-slate-400 font-mono font-bold border-b border-slate-100/60 pb-1">
+                      <span>{isUser ? "User Consultation Query" : "S.C.A.L.E.S. Advisor"}</span>
+                      {!isUser && message.metadata?.engineUsed && (
+                        <span className="text-[8px] font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 normal-case">
+                          Engine: {message.metadata.engineUsed}
+                        </span>
+                      )}
                     </div>
 
                     <div className="leading-relaxed whitespace-pre-line">
@@ -512,6 +525,40 @@ export default function ScalesDashboard() {
                         <p className="whitespace-pre-wrap">{message.content}</p>
                       )}
                     </div>
+
+                    {/* Structured Cypher Result Table */}
+                    {!isUser && message.metadata?.tableColumns && message.metadata.tableColumns.length > 0 && message.metadata?.tableRows && message.metadata.tableRows.length > 0 && (
+                      <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+                        <div className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between font-mono">
+                          <span>Structured Graph Database Query Results ({message.metadata.tableRows.length} records):</span>
+                        </div>
+                        <table className="w-full text-left text-[11px] font-mono border-collapse bg-white rounded-lg overflow-hidden border border-slate-200">
+                          <thead>
+                            <tr className="bg-slate-100 text-slate-600 border-b border-slate-200 uppercase text-[9px]">
+                              {message.metadata.tableColumns.map((col, cIdx) => (
+                                <th key={cIdx} className="p-2 font-bold">{col}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {message.metadata.tableRows.slice(0, 10).map((row, rIdx) => (
+                              <tr key={rIdx} className="border-b border-slate-100 hover:bg-slate-50">
+                                {message.metadata!.tableColumns!.map((col, cIdx) => (
+                                  <td key={cIdx} className="p-2 text-slate-700 truncate max-w-[160px]">
+                                    {String(row[col] ?? "—")}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {message.metadata.tableRows.length > 10 && (
+                          <div className="text-[9px] text-slate-400 mt-1 font-mono text-right">
+                            Showing first 10 of {message.metadata.tableRows.length} records
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Collapsible trace elements */}
                     {hasMetadata && (
@@ -673,6 +720,7 @@ export default function ScalesDashboard() {
                 </div>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Form input */}

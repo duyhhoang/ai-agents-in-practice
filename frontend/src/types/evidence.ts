@@ -1,4 +1,4 @@
-﻿export type NodeType =
+export type NodeType =
     | "Supplier"
     | "Product"
     | "Material"
@@ -84,14 +84,8 @@ export type ChatMessage = {
     evidenceTrace?: EvidenceTrace;
 };
 
-export type ChatResponse = {
-    messageId: string;
-    answer: string;
-    tableColumns?: string[];
-    tableRows?: TableRow[];
-    evidenceGraph: EvidenceGraph;
-    evidenceTrace: EvidenceTrace;
-};
+import type { ChatResponse } from "@/lib/chatApi";
+export type { ChatResponse };
 
 export type TableRow = Record<string, EvidenceValue>;
 

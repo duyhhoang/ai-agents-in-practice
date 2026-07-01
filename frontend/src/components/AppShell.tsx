@@ -11,7 +11,8 @@ import {
   Database,
   Activity,
   CheckCircle2,
-  HelpCircle
+  HelpCircle,
+  Cpu
 } from "lucide-react";
 import DashboardView from "./dashboard/DashboardView";
 import IngestionView from "./ingestion/IngestionView";
@@ -20,6 +21,16 @@ import ScalesDashboard from "./scales/ScalesDashboard";
 
 type Tab = "dashboard" | "ingestion" | "explorer" | "chat" | "settings";
 
+type HealthState = {
+  status: string;
+  services: {
+    mcp_server?: { status: string; message?: string };
+    neo4j?: { status: string; message?: string };
+    n8n?: { status: string; message?: string };
+    llm_cluster?: { status: string; message?: string };
+  };
+};
+
 export default function AppShell() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
 
@@ -27,6 +38,18 @@ export default function AppShell() {
   const [reasoning, setReasoning] = useState<string>("low");
   const [ragLimit, setRagLimit] = useState<number>(3);
   const [explorerLimit, setExplorerLimit] = useState<number>(80);
+  const [engine, setEngine] = useState<string>("auto");
+
+  // Dynamic health monitoring state
+  const [health, setHealth] = useState<HealthState>({
+    status: "checking",
+    services: {
+      mcp_server: { status: "ok" },
+      neo4j: { status: "checking" },
+      n8n: { status: "checking" },
+      llm_cluster: { status: "checking" }
+    }
+  });
 
   // Load functional settings on client mount
   useEffect(() => {
@@ -34,7 +57,38 @@ export default function AppShell() {
       setReasoning(window.localStorage.getItem("scales_reasoning_level") || "low");
       setRagLimit(Number(window.localStorage.getItem("scales_rag_limit")) || 3);
       setExplorerLimit(Number(window.localStorage.getItem("scales_explorer_limit")) || 80);
+      setEngine(window.localStorage.getItem("scales_orchestrator_engine") || "auto");
     }
+  }, []);
+
+  // Poll real service health
+  useEffect(() => {
+    async function checkHealth() {
+      try {
+        const res = await fetch("/api/health");
+        if (res.ok) {
+          const data = await res.json();
+          setHealth(data);
+        } else {
+          setHealth((prev) => ({ ...prev, status: "degraded" }));
+        }
+      } catch {
+        setHealth((prev) => ({
+          ...prev,
+          status: "offline",
+          services: {
+            mcp_server: { status: "offline", message: "Server unreachable" },
+            neo4j: { status: "unknown" },
+            n8n: { status: "unknown" },
+            llm_cluster: { status: "unknown" }
+          }
+        }));
+      }
+    }
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const updateReasoning = (val: string) => {
@@ -51,6 +105,14 @@ export default function AppShell() {
     setExplorerLimit(val);
     window.localStorage.setItem("scales_explorer_limit", String(val));
   };
+
+  const updateEngine = (val: string) => {
+    setEngine(val);
+    window.localStorage.setItem("scales_orchestrator_engine", val);
+  };
+
+  const isNeo4jOk = health.services.neo4j?.status === "ok";
+  const isN8nOk = health.services.n8n?.status === "ok";
 
   return (
     <main className="relative min-h-screen w-screen overflow-hidden bg-slate-50 text-slate-800 flex">
@@ -136,21 +198,21 @@ export default function AppShell() {
           </nav>
         </div>
 
-        {/* Sidebar Footer status indicators with help hover overlays */}
+        {/* Sidebar Footer status indicators with live health polling */}
         <div className="space-y-2.5 border-t border-slate-100 pt-4">
-          <div className="group relative flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold cursor-help">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span>Neo4j: Connected</span>
+          <div className="group relative flex items-center gap-1.5 text-[10px] text-slate-600 font-semibold cursor-help">
+            <span className={`h-1.5 w-1.5 rounded-full ${isNeo4jOk ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
+            <span>Neo4j: {isNeo4jOk ? "Connected" : (health.services.neo4j?.status || "Checking")}</span>
             <div className="pointer-events-none absolute left-[255px] bottom-0 z-50 w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] text-slate-500 font-normal leading-relaxed normal-case tracking-normal">
-              Neo4j database is connected at port 7687, serving 680 supply chain entities and relationships.
+              Neo4j Database status: {health.services.neo4j?.message || "Connected at port 7687"}. Serving graph schema and vector embeddings index.
             </div>
           </div>
 
-          <div className="group relative flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold cursor-help">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span>n8n: Linked</span>
+          <div className="group relative flex items-center gap-1.5 text-[10px] text-slate-600 font-semibold cursor-help">
+            <span className={`h-1.5 w-1.5 rounded-full ${isN8nOk ? "bg-emerald-500" : "bg-amber-500"}`} />
+            <span>n8n: {isN8nOk ? "Linked (:5678)" : (health.services.n8n?.status || "Standby")}</span>
             <div className="pointer-events-none absolute left-[255px] bottom-0 z-50 w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] text-slate-500 font-normal leading-relaxed normal-case tracking-normal">
-              n8n workflow webhook is active at port 5678, ready to process incoming logs and map nodes.
+              n8n Workflow Engine: {health.services.n8n?.message || "Active at port 5678"}. Handles workflow extraction and Chat Orchestrator.
             </div>
           </div>
 
@@ -163,7 +225,7 @@ export default function AppShell() {
         </div>
       </aside>
 
-      {/* Main Panel content view (tabs stay mounted to preserve state) */}
+      {/* Main Panel content view */}
       <section className="relative z-10 flex-1 overflow-hidden flex flex-col min-h-screen bg-slate-50">
         <div className="flex-1 h-full w-full relative">
           
@@ -195,7 +257,34 @@ export default function AppShell() {
                 <div>
                   <h2 className="text-md font-bold text-slate-900 mb-1">Multi-Agent Consultant Parameters</h2>
                   <p className="text-xs text-slate-500 leading-normal">
-                    Adjust LLM strategy and document context constraints dynamically. Changes are auto-saved.
+                    Adjust LLM strategy, orchestration engine, and document context constraints dynamically. Changes are auto-saved.
+                  </p>
+                </div>
+
+                {/* Orchestrator Engine Switch */}
+                <div className="space-y-2.5 border-t border-slate-100 pt-4">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Agent Orchestration Engine</span>
+                  <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200/60 max-w-md text-xs font-bold">
+                    {[
+                      { id: "auto", label: "Auto (n8n + Fallback)" },
+                      { id: "n8n", label: "n8n Engine (:5678)" },
+                      { id: "express", label: "Express MCP (:8000)" }
+                    ].map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => updateEngine(item.id)}
+                        className={`flex-1 py-2 rounded-lg text-center transition ${
+                          engine === item.id 
+                            ? "bg-white text-[#0065bd] shadow-sm border border-slate-200/50" 
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    Auto-routing attempts n8n Chat Orchestrator workflows first, automatically falling back to Express MCP Server multi-agent pipeline if n8n is offline.
                   </p>
                 </div>
 

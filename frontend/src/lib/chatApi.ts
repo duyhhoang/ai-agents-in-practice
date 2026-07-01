@@ -14,6 +14,7 @@ export type EvidenceGraphEdge = {
 };
 
 export type ChatResponse = {
+  messageId?: string;
   success?: boolean;
   answer?: string;
   executiveSummary?: string;
@@ -22,6 +23,8 @@ export type ChatResponse = {
   nextActions?: string[];
   riskLevel?: string;
   confidence?: string;
+  tableColumns?: string[];
+  tableRows?: Record<string, unknown>[];
   evidenceGraph?: {
     nodes: EvidenceGraphNode[];
     edges: EvidenceGraphEdge[];
@@ -48,6 +51,7 @@ export type ChatResponse = {
   question?: string;
   sessionId?: string;
   timestamp?: string;
+  engineUsed?: string;
   error?: string;
 };
 
@@ -61,9 +65,11 @@ export async function sendChatMessage(
 
   let reasoning = "low";
   let ragLimit = 3;
+  let engine = "auto";
   if (typeof window !== "undefined") {
     reasoning = window.localStorage.getItem("scales_reasoning_level") || "low";
     ragLimit = Number(window.localStorage.getItem("scales_rag_limit")) || 3;
+    engine = window.localStorage.getItem("scales_orchestrator_engine") || "auto";
   }
 
   const response = await fetch("/api/chat", {
@@ -73,9 +79,11 @@ export async function sendChatMessage(
     },
     body: JSON.stringify({
       message: message.trim(),
+      question: message.trim(),
       sessionId,
       reasoning,
-      ragLimit
+      ragLimit,
+      engine
     }),
   });
 
