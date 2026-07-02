@@ -1,5 +1,23 @@
 [
   {
+    "id": "exec-9797",
+    "timestamp": "2026-07-03T14:49:43.852Z",
+    "triggerType": "Upload Log (erp_goods_movements.csv)",
+    "status": "Success",
+    "durationMs": 50,
+    "filesProcessed": 1,
+    "error": null
+  },
+  {
+    "id": "exec-7763",
+    "timestamp": "2026-07-03T14:49:17.332Z",
+    "triggerType": "Manual Trigger",
+    "status": "Success",
+    "durationMs": 69,
+    "filesProcessed": 1,
+    "error": null
+  },
+  {
     "id": "exec-1982",
     "timestamp": "2026-07-02T18:07:52.615Z",
     "triggerType": "Manual Trigger",

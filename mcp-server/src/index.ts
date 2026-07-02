@@ -13,6 +13,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { getNeo4jDriver, closeNeo4jDriver } from "./neo4j-client.js";
 import neo4j from "neo4j-driver";
+import { convertNeo4jTypes, getHash, isForbiddenCypherQuery } from "./utils.js";
 
 dotenv.config();
 
@@ -29,44 +30,7 @@ const mcpServer = new Server({
   },
 });
 
-/**
- * Recursively converts Neo4j-specific types (Integer, DateTime, Date, etc.)
- * into standard JS primitives or ISO strings so they serialize cleanly in JSON.
- */
-function convertNeo4jTypes(value: any): any {
-  if (value === null || value === undefined) {
-    return value;
-  }
-  
-  if (typeof value === "object") {
-    // 1. Neo4j Integer (has .low and .high properties, or constructor name is "Integer")
-    if (value.constructor && value.constructor.name === "Integer") {
-      return value.toNumber();
-    }
-    if (typeof value.low === "number" && typeof value.high === "number" && Object.keys(value).length === 2) {
-      return value.high === 0 ? value.low : (value.high * 4294967296 + (value.low >>> 0));
-    }
-    
-    // 2. Neo4j Temporal Types (Date, DateTime, Time, LocalTime, Duration)
-    if (value.constructor && ["Date", "DateTime", "Time", "LocalTime", "Duration"].includes(value.constructor.name)) {
-      return value.toString();
-    }
-    
-    // 3. Arrays
-    if (Array.isArray(value)) {
-      return value.map(convertNeo4jTypes);
-    }
-    
-    // 4. Objects (dicts)
-    const converted: Record<string, any> = {};
-    for (const key of Object.keys(value)) {
-      converted[key] = convertNeo4jTypes(value[key]);
-    }
-    return converted;
-  }
-  
-  return value;
-}
+
 
 /**
  * Generates a deterministic unit vector of 1536 dimensions seeded by a string hash.
@@ -374,6 +338,21 @@ mcpServer.setRequestHandler(ListToolsRequestSchema, async () => {
           },
           required: ["query_text"]
         }
+      },
+      {
+        name: "schema-inspect",
+        description: "Inspect the Neo4j graph database schema, returning available node labels, relationship types, and property keys",
+        inputSchema: { type: "object", properties: {} }
+      },
+      {
+        name: "file-list",
+        description: "List all ingested files with their names, MD5 hashes, and vector embedding status",
+        inputSchema: { type: "object", properties: {} }
+      },
+      {
+        name: "ingest-file",
+        description: "Trigger the n8n data ingestion pipeline programmatically via MCP",
+        inputSchema: { type: "object", properties: {} }
       }
     ]
   };
@@ -697,6 +676,66 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         await session.close();
       }
     }
+
+    else if (name === "schema-inspect") {
+      const session = driver.session();
+      try {
+        const labelsRes = await session.executeRead(tx => tx.run("CALL db.labels() YIELD label RETURN label"));
+        const relsRes = await session.executeRead(tx => tx.run("CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType"));
+        const propsRes = await session.executeRead(tx => tx.run("CALL db.propertyKeys() YIELD propertyKey RETURN propertyKey"));
+        
+        const labels = labelsRes.records.map(r => r.get("label"));
+        const relationshipTypes = relsRes.records.map(r => r.get("relationshipType"));
+        const propertyKeys = propsRes.records.map(r => r.get("propertyKey"));
+
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({ labels, relationshipTypes, propertyKeys }, null, 2)
+          }]
+        };
+      } finally {
+        await session.close();
+      }
+    }
+
+    else if (name === "file-list") {
+      const session = driver.session();
+      try {
+        const res = await session.executeRead(tx => tx.run("MATCH (f:ProcessedFile) RETURN f.name AS name, f.hash AS hash, f.ingested_at AS ingested_at, f.embedding IS NOT NULL AS has_embedding"));
+        const files = res.records.map(r => ({
+          name: r.get("name"),
+          hash: r.get("hash"),
+          ingested_at: r.get("ingested_at"),
+          has_embedding: r.get("has_embedding")
+        }));
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({ total: files.length, files: convertNeo4jTypes(files) }, null, 2)
+          }]
+        };
+      } finally {
+        await session.close();
+      }
+    }
+
+    else if (name === "ingest-file") {
+      const webhookUrl = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/trigger-extraction";
+      const startTime = Date.now();
+      let n8nRes = await fetch(webhookUrl, { method: "POST" });
+      if (!n8nRes.ok && n8nRes.status === 405) {
+        n8nRes = await fetch(webhookUrl, { method: "GET" });
+      }
+      const duration = Date.now() - startTime;
+      const data = await n8nRes.json().catch(() => ({}));
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({ success: n8nRes.ok, duration_ms: duration, result: data }, null, 2)
+        }]
+      };
+    }
     
     else {
       throw new Error(`Tool ${name} not found`);
@@ -760,10 +799,7 @@ if (useStdio) {
   });
   const upload = multer({ storage });
 
-  // Helper to compute MD5 string hash
-  function getHash(str: string): string {
-    return crypto.createHash("md5").update(str).digest("hex");
-  }
+
 
   // Health check endpoint
   app.get("/api/health", async (req, res) => {
@@ -986,7 +1022,7 @@ if (useStdio) {
     try {
       const list = getExecutions();
       list.unshift({
-        id: "exec-" + Math.floor(1000 + Math.random() * 9000),
+        id: "exec-" + crypto.randomUUID(),
         timestamp: new Date().toISOString(),
         triggerType,
         status,
@@ -1103,7 +1139,10 @@ if (useStdio) {
 
     try {
       console.log(`[Upload] Triggering n8n pipeline: ${webhookUrl}`);
-      const n8nRes = await fetch(webhookUrl, { method: "GET" });
+      let n8nRes = await fetch(webhookUrl, { method: "POST" });
+      if (!n8nRes.ok && n8nRes.status === 405) {
+        n8nRes = await fetch(webhookUrl, { method: "GET" });
+      }
       const duration = Date.now() - startTime;
 
       if (!n8nRes.ok) {
@@ -1164,7 +1203,10 @@ if (useStdio) {
     const webhookUrl = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/trigger-extraction";
     const startTime = Date.now();
     try {
-      const n8nRes = await fetch(webhookUrl, { method: "GET" });
+      let n8nRes = await fetch(webhookUrl, { method: "POST" });
+      if (!n8nRes.ok && n8nRes.status === 405) {
+        n8nRes = await fetch(webhookUrl, { method: "GET" });
+      }
       const duration = Date.now() - startTime;
       if (n8nRes.ok) {
         const data = await n8nRes.json().catch(() => ({}));
@@ -1315,7 +1357,7 @@ Output ONLY the raw Cypher query inside a \`\`\`cypher code block. Do not write 
       if (cypherQuery && !cypherQuery.toLowerCase().includes("delete") && !cypherQuery.toLowerCase().includes("create") && !cypherQuery.toLowerCase().includes("merge")) {
         const session = driver.session();
         try {
-          const queryRes = await session.run(cypherQuery);
+          const queryRes = await session.executeRead(tx => tx.run(cypherQuery));
           dbResults = queryRes.records.map(r => r.toObject());
           dbResults = convertNeo4jTypes(dbResults);
         } catch (err: any) {
