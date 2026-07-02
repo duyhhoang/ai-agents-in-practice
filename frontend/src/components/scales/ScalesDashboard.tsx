@@ -241,6 +241,23 @@ export default function ScalesDashboard() {
   const [expandedTraceIdx, setExpandedTraceIdx] = useState<Record<number, boolean>>({});
   // Copy state for Cypher query copy button
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [health, setHealth] = useState<any>(null);
+
+  // Poll health status
+  useEffect(() => {
+    async function checkHealth() {
+      try {
+        const res = await fetch("/api/health");
+        if (res.ok) {
+          const data = await res.json();
+          setHealth(data);
+        }
+      } catch {}
+    }
+    checkHealth();
+    const interval = setInterval(checkHealth, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Auto-scroll ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -407,10 +424,10 @@ export default function ScalesDashboard() {
         </div>
 
         <div className="flex gap-2 sm:gap-3 flex-wrap">
-          <StatusTag icon={<Activity size={13} />} label="Core" value="Active" />
-          <StatusTag icon={<Network size={13} />} label="n8n" value="Linked" />
-          <StatusTag icon={<Database size={13} />} label="Neo4j" value="Ready" />
-          <StatusTag icon={<Zap size={13} />} label="MCP" value="Enabled" />
+          <StatusTag icon={<Activity size={13} />} label="Core" value={health ? (health.status === "ok" ? "Active" : "Degraded") : "Active"} />
+          <StatusTag icon={<Network size={13} />} label="n8n" value={health?.services?.n8n ? (health.services.n8n.status === "ok" ? "Linked" : "Offline") : "Linked"} />
+          <StatusTag icon={<Database size={13} />} label="Neo4j" value={health?.services?.neo4j ? (health.services.neo4j.status === "ok" ? "Ready" : "Offline") : "Ready"} />
+          <StatusTag icon={<Zap size={13} />} label="MCP" value={health?.services?.mcp_server ? (health.services.mcp_server.status === "ok" ? "Enabled" : "Offline") : "Enabled"} />
         </div>
       </header>
 
@@ -722,6 +739,28 @@ export default function ScalesDashboard() {
             )}
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Quick Prompts Chips */}
+          {messages.length <= 2 && (
+            <div className="px-4 py-2.5 bg-slate-50/80 border-t border-slate-100 flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Suggested:</span>
+              {[
+                "Identify top supplier risks across EV charging stations",
+                "List all logistics routes and transport delays",
+                "Summarize quality defect inspection reports",
+                "Check ESG compliance and carbon emissions"
+              ].map((promptText, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setInput(promptText)}
+                  className="text-[11px] px-2.5 py-1 rounded-full border border-slate-200 bg-white text-slate-600 hover:border-[#0065bd]/40 hover:bg-[#0065bd]/5 hover:text-[#0065bd] transition"
+                >
+                  {promptText}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Form input */}
           <form onSubmit={handleSubmit} className="border-t border-slate-100 p-4 flex gap-3 bg-slate-50/50 rounded-b-2xl">

@@ -64,7 +64,7 @@ export const scalesAgents: ScalesAgent[] = [
     keywords: ["sustainability", "esg", "emission", "waste", "recycling", "green"],
   },
   {
-    letter: "S",
+    letter: "M",
     codename: "Strategist",
     role: "Manager Agent",
     description: "Combines all agent outputs into one final business decision.",

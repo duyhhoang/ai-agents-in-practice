@@ -47,6 +47,7 @@ export default function IngestionView() {
   // Executions history states
   const [executions, setExecutions] = useState<ExecutionRun[]>([]);
   const [loadingExecs, setLoadingExecs] = useState(true);
+  const [selectedExecution, setSelectedExecution] = useState<ExecutionRun | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const consoleBottomRef = useRef<HTMLDivElement>(null);
@@ -344,8 +345,9 @@ export default function IngestionView() {
                       return (
                         <tr 
                           key={exec.id || idx}
-                          className="border-b border-slate-200/50 hover:bg-slate-100/50 transition cursor-help"
-                          title={exec.error ? `Error details: ${exec.error}` : isRunning ? "Workflow execution currently running in n8n" : "Workflow execution succeeded."}
+                          onClick={() => setSelectedExecution(exec)}
+                          className="border-b border-slate-200/50 hover:bg-slate-100/50 transition cursor-pointer"
+                          title="Click to inspect execution details"
                         >
                           <td className="p-3 text-slate-900 font-bold">
                             #{exec.id}
@@ -467,6 +469,73 @@ export default function IngestionView() {
         </div>
 
       </div>
+
+      {/* Execution Detail Modal */}
+      {selectedExecution && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <TerminalIcon className="text-[#0065bd]" size={18} />
+                <h3 className="font-bold text-slate-800 text-sm">Execution Run Details</h3>
+              </div>
+              <button
+                onClick={() => setSelectedExecution(null)}
+                className="text-slate-400 hover:text-slate-600 rounded-lg p-1 transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs font-mono">
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-400">Execution ID:</span>
+                <span className="font-bold text-slate-800">{selectedExecution.id}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-400">Timestamp:</span>
+                <span className="text-slate-700">{new Date(selectedExecution.timestamp).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-400">Trigger Source:</span>
+                <span className="text-slate-700">{selectedExecution.triggerType}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-400">Duration:</span>
+                <span className="text-slate-700">{(selectedExecution.durationMs / 1000).toFixed(2)}s ({selectedExecution.durationMs} ms)</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-400">Files Processed:</span>
+                <span className="text-slate-700">{selectedExecution.filesProcessed}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-400">Status:</span>
+                <span className={`font-bold px-2 py-0.5 rounded-full ${selectedExecution.status === "Success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : selectedExecution.status === "Running" ? "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                  {selectedExecution.status}
+                </span>
+              </div>
+
+              {selectedExecution.error && (
+                <div className="mt-3">
+                  <span className="text-slate-400 font-bold block mb-1">Error Diagnostics:</span>
+                  <pre className="p-3 bg-red-50 text-red-700 border border-red-100 rounded-xl whitespace-pre-wrap text-[11px] font-mono">
+                    {selectedExecution.error}
+                  </pre>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setSelectedExecution(null)}
+                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
