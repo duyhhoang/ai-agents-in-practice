@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
         source: "/upload",
         destination: "http://localhost:8000/upload",
       },
+      {
+        source: "/api/upload",
+        destination: "http://localhost:8000/api/upload",
+      },
+      {
+        source: "/api/upload/:path*",
+        destination: "http://localhost:8000/api/upload/:path*",
+      },
     ];
   },
 };
