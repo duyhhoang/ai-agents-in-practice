@@ -163,7 +163,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
   }
 
   // Load graph from Cypher query
-  async function runQuery(queryText: string) {
+  async function runQuery(queryText: string, params?: Record<string, any>) {
     setLoading(true);
     setCypherError("");
     setSelectedNode(null);
@@ -184,7 +184,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
       const res = await fetch("/api/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: queryText })
+        body: JSON.stringify({ query: queryText, params })
       });
 
       if (res.ok) {
@@ -211,6 +211,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
   function handleAmateurSearch(e: React.FormEvent) {
     e.preventDefault();
     let query = "";
+    let queryParams: Record<string, any> | undefined = undefined;
     const term = amateurTerm.trim();
     
     if (!term) {
@@ -222,20 +223,21 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
     } else {
       const sanitizedTerm = term.replace(/[\\^$*+?.()|[\]{}]/g, "\\$&").replace(/'/g, "\\'");
       const searchRegex = `(?i).*${sanitizedTerm}.*`;
+      queryParams = { searchTerm: searchRegex };
       
       if (amateurType === "All") {
         query = `
           MATCH (n)
           WHERE NOT n:ProcessedFile AND (
-            n.actor_name =~ '${searchRegex}' OR 
-            n.location_name =~ '${searchRegex}' OR 
-            n.material_name =~ '${searchRegex}' OR 
-            n.process_name =~ '${searchRegex}' OR 
-            n.unit_id =~ '${searchRegex}' OR
-            n.actor_id =~ '${searchRegex}' OR
-            n.material_id =~ '${searchRegex}' OR
-            n.process_id =~ '${searchRegex}' OR
-            n.name =~ '${searchRegex}'
+            n.actor_name =~ $searchTerm OR 
+            n.location_name =~ $searchTerm OR 
+            n.material_name =~ $searchTerm OR 
+            n.process_name =~ $searchTerm OR 
+            n.unit_id =~ $searchTerm OR
+            n.actor_id =~ $searchTerm OR
+            n.material_id =~ $searchTerm OR
+            n.process_id =~ $searchTerm OR
+            n.name =~ $searchTerm
           )
           OPTIONAL MATCH (n)-[r]-(m)
           WHERE NOT m:ProcessedFile
@@ -250,7 +252,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
           amateurType === "Material" ? ["n.material_name", "n.material_id"] :
           amateurType === "Transport" ? ["n.transport_id"] : ["n.name"];
         
-        const whereClause = searchFields.map(f => `${f} =~ '${searchRegex}'`).join(" OR ");
+        const whereClause = searchFields.map(f => `${f} =~ $searchTerm`).join(" OR ");
         query = `
           MATCH (n:${amateurType})
           WHERE ${whereClause}
@@ -260,7 +262,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
         `;
       }
     }
-    runQuery(query);
+    runQuery(query, queryParams);
   }
 
   // Load configuration defaults and dynamic labels query
