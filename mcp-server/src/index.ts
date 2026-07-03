@@ -13,6 +13,8 @@ import queryRouter from "./routes/query.js";
 import ingestionRouter from "./routes/ingestion.js";
 import chatRouter from "./routes/chat.js";
 
+import { createRateLimiter } from "./services/rate-limiter.js";
+
 dotenv.config();
 
 const mcpServer = new Server({
@@ -50,6 +52,14 @@ if (useStdio) {
   const app = express();
   app.use(cors({ exposedHeaders: ["mcp-session-id"] }));
   app.use(express.json());
+
+  // Rate Limiting Middleware for MCP Transports (Enhancement #4)
+  const mcpRateLimiter = createRateLimiter({
+    windowMs: 60 * 1000,
+    max: 120,
+    message: "MCP rate limit exceeded: maximum 120 requests per minute allowed."
+  });
+  app.use(["/sse", "/messages"], mcpRateLimiter);
 
   // Request Logger
   app.use((req, res, next) => {

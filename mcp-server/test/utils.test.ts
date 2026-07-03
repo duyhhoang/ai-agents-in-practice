@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { getHash, convertNeo4jTypes, isForbiddenCypherQuery } from "../src/utils.js";
 import { chunkText } from "../src/services/chunker.js";
+import { createRateLimiter } from "../src/services/rate-limiter.js";
 
 test("getHash - returns deterministic MD5 hex string", () => {
   const text = "TUM Supply Chain Test String";
@@ -64,4 +65,26 @@ Paragraph 3: Sustainability metrics and ESG compliance. Recycling rate achieved 
   assert.ok(chunks[0].text.includes("Supply chain risks"));
   assert.equal(chunks[1].index, 1);
   assert.ok(chunks[1].text.includes("Logistics analysis"));
+});
+
+test("createRateLimiter - enforces request limits per IP window", () => {
+  const limiter = createRateLimiter({ windowMs: 1000, max: 2, message: "Limit reached" });
+  let statusCode = 200;
+
+  const mockReq = { headers: {}, socket: { remoteAddress: "127.0.0.1" } } as any;
+  const mockRes = {
+    status(code: number) { statusCode = code; return this; },
+    json(body: any) { return body; }
+  } as any;
+
+  let passedCount = 0;
+  const next = () => { passedCount++; };
+
+  limiter(mockReq, mockRes, next); // Req 1: OK
+  limiter(mockReq, mockRes, next); // Req 2: OK
+  assert.equal(passedCount, 2);
+
+  limiter(mockReq, mockRes, next); // Req 3: Rate limited!
+  assert.equal(passedCount, 2);
+  assert.equal(statusCode, 429);
 });
