@@ -70,6 +70,19 @@ router.post("/ingestion/progress", (req, res) => {
   res.json({ success: true, progress: activeProgress });
 });
 
+router.post("/ingestion/failure", (req, res) => {
+  const { workflowName, executionId, error, timestamp } = req.body;
+  const errorMsg = error || "n8n pipeline execution failed";
+  const source = workflowName ? `n8n Error Trigger (${workflowName})` : "n8n Error Trigger";
+
+  console.error(`[n8n Pipeline Failure Notification] Execution: ${executionId || "N/A"}, Workflow: ${workflowName || "Data Ingestion"}, Error: ${errorMsg}`);
+  
+  logExecution(source, "Failed", 0, 0, errorMsg);
+  updateProgress(null, `Error Trigger: ${errorMsg}`, 0, false);
+
+  res.json({ success: true, message: "Failure notification logged" });
+});
+
 router.get("/ingestion/executions", (req, res) => {
   try {
     const cmd = `docker exec n8n-compose node -e "const { DatabaseSync } = require('node:sqlite'); const db = new DatabaseSync('/home/node/.n8n/database.sqlite'); const rows = db.prepare('SELECT e.id, e.workflowId, w.name AS workflowName, e.status, e.mode AS triggerType, e.startedAt, e.stoppedAt FROM execution_entity e LEFT JOIN workflow_entity w ON e.workflowId = w.id ORDER BY e.id DESC LIMIT 50').all(); console.log(JSON.stringify(rows));"`;

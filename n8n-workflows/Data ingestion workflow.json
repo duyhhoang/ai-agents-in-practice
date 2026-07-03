@@ -298,9 +298,53 @@
         1616,
         352
       ]
+    },
+    {
+      "parameters": {
+        "events": [
+          "workflowExecutionFailed"
+        ]
+      },
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        700
+      ],
+      "id": "error-trigger-node-001",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/api/ingestion/failure",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"workflowName\": \"{{$workflow.name}}\",\n  \"executionId\": \"{{$execution.id}}\",\n  \"error\": \"{{$json.execution.error.message || 'n8n workflow execution error'}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1420,
+        700
+      ],
+      "id": "error-notification-webhook-001",
+      "name": "Notify Failure Webhook"
     }
   ],
   "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Notify Failure Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Start": {
       "main": [
         [
