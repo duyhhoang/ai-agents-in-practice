@@ -30,6 +30,46 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+type ProgressState = {
+  active: boolean;
+  fileName: string | null;
+  step: string;
+  percent: number;
+  updatedAt: string;
+};
+
+let activeProgress: ProgressState = {
+  active: false,
+  fileName: null,
+  step: "Idle",
+  percent: 0,
+  updatedAt: new Date().toISOString()
+};
+
+export function updateProgress(fileName: string | null, step: string, percent: number, active = true) {
+  activeProgress = {
+    active,
+    fileName,
+    step,
+    percent: Math.min(100, Math.max(0, percent)),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+router.get("/ingestion/progress", (req, res) => {
+  const ageMs = Date.now() - new Date(activeProgress.updatedAt).getTime();
+  if (ageMs > 30000 && activeProgress.active) {
+    activeProgress.active = false;
+  }
+  res.json(activeProgress);
+});
+
+router.post("/ingestion/progress", (req, res) => {
+  const { fileName, step, percent, active } = req.body;
+  updateProgress(fileName || null, step || "Processing...", Number(percent) || 0, active !== false);
+  res.json({ success: true, progress: activeProgress });
+});
+
 router.get("/ingestion/executions", (req, res) => {
   try {
     const cmd = `docker exec n8n-compose node -e "const { DatabaseSync } = require('node:sqlite'); const db = new DatabaseSync('/home/node/.n8n/database.sqlite'); const rows = db.prepare('SELECT e.id, e.workflowId, w.name AS workflowName, e.status, e.mode AS triggerType, e.startedAt, e.stoppedAt FROM execution_entity e LEFT JOIN workflow_entity w ON e.workflowId = w.id ORDER BY e.id DESC LIMIT 50').all(); console.log(JSON.stringify(rows));"`;
@@ -131,6 +171,7 @@ router.post(["/upload", "/api/upload", "/api/ingestion/upload"], upload.single("
 
   try {
     console.log(`[Upload] Triggering n8n pipeline: ${webhookUrl}`);
+    updateProgress(filename, "Triggering n8n pipeline...", 15, true);
     let n8nRes = await fetch(webhookUrl, { method: "POST" });
     if (!n8nRes.ok && n8nRes.status === 405) {
       n8nRes = await fetch(webhookUrl, { method: "GET" });
@@ -144,10 +185,12 @@ router.post(["/upload", "/api/upload", "/api/ingestion/upload"], upload.single("
     const n8nData = await n8nRes.json().catch(() => ({}));
     console.log(`[Upload] Ingestion completed in ${duration}ms:`, n8nData);
 
+    updateProgress(filename, "Generating vector chunk embeddings...", 75, true);
     await initializeEmbeddings();
 
     const filesCount = Array.isArray(n8nData) ? n8nData.length : 1;
     logExecution(`Upload Log (${filename})`, "Success", duration, filesCount);
+    updateProgress(filename, "Ingestion complete!", 100, false);
 
     const answer = `File **${filename}** uploaded and ingested successfully!\n\n**Ingestion Report:**\n- Pipeline Duration: ${(duration / 1000).toFixed(2)}s\n- Status: Ingestion complete\n- Files processed in batch: ${filesCount}`;
 
@@ -175,6 +218,7 @@ router.post(["/upload", "/api/upload", "/api/ingestion/upload"], upload.single("
     const duration = Date.now() - startTime;
     console.error(`[Upload Error]`, err.message);
     logExecution(`Upload Log (${filename})`, "Failed", duration, 0, err.message);
+    updateProgress(filename, `Failed: ${err.message}`, 0, false);
     res.status(500).json({
       error: "Upload & Ingestion failed",
       details: err.message
@@ -189,6 +233,7 @@ router.post("/ingestion/trigger", async (req, res) => {
     return res.status(429).json({ success: false, error: "The n8n ingestion pipeline is already running. Please wait for it to complete." });
   }
   isPipelineRunning = true;
+  updateProgress("Batch Pipeline", "Triggering n8n pipeline...", 10, true);
   const webhookUrl = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/trigger-extraction";
   const startTime = Date.now();
   try {
@@ -201,6 +246,7 @@ router.post("/ingestion/trigger", async (req, res) => {
       const data = await n8nRes.json().catch(() => ({}));
       const filesCount = Array.isArray(data) ? data.length : 1;
       logExecution("Manual Trigger", "Success", duration, filesCount);
+      updateProgress("Batch Pipeline", "Pipeline finished!", 100, false);
       res.json({
         success: true,
         duration_ms: duration,
@@ -213,6 +259,7 @@ router.post("/ingestion/trigger", async (req, res) => {
   } catch (err: any) {
     const duration = Date.now() - startTime;
     logExecution("Manual Trigger", "Failed", duration, 0, err.message);
+    updateProgress("Batch Pipeline", `Failed: ${err.message}`, 0, false);
     res.status(500).json({ success: false, error: err.message });
   } finally {
     isPipelineRunning = false;

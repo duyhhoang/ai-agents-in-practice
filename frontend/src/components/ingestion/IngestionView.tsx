@@ -36,6 +36,14 @@ type ExecutionRun = {
   error: string | null;
 };
 
+type ProgressState = {
+  active: boolean;
+  fileName: string | null;
+  step: string;
+  percent: number;
+  updatedAt: string;
+};
+
 export default function IngestionView() {
   const [files, setFiles] = useState<IngestionFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(true);
@@ -44,6 +52,15 @@ export default function IngestionView() {
   const [logs, setLogs] = useState<ConsoleLog[]>([]);
   const [selectedFile, setSelectedFile] = useState<IngestionFile | null>(null);
   
+  // Progress State (Enhancement #3)
+  const [progress, setProgress] = useState<ProgressState>({
+    active: false,
+    fileName: null,
+    step: "Idle",
+    percent: 0,
+    updatedAt: new Date().toISOString()
+  });
+
   // Executions history states
   const [executions, setExecutions] = useState<ExecutionRun[]>([]);
   const [loadingExecs, setLoadingExecs] = useState(true);
@@ -51,6 +68,25 @@ export default function IngestionView() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const consoleBottomRef = useRef<HTMLDivElement>(null);
+
+  // Poll progress state
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    async function fetchProgress() {
+      try {
+        const res = await fetch("/api/ingestion/progress");
+        if (res.ok) {
+          const data = await res.json();
+          setProgress(data);
+        }
+      } catch (err) {
+        console.warn("Progress fetch error:", err);
+      }
+    }
+    fetchProgress();
+    interval = setInterval(fetchProgress, 1500);
+    return () => clearInterval(interval);
+  }, []);
 
   // Load execution history
   async function loadExecutions() {
@@ -306,6 +342,36 @@ export default function IngestionView() {
               )}
             </div>
           </div>
+
+          {/* Live Ingestion Progress Bar (Enhancement #3) */}
+          {(progress.active || uploading || triggering) && (
+            <div className="rounded-2xl border border-[#0065bd]/20 bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-purple-50/40 p-5 shadow-sm mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="animate-spin text-[#0065bd]" size={16} />
+                  <span className="text-xs font-bold text-slate-800">
+                    {progress.fileName ? `Ingesting File: ${progress.fileName}` : "Pipeline Execution Active"}
+                  </span>
+                </div>
+                <span className="text-xs font-bold font-mono text-[#0065bd]">
+                  {progress.percent}%
+                </span>
+              </div>
+              
+              {/* Progress Bar Track */}
+              <div className="w-full bg-slate-200/80 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-300/40">
+                <div 
+                  className="bg-gradient-to-r from-[#0065bd] to-blue-500 h-full rounded-full transition-all duration-500 ease-out shadow-sm"
+                  style={{ width: `${Math.max(5, progress.percent)}%` }}
+                />
+              </div>
+
+              <div className="flex justify-between items-center mt-2 text-[10px] font-mono text-slate-500">
+                <span>Step: <strong className="text-slate-700">{progress.step}</strong></span>
+                <span>Active n8n Extraction Pipeline</span>
+              </div>
+            </div>
+          )}
 
           {/* n8n Executions History */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col h-[320px]">
