@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getNeo4jDriver } from "../neo4j-client.js";
+import { chunkText } from "./chunker.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,14 +71,16 @@ export async function getEmbedding(text: string): Promise<number[]> {
 }
 
 /**
- * Startup function to read files from data-processors and update ProcessedFile nodes in Neo4j with vector embeddings.
+ * Startup function to read files from data-processors, chunk them into ProcessedChunk nodes,
+ * and update ProcessedFile & ProcessedChunk nodes in Neo4j with vector embeddings.
  */
 export async function initializeEmbeddings(): Promise<void> {
-  console.log("[Embedding Init] Initializing vector embeddings...");
+  console.log("[Embedding Init] Initializing chunked vector embeddings...");
   const driver = getNeo4jDriver();
   const session = driver.session();
   try {
-    const createIndexQuery = `
+    // 1. Create file_embeddings index (backward compatibility)
+    const createFileIndexQuery = `
       CREATE VECTOR INDEX file_embeddings IF NOT EXISTS
       FOR (f:ProcessedFile) ON (f.embedding)
       OPTIONS {indexConfig: {
@@ -85,8 +88,19 @@ export async function initializeEmbeddings(): Promise<void> {
         \`vector.similarity_function\`: 'cosine'
       }};
     `;
-    await session.run(createIndexQuery);
-    console.log("[Embedding Init] Vector index 'file_embeddings' verified.");
+    await session.run(createFileIndexQuery);
+
+    // 2. Create chunk_embeddings index for fine-grained chunk retrieval
+    const createChunkIndexQuery = `
+      CREATE VECTOR INDEX chunk_embeddings IF NOT EXISTS
+      FOR (c:ProcessedChunk) ON (c.embedding)
+      OPTIONS {indexConfig: {
+        \`vector.dimensions\`: 1536,
+        \`vector.similarity_function\`: 'cosine'
+      }};
+    `;
+    await session.run(createChunkIndexQuery);
+    console.log("[Embedding Init] Vector indices 'file_embeddings' and 'chunk_embeddings' verified.");
 
     const result = await session.run("MATCH (f:ProcessedFile) RETURN f.name AS name");
     const dbFiles = result.records.map(r => r.get("name") as string);
@@ -94,26 +108,56 @@ export async function initializeEmbeddings(): Promise<void> {
 
     const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, "../../data-processors");
     let updatedCount = 0;
+    let totalChunksCreated = 0;
 
     for (const fileName of dbFiles) {
       const filePath = path.join(uploadDir, fileName);
       if (fs.existsSync(filePath)) {
         const text = fs.readFileSync(filePath, "utf-8");
-        const embedding = await getEmbedding(text);
+        const fileEmbedding = await getEmbedding(text);
         
+        // Update ProcessedFile node
         await session.run(
           `
           MATCH (f:ProcessedFile {name: $name})
           SET f.embedding = $embedding, f.text = $text
           `,
-          { name: fileName, embedding, text }
+          { name: fileName, embedding: fileEmbedding, text }
         );
+
+        // Generate fine-grained paragraph/section chunks
+        const chunks = chunkText(text, 500, 100);
+        for (const chunk of chunks) {
+          const chunkEmbedding = await getEmbedding(chunk.text);
+          const chunkId = `${fileName}_chunk_${chunk.index}`;
+
+          await session.run(
+            `
+            MATCH (f:ProcessedFile {name: $fileName})
+            MERGE (c:ProcessedChunk {chunk_id: $chunkId})
+            SET c.index = $index,
+                c.text = $text,
+                c.file_name = $fileName,
+                c.embedding = $embedding
+            MERGE (f)-[:HAS_CHUNK]->(c)
+            `,
+            {
+              fileName,
+              chunkId,
+              index: chunk.index,
+              text: chunk.text,
+              embedding: chunkEmbedding
+            }
+          );
+          totalChunksCreated++;
+        }
+
         updatedCount++;
       } else {
         console.warn(`[Embedding Init] File ${fileName} from Neo4j DB does not exist on disk at ${filePath}`);
       }
     }
-    console.log(`[Embedding Init] Updated ${updatedCount} files with vector embeddings.`);
+    console.log(`[Embedding Init] Processed ${updatedCount} files, created/updated ${totalChunksCreated} ProcessedChunk nodes with vector embeddings.`);
   } catch (err: any) {
     console.error("[Embedding Init] Error populating embeddings:", err.message);
   } finally {

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { getHash, convertNeo4jTypes, isForbiddenCypherQuery } from "../src/utils.js";
+import { chunkText } from "../src/services/chunker.js";
 
 test("getHash - returns deterministic MD5 hex string", () => {
   const text = "TUM Supply Chain Test String";
@@ -48,4 +49,19 @@ test("parameterized query regex helper", () => {
   const sanitized = term.replace(/[\\^$*+?.()|[\]{}]/g, "\\$&").replace(/'/g, "\\'");
   const regex = `(?i).*${sanitized}.*`;
   assert.equal(regex, "(?i).*Steel \\(Alpha\\) & Co\\..*");
+});
+
+test("chunkText - breaks text into logical paragraph chunks", () => {
+  const sampleDocument = `Paragraph 1: Supply chain risks in European manufacturing. High probability of delay in Q3.
+
+Paragraph 2: Logistics analysis for shipping routes. Sea freight costs increased by 15% due to weather disruptions.
+
+Paragraph 3: Sustainability metrics and ESG compliance. Recycling rate achieved 88% across German assembly plants.`;
+
+  const chunks = chunkText(sampleDocument, 120, 20);
+  assert.ok(chunks.length >= 3);
+  assert.equal(chunks[0].index, 0);
+  assert.ok(chunks[0].text.includes("Supply chain risks"));
+  assert.equal(chunks[1].index, 1);
+  assert.ok(chunks[1].text.includes("Logistics analysis"));
 });

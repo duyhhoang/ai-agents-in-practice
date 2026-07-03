@@ -175,14 +175,21 @@ router.post(["/chat", "/api/chat"], async (req, res) => {
       const embedding = await getEmbedding(prompt);
       const session = driver.session();
       try {
-        const vecRes = await session.run(
-          `
+        const chunkQuery = `
+          CALL db.index.vector.queryNodes('chunk_embeddings', $limit, $embedding)
+          YIELD node, score
+          RETURN node.file_name AS filename, node.index AS chunk_index, node.text AS content, score
+        `;
+        const fileQuery = `
           CALL db.index.vector.queryNodes('file_embeddings', $limit, $embedding)
           YIELD node, score
-          RETURN node.name AS filename, coalesce(node.text, node.name) AS content, score
-          `,
-          { embedding, limit: neo4j.int(ragLimit) }
-        );
+          RETURN node.name AS filename, 0 AS chunk_index, coalesce(node.text, node.name) AS content, score
+        `;
+        
+        let vecRes = await session.executeRead(tx => tx.run(chunkQuery, { embedding, limit: neo4j.int(ragLimit) })).catch(() => null);
+        if (!vecRes || vecRes.records.length === 0) {
+          vecRes = await session.executeRead(tx => tx.run(fileQuery, { embedding, limit: neo4j.int(ragLimit) }));
+        }
         vectorResults = vecRes.records.map(r => r.toObject());
       } finally {
         await session.close();

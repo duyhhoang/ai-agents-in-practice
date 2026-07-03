@@ -358,15 +358,23 @@ export function registerMcpTools(mcpServer: Server): void {
         const limit = (args?.limit as number) || 5;
 
         const embedding = await getEmbedding(queryText);
-        const query = `
+        const chunkQuery = `
+          CALL db.index.vector.queryNodes('chunk_embeddings', $limit, $embedding)
+          YIELD node, score
+          RETURN node.file_name AS filename, node.index AS chunk_index, node.text AS content, score
+        `;
+        const fileQuery = `
           CALL db.index.vector.queryNodes('file_embeddings', $limit, $embedding)
           YIELD node, score
-          RETURN node.name AS filename, coalesce(node.text, node.name) AS content, score
+          RETURN node.name AS filename, 0 AS chunk_index, coalesce(node.text, node.name) AS content, score
         `;
 
         const session = driver.session();
         try {
-          const result = await session.executeRead(tx => tx.run(query, { limit, embedding }));
+          let result = await session.executeRead(tx => tx.run(chunkQuery, { limit, embedding })).catch(() => null);
+          if (!result || result.records.length === 0) {
+            result = await session.executeRead(tx => tx.run(fileQuery, { limit, embedding }));
+          }
           const records = result.records.map(r => r.toObject());
           const cleaned = convertNeo4jTypes(records);
           return {
