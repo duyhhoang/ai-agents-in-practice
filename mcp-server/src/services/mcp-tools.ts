@@ -169,9 +169,12 @@ export function registerMcpTools(mcpServer: Server): void {
                           entity_type === "Material" ? "material_id" : "id";
 
           let matchClause = `MATCH (start:${entity_type} {${idField}: $entity_id})`;
+          const queryParams: any = { entity_id, depth };
           if (entity_type === "Process" && unit_id) {
             const compoundId = `${unit_id}_${entity_id}`;
-            matchClause = `MATCH (start:Process) WHERE start.canonical_id = '${compoundId}' OR start.process_id = '${compoundId}' OR (start.process_id = '${entity_id}' AND start.unit_id = '${unit_id}')`;
+            matchClause = `MATCH (start:Process) WHERE start.canonical_id = $compoundId OR start.process_id = $compoundId OR (start.process_id = $entity_id AND start.unit_id = $unit_id)`;
+            queryParams.compoundId = compoundId;
+            queryParams.unit_id = unit_id;
           }
 
           const query = `
@@ -195,7 +198,7 @@ export function registerMcpTools(mcpServer: Server): void {
               }] AS relationships
           `;
 
-          const result = await session.executeRead(tx => tx.run(query, { entity_id, depth }));
+          const result = await session.executeRead(tx => tx.run(query, queryParams));
           if (result.records.length > 0) {
             const record = result.records[0].toObject();
             return {

@@ -40,6 +40,7 @@ test("isForbiddenCypherQuery - detects mutating keywords", () => {
   assert.equal(isForbiddenCypherQuery("CREATE (a:Actor {name: 'Test'})"), true);
   assert.equal(isForbiddenCypherQuery("MATCH (n) DETACH DELETE n"), true);
   assert.equal(isForbiddenCypherQuery("MATCH (a:Actor) SET a.country = 'DE'"), true);
+  assert.equal(isForbiddenCypherQuery("MATCH (n) SET n.name = 'test'"), true);
   assert.equal(isForbiddenCypherQuery("MERGE (c:ChargingStation {id: '1'})"), true);
   assert.equal(isForbiddenCypherQuery("MATCH (n) REMOVE n.flag"), true);
   assert.equal(isForbiddenCypherQuery("DROP INDEX actor_index IF EXISTS"), true);
@@ -65,6 +66,26 @@ Paragraph 3: Sustainability metrics and ESG compliance. Recycling rate achieved 
   assert.ok(chunks[0].text.includes("Supply chain risks"));
   assert.equal(chunks[1].index, 1);
   assert.ok(chunks[1].text.includes("Logistics analysis"));
+});
+
+test("chunkText - edge cases (empty text, single short paragraph, oversized paragraph)", () => {
+  // Empty/whitespace text
+  assert.deepEqual(chunkText(""), []);
+  assert.deepEqual(chunkText("   "), []);
+
+  // Single short paragraph (fits within maxChunkSize)
+  const shortText = "Just a short single paragraph.";
+  const shortChunks = chunkText(shortText, 100, 20);
+  assert.equal(shortChunks.length, 1);
+  assert.equal(shortChunks[0].index, 0);
+  assert.equal(shortChunks[0].text, shortText);
+
+  // Oversized paragraph (longer than maxChunkSize) split by sentence
+  const longParagraph = "This is sentence one which is fairly long. This is sentence two which is also long. This is sentence three which is also long.";
+  const oversizedChunks = chunkText(longParagraph, 50, 10);
+  assert.ok(oversizedChunks.length > 1);
+  assert.equal(oversizedChunks[0].index, 0);
+  assert.ok(oversizedChunks[0].text.includes("sentence one"));
 });
 
 test("createRateLimiter - enforces request limits per IP window", () => {

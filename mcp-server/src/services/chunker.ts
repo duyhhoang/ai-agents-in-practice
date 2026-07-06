@@ -7,7 +7,7 @@ export type TextChunk = {
  * Splits text into logical chunks (paragraphs / section windows) of approximately `maxChunkSize` characters,
  * respecting paragraph and sentence boundaries.
  */
-export function chunkText(text: string, maxChunkSize = 500, overlap = 100): TextChunk[] {
+export function chunkText(text: string, maxChunkSize = 500, overlap = 150): TextChunk[] {
   if (!text || !text.trim()) return [];
 
   const cleanText = text.trim();

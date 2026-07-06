@@ -748,7 +748,9 @@ export default function ScalesDashboard() {
                 "Identify top supplier risks across EV charging stations",
                 "List all logistics routes and transport delays",
                 "Summarize quality defect inspection reports",
-                "Check ESG compliance and carbon emissions"
+                "Check ESG compliance and carbon emissions",
+                "Show transport costs",
+                "Identify risk suppliers"
               ].map((promptText, idx) => (
                 <button
                   key={idx}

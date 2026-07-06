@@ -30,7 +30,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
+        "url": "={{ $env.LLM_SERVER_URL || 'http://atknoll32.air.cit.tum.de:3000/inference/chat/completions' }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
@@ -38,7 +38,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "your-cluster-api-key-here"
+              "value": "={{ $env.LLM_AUTHORIZATION }}"
             },
             {
               "name": "Content-Type",

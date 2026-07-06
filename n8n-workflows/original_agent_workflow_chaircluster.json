@@ -109,10 +109,10 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
+                "url": "={{ $env.LLM_SERVER_URL || 'http://atknoll32.air.cit.tum.de:3000/inference/chat/completions' }}",
                 "sendHeaders": true,
                 "specifyHeaders": "json",
-                "jsonHeaders": "{\"Authorization\": \"Bearer your-cluster-api-key-here\", \"Content-Type\": \"application/json\"}",
+                "jsonHeaders": "={{ JSON.stringify({ 'Authorization': $env.LLM_AUTHORIZATION, 'Content-Type': 'application/json' }) }}",
                 "sendBody": true,
                 "specifyBody": "json",
                 "jsonBody": "={{ $json }}",
@@ -138,10 +138,10 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
+                "url": "={{ $env.LLM_SERVER_URL || 'http://atknoll32.air.cit.tum.de:3000/inference/chat/completions' }}",
                 "sendHeaders": true,
                 "specifyHeaders": "json",
-                "jsonHeaders": "{\"Authorization\": \"Bearer your-cluster-api-key-here\", \"Content-Type\": \"application/json\"}",
+                "jsonHeaders": "={{ JSON.stringify({ 'Authorization': $env.LLM_AUTHORIZATION, 'Content-Type': 'application/json' }) }}",
                 "sendBody": true,
                 "specifyBody": "json",
                 "jsonBody": "={{ $json }}",

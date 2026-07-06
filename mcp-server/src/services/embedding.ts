@@ -126,7 +126,7 @@ export async function initializeEmbeddings(): Promise<void> {
         );
 
         // Generate fine-grained paragraph/section chunks
-        const chunks = chunkText(text, 500, 100);
+        const chunks = chunkText(text, 500, 150);
         for (const chunk of chunks) {
           const chunkEmbedding = await getEmbedding(chunk.text);
           const chunkId = `${fileName}_chunk_${chunk.index}`;
