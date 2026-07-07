@@ -1,5 +1,14 @@
 [
   {
+    "id": "exec-bc0ff548-ffcd-4930-8db4-5771157abe09",
+    "timestamp": "2026-07-07T11:15:00.557Z",
+    "triggerType": "Manual Trigger",
+    "status": "Success",
+    "durationMs": 67,
+    "filesProcessed": 1,
+    "error": null
+  },
+  {
     "id": "exec-8c1fe1ca-4de4-4bcc-8687-290049099f2e",
     "timestamp": "2026-07-07T11:05:12.635Z",
     "triggerType": "Manual Trigger",

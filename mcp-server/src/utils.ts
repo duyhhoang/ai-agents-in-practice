@@ -1,10 +1,16 @@
 import crypto from "crypto";
 
 /**
- * Computes an MD5 string hash for file content/cache keys.
+ * Computes the Java-like string hashCode custom hash (same as used in n8n pipeline).
  */
 export function getHash(str: string): string {
-  return crypto.createHash("md5").update(str).digest("hex");
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return (hash >>> 0).toString(16);
 }
 
 /**
