@@ -27,6 +27,13 @@ type ConsoleLog = {
   type: "system" | "success" | "error";
 };
 
+type IngestionFileDetail = {
+  name: string;
+  hash: string;
+  status: "Processed" | "Skipped" | "Failed";
+  error?: string;
+};
+
 type ExecutionRun = {
   id: string;
   timestamp: string;
@@ -35,6 +42,7 @@ type ExecutionRun = {
   durationMs: number;
   filesProcessed: number;
   error: string | null;
+  files?: IngestionFileDetail[];
 };
 
 type ProgressState = {
@@ -594,6 +602,28 @@ export default function IngestionView() {
                   {selectedExecution.status}
                 </span>
               </div>
+
+              {selectedExecution.files && selectedExecution.files.length > 0 && (
+                <div className="mt-3 border-t border-slate-100 pt-3">
+                  <span className="text-slate-400 font-bold block mb-1">Files Involved:</span>
+                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 divide-y divide-slate-100 max-h-[140px] overflow-y-auto">
+                    {selectedExecution.files.map((file, fIdx) => (
+                      <div key={fIdx} className="p-2 flex justify-between items-center text-[10px]">
+                        <span className="font-semibold text-slate-700 truncate max-w-[240px]" title={file.name}>
+                          {file.name}
+                        </span>
+                        <span className={`px-1.5 py-0.5 rounded-sm text-[8px] font-bold border ${
+                          file.status === "Processed" ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
+                          file.status === "Skipped" ? "bg-slate-100 text-slate-600 border-slate-200" :
+                          "bg-red-50 text-red-700 border-red-100"
+                        }`}>
+                          {file.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {selectedExecution.error && (
                 <div className="mt-3">

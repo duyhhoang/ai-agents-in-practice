@@ -4,6 +4,7 @@ import neo4j from "neo4j-driver";
 import { getNeo4jDriver } from "../neo4j-client.js";
 import { convertNeo4jTypes } from "../utils.js";
 import { getEmbedding } from "./embedding.js";
+import { runIngestionPipeline } from "./ingestion-service.js";
 
 export function registerMcpTools(mcpServer: Server): void {
   mcpServer.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -435,18 +436,17 @@ export function registerMcpTools(mcpServer: Server): void {
       }
 
       else if (name === "ingest-file") {
-        const webhookUrl = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/trigger-extraction";
-        const startTime = Date.now();
-        let n8nRes = await fetch(webhookUrl, { method: "POST" });
-        if (!n8nRes.ok && n8nRes.status === 405) {
-          n8nRes = await fetch(webhookUrl, { method: "GET" });
-        }
-        const duration = Date.now() - startTime;
-        const data = await n8nRes.json().catch(() => ({}));
+        const result = await runIngestionPipeline("MCP Tool (ingest-file)");
         return {
           content: [{
             type: "text",
-            text: JSON.stringify({ success: n8nRes.ok, duration_ms: duration, result: data }, null, 2)
+            text: JSON.stringify({
+              success: result.success,
+              executionId: result.executionId,
+              duration_ms: result.durationMs,
+              processed_files: result.filesProcessed,
+              files: result.files
+            }, null, 2)
           }]
         };
       }

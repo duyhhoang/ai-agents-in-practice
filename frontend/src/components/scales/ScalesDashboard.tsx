@@ -530,9 +530,21 @@ export default function ScalesDashboard() {
                     <div className="mb-2 flex items-center justify-between gap-2 text-[9px] uppercase tracking-wider text-slate-400 font-mono font-bold border-b border-slate-100/60 pb-1">
                       <span>{isUser ? "User Consultation Query" : "S.C.A.L.E.S. Advisor"}</span>
                       {!isUser && message.metadata?.engineUsed && (
-                        <span className="text-[8px] font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 normal-case">
-                          Engine: {message.metadata.engineUsed}
-                        </span>
+                        <div className="flex gap-1.5 items-center">
+                          <span className="text-[8px] font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 normal-case">
+                            Engine: {message.metadata.engineUsed}
+                          </span>
+                          {message.metadata?.embeddingMode === "fallback" && (
+                            <span className="text-[8px] font-mono font-semibold px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 normal-case" title="Google Gemini embeddings were unavailable; falling back to local deterministic mock vectors (non-semantic similarity)">
+                              RAG: Fallback Similarity
+                            </span>
+                          )}
+                          {message.metadata?.embeddingMode === "gemini" && (
+                            <span className="text-[8px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 normal-case">
+                              RAG: Gemini Semantic
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
 

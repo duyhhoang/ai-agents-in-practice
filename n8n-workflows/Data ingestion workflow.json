@@ -260,6 +260,12 @@
               "name": "timestamp",
               "value": "={{ $now.toISO() }}",
               "type": "string"
+            },
+            {
+              "id": "executionId",
+              "name": "executionId",
+              "value": "={{ $execution.id }}",
+              "type": "string"
             }
           ]
         },

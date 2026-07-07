@@ -40,6 +40,13 @@ export function getDeterministicMockEmbedding(text: string): number[] {
 }
 
 /**
+ * Returns true if GEMINI_API_KEY is not defined in the environment.
+ */
+export function isMockEmbedding(): boolean {
+  return !process.env.GEMINI_API_KEY;
+}
+
+/**
  * Generates embedding for a given text.
  * Uses Google Gemini if GEMINI_API_KEY is defined, or defaults to a local deterministic unit vector.
  */

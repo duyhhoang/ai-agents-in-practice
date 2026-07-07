@@ -64,7 +64,11 @@ export async function POST(request: NextRequest) {
     if (engine === "n8n") {
       const result = await fetchFromEndpoint(N8N_CHAT_WEBHOOK_URL, payload);
       if (result.ok && result.data) {
-        return NextResponse.json({ ...result.data, engineUsed: "n8n Workflow Engine (:5678)" });
+        return NextResponse.json({ 
+          ...result.data, 
+          engineUsed: "n8n Workflow Engine (:5678)",
+          embeddingMode: "fallback"
+        });
       }
       return NextResponse.json(
         { success: false, error: `n8n Chat Orchestrator failed: ${result.error}` },
@@ -75,7 +79,11 @@ export async function POST(request: NextRequest) {
     if (engine === "express") {
       const result = await fetchFromEndpoint(EXPRESS_CHAT_URL, payload);
       if (result.ok && result.data) {
-        return NextResponse.json({ ...result.data, engineUsed: "Express MCP Server (:8000)" });
+        return NextResponse.json({ 
+          ...result.data, 
+          engineUsed: "Express MCP Server (:8000)",
+          embeddingMode: result.data.embeddingMode || "gemini"
+        });
       }
       return NextResponse.json(
         { success: false, error: `Express Chat Server failed: ${result.error}` },
@@ -86,13 +94,21 @@ export async function POST(request: NextRequest) {
     // Auto-Routing: Try n8n first with full timeout (120s), fallback to Express if n8n is offline or unreachable
     const n8nResult = await fetchFromEndpoint(N8N_CHAT_WEBHOOK_URL, payload, 120000);
     if (n8nResult.ok && n8nResult.data && !n8nResult.data.error) {
-      return NextResponse.json({ ...n8nResult.data, engineUsed: "n8n Workflow Engine (:5678)" });
+      return NextResponse.json({ 
+        ...n8nResult.data, 
+        engineUsed: "n8n Workflow Engine (:5678)",
+        embeddingMode: "fallback"
+      });
     }
 
     // Fallback to Express Multi-Agent Engine
     const expressResult = await fetchFromEndpoint(EXPRESS_CHAT_URL, payload);
     if (expressResult.ok && expressResult.data) {
-      return NextResponse.json({ ...expressResult.data, engineUsed: "Express MCP Engine (:8000 - Fallback)" });
+      return NextResponse.json({ 
+        ...expressResult.data, 
+        engineUsed: "Express MCP Engine (:8000 - Fallback)",
+        embeddingMode: expressResult.data.embeddingMode || "gemini"
+      });
     }
 
     return NextResponse.json(
