@@ -284,7 +284,7 @@ export default function AppShell() {
                     ))}
                   </div>
                   <p className="text-[10px] text-slate-400">
-                    Auto-routing attempts n8n Chat Orchestrator workflows first, automatically falling back to Express MCP Server multi-agent pipeline if n8n is offline.
+                    Auto-routing attempts n8n Chat Orchestrator workflows first, automatically falling back to Express MCP server if n8n is offline.
                   </p>
                 </div>
 

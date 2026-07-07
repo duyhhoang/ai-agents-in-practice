@@ -383,7 +383,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const question = $(\"Normalize Chat Input\").first().json.question || \"\";\nconst sessionId = $(\"Normalize Chat Input\").first().json.sessionId || \"default-session\";\nconst selectedAgents = $(\"Route Question\").first().json.selectedAgents || [];\n\nfunction getNodeJson(nodeName) {\n  try {\n    return $(nodeName).first().json;\n  } catch (e) {\n    return {\n      agent: nodeName,\n      status: \"error\",\n      answer: `Could not read output from ${nodeName}`,\n      keyFindings: [],\n      recommendations: [],\n      confidence: \"low\",\n      error: e.message,\n    };\n  }\n}\n\nconst procurement = getNodeJson(\"Run Procurement Specialist\");\nconst risk = getNodeJson(\"Run Risk Analyst\");\nconst logistics = getNodeJson(\"Run Logistics Specialist\");\nconst sustainability = getNodeJson(\"Run Sustainability Analyst\");\nconst quality = getNodeJson(\"Run Quality Analyst\");\n\nconst allSpecialistResults = [\n  procurement,\n  risk,\n  logistics,\n  sustainability,\n  quality,\n].filter(Boolean);\n\nconst specialistResults = allSpecialistResults.filter(\n  (result) => result.status !== \"skipped\"\n);\n\nreturn [\n  {\n    json: {\n      question,\n      sessionId,\n      selectedAgents,\n      specialistResults,\n      allSpecialistResults,\n      timestamp: new Date().toISOString(),\n    },\n  },\n];"
+        "jsCode": "const question = $(\"Normalize Chat Input\").first().json.question || \"\";\nconst sessionId = $(\"Normalize Chat Input\").first().json.sessionId || \"default-session\";\nconst selectedAgents = $(\"Route Question\").first().json.selectedAgents || [];\nconst sourceChunks = $(\"Parse RAG Chunks\").first().json.sourceChunks || [];\n\nfunction getNodeJson(nodeName) {\n  try {\n    return $(nodeName).first().json;\n  } catch (e) {\n    return {\n      agent: nodeName,\n      status: \"error\",\n      answer: `Could not read output from ${nodeName}`,\n      keyFindings: [],\n      recommendations: [],\n      confidence: \"low\",\n      error: e.message,\n    };\n  }\n}\n\nconst procurement = getNodeJson(\"Run Procurement Specialist\");\nconst risk = getNodeJson(\"Run Risk Analyst\");\nconst logistics = getNodeJson(\"Run Logistics Specialist\");\nconst sustainability = getNodeJson(\"Run Sustainability Analyst\");\nconst quality = getNodeJson(\"Run Quality Analyst\");\n\nconst allSpecialistResults = [\n  procurement,\n  risk,\n  logistics,\n  sustainability,\n  quality,\n].filter(Boolean);\n\nconst specialistResults = allSpecialistResults.filter(\n  (result) => result.status !== \"skipped\"\n);\n\nconst toolsUsed = [];\nif (sourceChunks.length > 0) {\n  toolsUsed.push({\n    id: \"vector_search\",\n    name: \"Vector Search (Unstructured RAG)\",\n    status: \"success\",\n    inputSummary: question,\n    outputSummary: `Found ${sourceChunks.length} matching unstructured documents.`\n  });\n}\n\nconst CYPHER_TEMPLATES = {\n  procurement_specialist: `MATCH (a:Actor)\nWHERE coalesce(a.is_canonical_actor, false) = true AND (toLower(coalesce(a.actor_role, \"\")) IN [\"supplier\", \"manufacturer\"] OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"supplier\" OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"materials\" OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"manufacturing\" OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"cable\" OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"coating\" OR EXISTS { MATCH (a)-[:SUPPLIES]-() })\nOPTIONAL MATCH (a)-[r]-(connected)\nRETURN a.actor_id AS supplier_id, coalesce(a.display_name, a.actor_name, a.name) AS supplier_name, a.region AS region, a.actor_origin AS actor_origin, a.actor_role AS actor_role, labels(connected) AS connected_labels, coalesce(connected.display_name, connected.actor_name, connected.name, connected.unit_id, connected.process_id, connected.material_id, connected.location_name, connected.id) AS connected_entity, type(r) AS relationship, properties(connected) AS connected_properties\nORDER BY supplier_id LIMIT 100`,\n\n  risk_analyst: `MATCH (n)\nWHERE n:Risk OR n:IncidentReport OR n:AuditFinding OR n:MaintenanceEvent OR n:TestReport\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN coalesce(n.id, n.risk_id, n.incident_id, n.audit_id, n.test_report_id, n.maintenance_id) AS item_id, labels(n)[0] AS item_type, coalesce(n.name, n.risk_name, n.description, n.finding, n.incident_description, n.event_type, n.status, n.id) AS item_name, properties(n) AS properties, type(r) AS relationship, labels(connected) AS connected_labels, coalesce(connected.actor_name, connected.name, connected.unit_id, connected.process_id, connected.material_name, connected.location_name, connected.id) AS connected_entity\nLIMIT 100`,\n\n  logistics_specialist: `MATCH (n)\nWHERE n:Location OR n:Transport OR (n:Actor AND (toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"logistics\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"freight\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"transport\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"shipping\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"carrier\"))\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN coalesce(n.transport_id, n.location_code, n.actor_id, n.unit_id, n.id) AS item_id, labels(n)[0] AS item_type, coalesce(n.location_name, n.actor_name, n.name, n.route_from, n.route_to, n.country, n.id) AS item_name, properties(n) AS properties, type(r) AS relationship, labels(connected) AS connected_labels, coalesce(connected.unit_id, connected.serial_number, connected.actor_name, connected.name, connected.process_id, connected.process_name, connected.material_name, connected.location_name, connected.id) AS connected_entity\nLIMIT 100`,\n\n  sustainability_analyst: `MATCH (n)\nWHERE n:Material OR (n:Actor AND (toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"recycling\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"recovery\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"waste\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"environment\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"sustainability\")) OR any(k IN keys(n) WHERE toLower(k) CONTAINS \"carbon\" OR toLower(k) CONTAINS \"co2\" OR toLower(k) CONTAINS \"emission\" OR toLower(k) CONTAINS \"recycling\" OR toLower(k) CONTAINS \"recycled\" OR toLower(k) CONTAINS \"waste\" OR toLower(k) CONTAINS \"environment\" OR toLower(k) CONTAINS \"sustainability\")\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN coalesce(n.material_id, n.actor_id, n.unit_id, n.process_id, n.location_code, n.id) AS item_id, labels(n)[0] AS item_type, coalesce(n.material_name, n.actor_name, n.name, n.process_name, n.location_name, n.serial_number, n.id) AS item_name, properties(n) AS properties, type(r) AS relationship, labels(connected) AS connected_labels, coalesce(connected.actor_name, connected.name, connected.unit_id, connected.process_id, connected.process_name, connected.material_name, connected.location_name, connected.id) AS connected_entity\nLIMIT 100`,\n\n  quality_analyst: `MATCH (n)\nWHERE n:TestReport OR n:AuditFinding OR n:IncidentReport OR n:MaintenanceEvent OR any(k IN keys(n) WHERE toLower(k) CONTAINS \"quality\" OR toLower(k) CONTAINS \"test\" OR toLower(k) CONTAINS \"defect\" OR toLower(k) CONTAINS \"failure\" OR toLower(k) CONTAINS \"inspection\" OR toLower(k) CONTAINS \"audit\" OR toLower(k) CONTAINS \"result\")\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN coalesce(n.test_report_id, n.audit_id, n.incident_id, n.maintenance_id, n.id) AS item_id, labels(n)[0] AS item_type, coalesce(n.name, n.description, n.finding, n.status, n.result, n.event_type, n.incident_description, n.id) AS item_name, properties(n) AS properties, type(r) AS relationship, labels(connected) AS connected_labels, coalesce(connected.actor_name, connected.name, connected.unit_id, connected.process_id, connected.process_name, connected.material_name, connected.location_name, connected.id) AS connected_entity\nLIMIT 100`\n};\n\nconst cypherQueries = [];\nspecialistResults.forEach((spec) => {\n  if (spec.agent && CYPHER_TEMPLATES[spec.agent]) {\n    cypherQueries.push({ query: CYPHER_TEMPLATES[spec.agent] });\n  }\n});\n\nconst allRecords = [];\nspecialistResults.forEach((spec) => {\n  if (spec.evidence && typeof spec.evidence === \"object\") {\n    Object.values(spec.evidence).forEach((val) => {\n      if (Array.isArray(val)) {\n        allRecords.push(...val);\n      }\n    });\n  }\n});\n\nlet tableColumns = [];\nlet tableRows = [];\nif (allRecords.length > 0) {\n  const cols = new Set();\n  allRecords.forEach((row) => {\n    Object.keys(row).forEach((k) => cols.add(k));\n  });\n  tableColumns = Array.from(cols);\n  tableRows = allRecords;\n}\n\nreturn [\n  {\n    json: {\n      question,\n      sessionId,\n      selectedAgents,\n      specialistResults,\n      allSpecialistResults,\n      sourceChunks,\n      toolsUsed,\n      cypherQueries,\n      tableColumns,\n      tableRows,\n      timestamp: new Date().toISOString(),\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -397,7 +397,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{\n  {\n    success: true,\n    answer: $json.answer || \"\",\n    executiveSummary: $json.executiveSummary || \"\",\n    keyFindings: $json.keyFindings || [],\n    recommendations: $json.recommendations || [],\n    nextActions: $json.nextActions || [],\n    riskLevel: $json.riskLevel || \"unknown\",\n    confidence: $json.confidence || \"medium\",\n    evidenceGraph: $json.evidenceGraph || {\n      nodes: [],\n      edges: []\n    },\n    specialistSummary: $json.specialistSummary || [],\n    specialistResults: $json.specialistResults || [],\n    question: $json.question || \"\",\n    sessionId: $json.sessionId || \"default-session\",\n    timestamp: new Date().toISOString()\n  }\n}}",
+        "responseBody": "={{\n  {\n    success: true,\n    answer: $json.answer || \"\",\n    executiveSummary: $json.executiveSummary || \"\",\n    keyFindings: $json.keyFindings || [],\n    recommendations: $json.recommendations || [],\n    nextActions: $json.nextActions || [],\n    riskLevel: $json.riskLevel || \"unknown\",\n    confidence: $json.confidence || \"medium\",\n    evidenceGraph: $json.evidenceGraph || {\n      nodes: [],\n      edges: []\n    },\n    specialistSummary: $json.specialistSummary || [],\n    specialistResults: $json.specialistResults || [],\n    tableColumns: $json.tableColumns || [],\n    tableRows: $json.tableRows || [],\n    evidenceTrace: $json.evidenceTrace || {\n      toolsUsed: [],\n      cypherQueries: [],\n      sourceChunks: [],\n      accessedNodes: []\n    },\n    question: $json.question || \"\",\n    sessionId: $json.sessionId || \"default-session\",\n    timestamp: new Date().toISOString()\n  }\n}}",
         "options": {
           "responseCode": 200
         }
@@ -410,10 +410,87 @@
       ],
       "id": "d024686f-8b0c-4aae-98af-7364818aca31",
       "name": "Respond to Frontend"
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = $json.question || \"\";\n\n// LCG mock embedding\nconst embedding = [];\nlet seed = 0;\nfor (let i = 0; i < question.length; i++) {\n  seed = (seed << 5) - seed + question.charCodeAt(i);\n  seed |= 0;\n}\nlet state = seed;\nlet sumOfSquares = 0;\nfor (let i = 0; i < 1536; i++) {\n  state = (Math.imul(state, 1664525) + 1013904223) | 0;\n  const val = state / 2147483648;\n  embedding.push(val);\n  sumOfSquares += val * val;\n}\nconst magnitude = Math.sqrt(sumOfSquares);\nif (magnitude > 0) {\n  for (let i = 0; i < 1536; i++) {\n    embedding[i] /= magnitude;\n  }\n} else {\n  embedding[0] = 1.0;\n}\n\nconst chunkQuery = `\n  CALL db.index.vector.queryNodes('chunk_embeddings', 3, $embedding)\n  YIELD node, score\n  RETURN node.file_name AS filename, node.index AS chunk_index, node.text AS content, score\n`;\n\nreturn [{\n  json: {\n    body: {\n      query: chunkQuery,\n      params: {\n        embedding,\n        limit: 3\n      }\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        -150
+      ],
+      "id": "calc-embedding-node-id",
+      "name": "Calculate Embedding & Query"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/api/query",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        380,
+        -150
+      ],
+      "id": "vector-search-node-id",
+      "name": "Neo4j Vector Search"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $json.results || [];\nconst sourceChunks = results.map((r, idx) => ({\n  id: `chunk_${idx}`,\n  documentName: r.filename || \"Unknown Document\",\n  text: r.content || \"\"\n}));\n\nlet original = {};\ntry {\n  original = $(\"Normalize Chat Input\").first().json;\n} catch (e) {\n  original = {};\n}\n\nreturn [{\n  json: {\n    ...original,\n    sourceChunks\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -150
+      ],
+      "id": "parse-rag-chunks-id",
+      "name": "Parse RAG Chunks"
     }
   ],
   "connections": {
     "Normalize Chat Input": {
+      "main": [
+        [
+          {
+            "node": "Calculate Embedding & Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Embedding & Query": {
+      "main": [
+        [
+          {
+            "node": "Neo4j Vector Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neo4j Vector Search": {
+      "main": [
+        [
+          {
+            "node": "Parse RAG Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse RAG Chunks": {
       "main": [
         [
           {

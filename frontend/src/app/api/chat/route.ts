@@ -40,6 +40,8 @@ async function fetchFromEndpoint(url: string, payload: object, timeoutMs = 12000
   }
 }
 
+
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as ChatRequestBody;
