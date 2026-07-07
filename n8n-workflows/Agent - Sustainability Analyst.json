@@ -21,10 +21,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        0,
-        0
+        -672,
+        96
       ],
-      "id": "b24b62ac-191c-4e60-b183-614eb84bfa30",
+      "id": "92238f00-1628-41f4-a29b-d3e6226cfe7e",
       "name": "When Executed by Another Workflow"
     },
     {
@@ -34,28 +34,28 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
-        -96
+        0,
+        0
       ],
-      "id": "cc9ada74-ab80-4d2e-873d-5c1a0e9cad2a",
+      "id": "8c4aadf1-2aab-4631-872b-dae374e17828",
       "name": "Build Sustainability Query"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:3001/api/query",
+        "url": "http://host.docker.internal:8000/api/query",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  {\n    query: $json.query,\n    params: $json.params || {}\n  }\n}}",
+        "jsonBody": "={{ { query: $json.query, params: $json.params || {} } }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        848,
-        -96
+        176,
+        0
       ],
-      "id": "c824ab02-36af-4dfb-a54f-12478fd25a02",
+      "id": "022c981b-9de4-4a91-8f84-15d3acdd9746",
       "name": "HTTP Request"
     },
     {
@@ -65,10 +65,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
-        -96
+        368,
+        0
       ],
-      "id": "297c4f0d-c5d0-4de8-bb6d-9bf5849b2399",
+      "id": "204d0c02-16ea-4ed5-90eb-50bc0bfda601",
       "name": "Format Sustainability Result"
     },
     {
@@ -78,16 +78,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1232,
-        -96
+        560,
+        0
       ],
-      "id": "b76a761d-8eaa-49f6-945c-73d01866723a",
+      "id": "c1b3f58e-30ee-4a9c-90f0-041fe90f0cb7",
       "name": "Build LLM Summary Payload"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.LLM_SERVER_URL || 'http://atknoll32.air.cit.tum.de:3000/inference/chat/completions' }}",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
@@ -113,14 +113,14 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1440,
-        -96
+        768,
+        0
       ],
-      "id": "72a9b987-cd72-4104-9fcc-bd6c7b837e0b",
+      "id": "6af17304-65a3-4710-96ff-07ea8a52a085",
       "name": "LLM Sustainability Summary",
       "credentials": {
         "openAiApi": {
-          "id": "YPxI5FcVO2XRCV4r",
+          "id": "7I27ErC2eQH25gHI",
           "name": "OpenAI account"
         }
       }
@@ -132,10 +132,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1648,
-        -96
+        976,
+        0
       ],
-      "id": "0a3980d5-ccc5-4bf2-87b8-2c9ca96fb7a4",
+      "id": "7d3d0309-c0de-4403-9571-e3537481e4d9",
       "name": "Parse Sustainability Summary"
     },
     {
@@ -145,10 +145,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
-        0
+        -464,
+        96
       ],
-      "id": "c8cbe0be-8003-4d13-99a6-fdf68ae8ad89",
+      "id": "4fe390da-54fd-4ed2-8934-7167480ddcad",
       "name": "Should Run Sustainability Analyst"
     },
     {
@@ -179,10 +179,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        416,
-        0
+        -256,
+        96
       ],
-      "id": "b1264ab6-678a-4723-bbdb-935159c53e63",
+      "id": "c8a82869-bdde-42ef-be43-9fb972121f59",
       "name": "If"
     },
     {
@@ -192,14 +192,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
-        128
+        0,
+        224
       ],
-      "id": "6a14ec68-fdbe-40ec-9d2a-a69c58d35fb0",
+      "id": "910ebfd2-deac-4d44-9b0a-7c9ebfddc652",
       "name": "Return Skipped Sustainability Analyst"
     }
   ],
-  "pinData": {},
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
@@ -297,17 +296,17 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "ffd80b30-ca6d-43a3-8977-bbfe4c76a764",
-  "meta": {
-    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
-  },
+  "versionId": "a836ba8d-f8d9-4474-89c6-024a12ea096e",
+  "meta": null,
+  "id": "s8WHnPo7bImcVJJb",
   "nodeGroups": [],
-  "id": "686Mgxmqt06FHz7D",
-  "tags": []
+  "pinData": {}
 }

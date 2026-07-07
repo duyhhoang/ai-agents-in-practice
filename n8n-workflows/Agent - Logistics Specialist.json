@@ -21,10 +21,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        0,
-        0
+        -672,
+        112
       ],
-      "id": "1f9cfb29-9d9d-4357-bba1-6bd6f66d7bf2",
+      "id": "202c886a-fc4e-4415-a281-f334d8b6a7c8",
       "name": "When Executed by Another Workflow"
     },
     {
@@ -34,28 +34,28 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
-        -112
+        0,
+        0
       ],
-      "id": "07cfde05-7431-44d3-aa3c-70177487c185",
+      "id": "47189248-4722-4b18-946b-f4ed8cf44b3d",
       "name": "Build Logistics Query"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:3001/api/query",
+        "url": "http://host.docker.internal:8000/api/query",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  {\n    query: $json.query,\n    params: $json.params || {}\n  }\n}}",
+        "jsonBody": "={{ { query: $json.query, params: $json.params || {} } }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        848,
-        -112
+        176,
+        0
       ],
-      "id": "e7153c82-74ff-4a6b-815e-2d312212ec1c",
+      "id": "96dd089b-22a4-4c80-a7cf-a5f07f997bd4",
       "name": "Call Graph API Query"
     },
     {
@@ -65,10 +65,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1056,
-        -112
+        384,
+        0
       ],
-      "id": "337f19f4-7d5f-444d-9c72-b414ee52d61a",
+      "id": "ef95b19c-a262-4d1e-a2a3-72b4e4d45e48",
       "name": "Format Logistics Result"
     },
     {
@@ -78,16 +78,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1248,
-        -112
+        576,
+        0
       ],
-      "id": "7d390997-b896-4da9-89df-e87c916bb636",
+      "id": "cc759ef9-d4cf-4d1a-8b53-10a45ad5e6c9",
       "name": "Build LLM Summary Payload"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.LLM_SERVER_URL || 'http://atknoll32.air.cit.tum.de:3000/inference/chat/completions' }}",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
@@ -113,14 +113,14 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1456,
-        -112
+        784,
+        0
       ],
-      "id": "9396dcad-467a-48d0-8ba6-28a253cca936",
+      "id": "af87afdc-9292-4ce1-85d9-a602538ab741",
       "name": "LLM Logistics Summary",
       "credentials": {
         "openAiApi": {
-          "id": "YPxI5FcVO2XRCV4r",
+          "id": "7I27ErC2eQH25gHI",
           "name": "OpenAI account"
         }
       }
@@ -132,10 +132,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1648,
-        -112
+        976,
+        0
       ],
-      "id": "f2d1db98-1e57-445e-b371-4f5b5981adc4",
+      "id": "8d1e8e74-fc1c-4e93-ac0c-af6abc182048",
       "name": "Parse Logistics Summary"
     },
     {
@@ -145,10 +145,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
-        0
+        -464,
+        112
       ],
-      "id": "bd5830c4-5d01-4d3f-81ab-7d6f2d580313",
+      "id": "19da5486-3ccf-495f-9425-5a5700f95360",
       "name": "Should Run Logistics Specialist"
     },
     {
@@ -179,10 +179,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        416,
-        0
+        -256,
+        112
       ],
-      "id": "54024574-42c7-4e92-bc93-3a7ffa55b87d",
+      "id": "ef6a5f15-cf71-4041-b71e-ca5961f4de87",
       "name": "If"
     },
     {
@@ -192,14 +192,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
-        144
+        0,
+        256
       ],
-      "id": "917f5b7b-5b0b-4385-8d51-718a4044691c",
+      "id": "0ff57e18-f053-4ab3-bc97-9936c4df7f2a",
       "name": "Return Skipped Logistics Specialist"
     }
   ],
-  "pinData": {},
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
@@ -297,17 +296,15 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": true
   },
-  "versionId": "38e59972-ff5c-4580-afa2-a56afce981db",
-  "meta": {
-    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
-  },
+  "versionId": "88ea5612-63d5-4054-a2c4-dc846b46db4b",
+  "meta": null,
+  "id": "eapmSJqxssrCsoeP",
   "nodeGroups": [],
-  "id": "sfU2H5vLueRQIoGi",
-  "tags": []
+  "pinData": {}
 }

@@ -21,10 +21,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        0,
-        0
+        -832,
+        176
       ],
-      "id": "609266be-bbc0-47d9-9166-9b6c8fb6207b",
+      "id": "629de156-3ae1-440f-a4e5-18f79a9e5b44",
       "name": "When Executed by Another Workflow"
     },
     {
@@ -34,28 +34,28 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        608,
-        -96
+        -224,
+        80
       ],
-      "id": "dc417bc7-4bb4-4845-bbbe-ad735ef5a76f",
+      "id": "d2765f38-bae7-412b-a429-ceb25edab45b",
       "name": "Build Risk Query"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:3001/api/query",
+        "url": "http://host.docker.internal:8000/api/query",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  {\n    query: $json.query,\n    params: $json.params || {}\n  }\n}}",
+        "jsonBody": "={{ { query: $json.query, params: $json.params || {} } }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        832,
-        -96
+        0,
+        80
       ],
-      "id": "020955a7-954d-4ff2-af45-f9931d741549",
+      "id": "1d0debdb-5943-4b21-8e5e-8af2586897c5",
       "name": "Call Graph API Query"
     },
     {
@@ -65,10 +65,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
-        -96
+        208,
+        80
       ],
-      "id": "1fcac96a-9dd6-4a42-9e01-785612e72321",
+      "id": "19bfffb6-fba2-42ce-a8eb-70172795517f",
       "name": "Format Risk Result"
     },
     {
@@ -78,16 +78,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1248,
-        -96
+        416,
+        80
       ],
-      "id": "0667a4c1-3bb8-4efa-954e-b3778b74121d",
+      "id": "5fe689d0-523d-4b70-858b-4ffe1f60a49b",
       "name": "Build LLM Summary Payload"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.LLM_SERVER_URL || 'http://atknoll32.air.cit.tum.de:3000/inference/chat/completions' }}",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
@@ -113,14 +113,14 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1456,
-        -96
+        624,
+        80
       ],
-      "id": "3163f62c-3256-43f3-a114-1f25e96c7695",
+      "id": "479d737a-b7ae-4b4f-8e9d-d8b9e1e060ab",
       "name": "LLM Risk Summary",
       "credentials": {
         "openAiApi": {
-          "id": "YPxI5FcVO2XRCV4r",
+          "id": "7I27ErC2eQH25gHI",
           "name": "OpenAI account"
         }
       }
@@ -132,10 +132,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1664,
-        -96
+        832,
+        80
       ],
-      "id": "2b41c9f2-a8ce-441d-b96c-0b100bb0ea2f",
+      "id": "eaa1661c-0e70-4440-9d6d-27c7496d8619",
       "name": "Parse Risk Summary"
     },
     {
@@ -145,10 +145,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
-        0
+        -624,
+        176
       ],
-      "id": "a1b606d6-5d1d-4cf5-b5de-31c8baeb20e6",
+      "id": "a8ae5630-06b5-4ad2-808c-4f925a3105e9",
       "name": "Should Run Risk Analyst"
     },
     {
@@ -179,10 +179,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        416,
-        0
+        -416,
+        176
       ],
-      "id": "8c821052-4269-476a-89bc-be136097f8a3",
+      "id": "75a69a90-fff5-4f07-8192-7a864626e8fd",
       "name": "If"
     },
     {
@@ -192,14 +192,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        608,
-        96
+        -224,
+        272
       ],
-      "id": "dd9d32a1-b69a-4034-95bc-cc83196f4ab5",
+      "id": "2e0d8fd9-1460-40d2-bc98-df5c65c8b20e",
       "name": "Return Skipped Risk Analyst"
     }
   ],
-  "pinData": {},
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
@@ -297,17 +296,15 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": true
   },
-  "versionId": "337567c6-bd9f-4de5-988b-ddf85ef531cc",
-  "meta": {
-    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
-  },
+  "versionId": "9bce54a6-a096-4229-a2ff-3df18b737003",
+  "meta": null,
+  "id": "9gJZZgqU5nbqAJg4",
   "nodeGroups": [],
-  "id": "IsImqnGly0WiqjeN",
-  "tags": []
+  "pinData": {}
 }

@@ -21,10 +21,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        0,
-        0
+        -640,
+        64
       ],
-      "id": "55bb55a0-6931-41ed-97d5-2babb2c2511e",
+      "id": "d889b347-819d-4eac-a737-1481af98a04c",
       "name": "When Executed by Another Workflow"
     },
     {
@@ -34,28 +34,28 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        640,
-        -64
+        0,
+        0
       ],
-      "id": "11a7a255-b240-4ccb-abce-de08848d15ca",
+      "id": "47be5e30-e9b7-4651-8208-7c1fb9d0d945",
       "name": "Build Quality Query"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:3001/api/query",
+        "url": "http://host.docker.internal:8000/api/query",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  {\n    query: $json.query,\n    params: $json.params || {}\n  }\n}}",
+        "jsonBody": "={{ { query: $json.query, params: $json.params || {} } }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        832,
-        -64
+        192,
+        0
       ],
-      "id": "75e31497-b9a8-42c8-8387-71b46ed77491",
+      "id": "cdadad92-2590-412d-8f3b-8a8fe0443b9b",
       "name": "HTTP Request"
     },
     {
@@ -65,10 +65,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
-        -64
+        400,
+        0
       ],
-      "id": "f9ce8009-53aa-48a7-8bff-9e59271060bb",
+      "id": "b8fa1af8-a6d1-4959-9e3d-6282f5da480f",
       "name": "Format Quality Result"
     },
     {
@@ -78,16 +78,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1248,
-        -64
+        608,
+        0
       ],
-      "id": "3451482e-1179-4ddd-ae6c-c82bac110f98",
+      "id": "ad5cae9e-a682-4621-aba5-18d5b945b56b",
       "name": "Build LLM Summary Payload"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.LLM_SERVER_URL || 'http://atknoll32.air.cit.tum.de:3000/inference/chat/completions' }}",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
@@ -113,14 +113,14 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1440,
-        -64
+        800,
+        0
       ],
-      "id": "2b5f506e-9828-47b4-80dc-069e924a9eab",
+      "id": "a269067f-d974-4587-bd8b-2b1e87b0fc1c",
       "name": "LLM Quality Summary",
       "credentials": {
         "openAiApi": {
-          "id": "YPxI5FcVO2XRCV4r",
+          "id": "7I27ErC2eQH25gHI",
           "name": "OpenAI account"
         }
       }
@@ -132,10 +132,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1648,
-        -64
+        1008,
+        0
       ],
-      "id": "04c2c050-4154-4b57-836c-e5642057a22f",
+      "id": "cf8c65ef-f13c-4c78-9a37-14b6844e82a3",
       "name": "Parse Quality Summary"
     },
     {
@@ -145,10 +145,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
-        0
+        -432,
+        64
       ],
-      "id": "f8550bfc-8dcf-4a4a-8800-e853caa7afd0",
+      "id": "48671577-a1da-439b-abd8-06b10f1d4486",
       "name": "Should Run Quality Analyst"
     },
     {
@@ -179,10 +179,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        416,
-        0
+        -224,
+        64
       ],
-      "id": "a7d199fd-5be7-4501-9cee-5cf17eaab168",
+      "id": "3c4863ce-81b6-4455-adf1-b24dbffcb4da",
       "name": "If"
     },
     {
@@ -192,14 +192,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        640,
-        112
+        0,
+        176
       ],
-      "id": "00c68f41-95b1-4ae9-ac6b-381e4ac08259",
+      "id": "38d88283-b5d3-456d-84c2-61ce5f6d5279",
       "name": "Return Skipped Quality Analyst"
     }
   ],
-  "pinData": {},
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
@@ -297,17 +296,15 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": true
   },
-  "versionId": "0405c13b-72ac-46f8-a9ef-4266652f6943",
-  "meta": {
-    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
-  },
+  "versionId": "b19842f1-e023-481b-97c2-a488f6fc6295",
+  "meta": null,
+  "id": "katRgLtpWF3LrCHC",
   "nodeGroups": [],
-  "id": "TmZatFmBoIM3ZhDt",
-  "tags": []
+  "pinData": {}
 }

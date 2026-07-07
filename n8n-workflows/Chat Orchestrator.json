@@ -11,7 +11,7 @@
         208,
         0
       ],
-      "id": "8fbd0076-8cfd-4ae2-b73a-295c9354f715",
+      "id": "a354c625-8907-4028-a373-69c36ae2feeb",
       "name": "Normalize Chat Input"
     },
     {
@@ -27,7 +27,7 @@
         0,
         0
       ],
-      "id": "82aca0a7-52f3-4596-b585-13f1f28529bc",
+      "id": "327ed70c-fec2-45f3-8e56-616f0465db65",
       "name": "Chat Webhook",
       "webhookId": "e643ee31-e8f5-4135-a542-39f71461bfd7"
     },
@@ -41,16 +41,16 @@
         416,
         0
       ],
-      "id": "142dab87-5051-4561-9f49-079a46073bd2",
+      "id": "923faa7d-ed07-4a01-b17d-2ac93ae0a0b2",
       "name": "Route Question"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "IsImqnGly0WiqjeN",
+          "value": "9gJZZgqU5nbqAJg4",
           "mode": "list",
-          "cachedResultUrl": "/workflow/IsImqnGly0WiqjeN",
+          "cachedResultUrl": "/workflow/9gJZZgqU5nbqAJg4",
           "cachedResultName": "Agent - Risk Analyst"
         },
         "workflowInputs": {
@@ -102,16 +102,16 @@
         832,
         0
       ],
-      "id": "defc9211-fe89-42b4-a38e-76f64c9882be",
+      "id": "7c94c798-b318-4153-ab62-0e091111b7f3",
       "name": "Run Risk Analyst"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "sfU2H5vLueRQIoGi",
+          "value": "eapmSJqxssrCsoeP",
           "mode": "list",
-          "cachedResultUrl": "/workflow/sfU2H5vLueRQIoGi",
+          "cachedResultUrl": "/workflow/eapmSJqxssrCsoeP",
           "cachedResultName": "Agent - Logistics Specialist"
         },
         "workflowInputs": {
@@ -163,16 +163,16 @@
         1040,
         0
       ],
-      "id": "554124fc-662c-40f5-9c97-a473d175e77d",
+      "id": "d29cd495-56c4-41b2-95bb-331b6f50359b",
       "name": "Run Logistics Specialist"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "686Mgxmqt06FHz7D",
+          "value": "s8WHnPo7bImcVJJb",
           "mode": "list",
-          "cachedResultUrl": "/workflow/686Mgxmqt06FHz7D",
+          "cachedResultUrl": "/workflow/s8WHnPo7bImcVJJb",
           "cachedResultName": "Agent - Sustainability Analyst"
         },
         "workflowInputs": {
@@ -226,16 +226,16 @@
         1248,
         0
       ],
-      "id": "a1c29aa9-f297-4347-ba19-e3be9b692889",
+      "id": "c06f2955-3282-46dc-9958-f25c87dce1d8",
       "name": "Run Sustainability Analyst"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "TmZatFmBoIM3ZhDt",
+          "value": "katRgLtpWF3LrCHC",
           "mode": "list",
-          "cachedResultUrl": "/workflow/TmZatFmBoIM3ZhDt",
+          "cachedResultUrl": "/workflow/katRgLtpWF3LrCHC",
           "cachedResultName": "Agent - Quality Analyst"
         },
         "workflowInputs": {
@@ -287,16 +287,16 @@
         1456,
         0
       ],
-      "id": "ba0aaa8f-0d84-4a42-b987-1985445794a4",
+      "id": "84918db1-0ed6-42c4-b17f-f3d77d5d2739",
       "name": "Run Quality Analyst"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "TnXOpXvOE0RExCg3",
+          "value": "knllbSt9bGgQyQIZ",
           "mode": "list",
-          "cachedResultUrl": "/workflow/TnXOpXvOE0RExCg3",
+          "cachedResultUrl": "/workflow/knllbSt9bGgQyQIZ",
           "cachedResultName": "Agent - Manager"
         },
         "workflowInputs": {
@@ -315,16 +315,16 @@
         1872,
         0
       ],
-      "id": "5e65f95b-2708-41b7-a5d3-8084825e49da",
+      "id": "b7b5f1a6-5b7f-414e-86a6-2f95f58c1319",
       "name": "Run Manager Agent"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "XE16kijrzbXIFjhy",
+          "value": "uXxa1PiN0LtYwNdr",
           "mode": "list",
-          "cachedResultUrl": "/workflow/XE16kijrzbXIFjhy",
+          "cachedResultUrl": "/workflow/uXxa1PiN0LtYwNdr",
           "cachedResultName": "Agent - Procurement Specialist"
         },
         "workflowInputs": {
@@ -378,7 +378,7 @@
         624,
         0
       ],
-      "id": "a7c16971-d87b-4203-a146-36cbdaa77e4c",
+      "id": "b028b586-f9f3-4bb8-be2d-4234a9513087",
       "name": "Run Procurement Specialist"
     },
     {
@@ -391,7 +391,7 @@
         1664,
         0
       ],
-      "id": "f035cf1b-a2f3-4989-90f3-9aeeaf98935e",
+      "id": "bb76658b-be5e-4c5c-9c3a-a23bf01d3a7e",
       "name": "Combine Specialist Results"
     },
     {
@@ -408,11 +408,10 @@
         2080,
         0
       ],
-      "id": "a8acc7bf-cbb3-4f29-aeba-9f8f34c2423d",
+      "id": "d024686f-8b0c-4aae-98af-7364818aca31",
       "name": "Respond to Frontend"
     }
   ],
-  "pinData": {},
   "connections": {
     "Normalize Chat Input": {
       "main": [
@@ -525,17 +524,15 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": true
   },
-  "versionId": "a3030fe6-20fb-4570-8817-9bfe85e395fc",
-  "meta": {
-    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
-  },
+  "versionId": "b4638e68-c75c-467d-a244-1966edf80431",
+  "meta": null,
+  "id": "JapWg4BT2PAJfNTa",
   "nodeGroups": [],
-  "id": "Rrwgv1CHsvjsPiVi",
-  "tags": []
+  "pinData": {}
 }

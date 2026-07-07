@@ -1,114 +1,118 @@
 {
-    "nodes": [
-        {
-            "parameters": {
-                "options": {
-                    "systemMessage": "You are a senior supply chain consultant. You have access to a Neo4j knowledge graph representing processes, charging stations, actors, locations, and transport. Use your tools to query the graph, extract subgraphs, analyze bottlenecks, and generate PlantUML diagrams. Answer the user's question with consultant-grade insights."
-                }
-            },
-            "id": "4b86a239-34d8-4048-9198-2ceb4d2b494f",
-            "name": "Supply Chain Consultant Agent",
-            "type": "@n8n/n8n-nodes-langchain.agent",
-            "typeVersion": 3.1,
-            "position": [
-                368,
-                304
-            ]
-        },
-        {
-            "parameters": {
-                "model": {
-                    "__rl": true,
-                    "value": "google/gemma-4-31B-it",
-                    "mode": "id"
-                },
-                "builtInTools": {},
-                "options": {}
-            },
-            "id": "e7f7b617-03b7-425c-b105-008c32749a38",
-            "name": "TUM Cluster Chat Model",
-            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-            "typeVersion": 1.3,
-            "position": [
-                384,
-                528
-            ],
-            "credentials": {
-                "openAiApi": {
-                    "id": "7I27ErC2eQH25gHI",
-                    "name": "OpenAI account"
-                }
-            }
-        },
-        {
-            "parameters": {
-                "endpointUrl": "http://host.docker.internal:3000/sse",
-                "serverTransport": "sse",
-                "options": {}
-            },
-            "id": "3dcaed74-9f9d-4f80-8336-ba8f29518c29",
-            "name": "Supply Chain Knowledge Graph Tool",
-            "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
-            "typeVersion": 1.3,
-            "position": [
-                512,
-                528
-            ]
-        },
-        {
-            "parameters": {
-                "options": {}
-            },
-            "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-            "typeVersion": 1.4,
-            "position": [
-                144,
-                304
-            ],
-            "id": "0f23f447-5506-42c2-8e53-30d773ae3c0e",
-            "name": "When chat message received",
-            "webhookId": "d68f51ec-1144-4588-9517-ba73688b804c"
+  "name": "Supply Chain MCP Test Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a senior supply chain consultant. You have access to a Neo4j knowledge graph representing processes, charging stations, actors, locations, and transport. Use your tools to query the graph, extract subgraphs, analyze bottlenecks, and generate PlantUML diagrams. Answer the user's question with consultant-grade insights."
         }
-    ],
-    "connections": {
-        "TUM Cluster Chat Model": {
-            "ai_languageModel": [
-                [
-                    {
-                        "node": "Supply Chain Consultant Agent",
-                        "type": "ai_languageModel",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Supply Chain Knowledge Graph Tool": {
-            "ai_tool": [
-                [
-                    {
-                        "node": "Supply Chain Consultant Agent",
-                        "type": "ai_tool",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "When chat message received": {
-            "main": [
-                [
-                    {
-                        "node": "Supply Chain Consultant Agent",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        }
+      },
+      "id": "b3eefc0d-c9ce-4f0f-8146-4db0fd8884a6",
+      "name": "Supply Chain Consultant Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        384,
+        304
+      ]
     },
-    "pinData": {},
-    "meta": {
-        "aiBuilderAssisted": true,
-        "builderVariant": "mcp",
-        "instanceId": "795ff76ade5e734a99f2adb3c586c3485c1b0441404936a3336efd3be3e316c0"
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "id": "337b38f4-da31-4550-9f32-9b1e9d5c08fb",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        464
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "NusehXonsz4JNcpu",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://host.docker.internal:3000/sse",
+        "serverTransport": "sse",
+        "options": {}
+      },
+      "id": "a9f42c20-19b6-4bc5-9e83-4922554000d4",
+      "name": "Supply Chain Knowledge Graph Tool",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        128,
+        304
+      ],
+      "id": "6c720186-7b11-4e47-af90-f1457d507d09",
+      "name": "When chat message received",
+      "webhookId": "45136536-4459-4138-a6a9-4468ae5bd41b"
     }
+  ],
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Supply Chain Consultant Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supply Chain Knowledge Graph Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supply Chain Consultant Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Supply Chain Consultant Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "versionId": "5dde0e72-ae15-422a-aad9-9887700c3ab3",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "id": "DXg2bwufMcDN7TqE",
+  "nodeGroups": [],
+  "pinData": {}
 }

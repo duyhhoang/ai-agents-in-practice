@@ -11,7 +11,7 @@
         0,
         0
       ],
-      "id": "106ded77-4c99-4173-94b9-d610dbc9c198",
+      "id": "6b4e1b0f-7a7b-41bf-a37e-a5a088b8021c",
       "name": "When Executed by Another Workflow"
     },
     {
@@ -24,13 +24,13 @@
         208,
         0
       ],
-      "id": "25bfb2f9-4f29-488d-8443-edba08b5af63",
+      "id": "04c7fc37-b2ac-4a5d-9ad0-9249498f38f5",
       "name": "Build Manager LLM Payload"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.LLM_SERVER_URL || 'http://atknoll32.air.cit.tum.de:3000/inference/chat/completions' }}",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
@@ -59,11 +59,11 @@
         416,
         0
       ],
-      "id": "e3881e72-b59d-4fa0-b65c-3a81692bc759",
+      "id": "18f5a3ae-40a6-4762-b5f8-6aecb6ec111d",
       "name": "LLM Manager Summary",
       "credentials": {
         "openAiApi": {
-          "id": "YPxI5FcVO2XRCV4r",
+          "id": "7I27ErC2eQH25gHI",
           "name": "OpenAI account"
         }
       }
@@ -78,11 +78,10 @@
         624,
         0
       ],
-      "id": "bbe0c9fb-984a-4564-a41d-2439d3579538",
+      "id": "12496d3c-4076-4abc-9fce-9d223c4c6ad9",
       "name": "Parse Manager Answer"
     }
   ],
-  "pinData": {},
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
@@ -118,17 +117,15 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": true
   },
-  "versionId": "a95098ed-b1b0-48ef-b0ac-3f61476f19f1",
-  "meta": {
-    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
-  },
+  "versionId": "3018dc7b-4e37-434e-95d2-6b36af1e1e58",
+  "meta": null,
+  "id": "knllbSt9bGgQyQIZ",
   "nodeGroups": [],
-  "id": "TnXOpXvOE0RExCg3",
-  "tags": []
+  "pinData": {}
 }

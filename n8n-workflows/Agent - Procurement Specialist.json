@@ -21,10 +21,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        560,
-        0
+        -672,
+        112
       ],
-      "id": "c3a4e3f0-730f-462e-a169-bb0413f4da82",
+      "id": "859c7dfe-1c51-41bd-89d1-11cea5cce966",
       "name": "When Executed by Another Workflow"
     },
     {
@@ -34,28 +34,28 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1232,
-        -112
+        0,
+        0
       ],
-      "id": "574c323a-2504-412e-9531-d967481028bf",
+      "id": "ca316a56-3970-4315-ad8f-b9f77aee344a",
       "name": "Build Procurement Query"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:3001/api/query",
+        "url": "http://host.docker.internal:8000/api/query",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  {\n    query: $json.mcpArguments.query,\n    params: $json.mcpArguments.params || {}\n  }\n}}",
+        "jsonBody": "={{ { query: $json.query, params: $json.params || {} } }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1424,
-        -112
+        192,
+        0
       ],
-      "id": "13952df3-1989-4a2a-9013-1072dff2e436",
+      "id": "fb9cc25e-08b5-41b0-9d26-5a4ecedeeef7",
       "name": "Call MCP graph-query"
     },
     {
@@ -65,10 +65,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1616,
-        -112
+        384,
+        0
       ],
-      "id": "debecbc1-7ff4-4953-8e7b-617ae8c48420",
+      "id": "447574ce-2090-4e62-844f-f54483a2eea0",
       "name": "Format Procurement Result"
     },
     {
@@ -78,16 +78,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1824,
-        -112
+        592,
+        0
       ],
-      "id": "3cb71f9a-5277-46f5-af69-757cd948a269",
+      "id": "254bed5b-1341-4e4e-bf0e-67cb2b0ea190",
       "name": "Build LLM Summary Payload"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.LLM_SERVER_URL || 'http://atknoll32.air.cit.tum.de:3000/inference/chat/completions' }}",
+        "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
@@ -113,14 +113,14 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        2016,
-        -112
+        784,
+        0
       ],
-      "id": "4fd46321-a85a-4f25-97fe-39474ce13f14",
+      "id": "1ca6739d-bdbc-4f4b-a05d-c602a705fdee",
       "name": "HTTP Request",
       "credentials": {
         "openAiApi": {
-          "id": "YPxI5FcVO2XRCV4r",
+          "id": "7I27ErC2eQH25gHI",
           "name": "OpenAI account"
         }
       }
@@ -132,10 +132,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2240,
-        -112
+        1008,
+        0
       ],
-      "id": "81fb64d3-3363-4679-b4f8-b22c1789cf5b",
+      "id": "bca844c0-f681-4609-a58b-48d42088243f",
       "name": "Parse LLM Summary"
     },
     {
@@ -145,10 +145,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        768,
-        0
+        -464,
+        112
       ],
-      "id": "aff7bf03-f4ef-4e5c-9e00-10cdbe32bbda",
+      "id": "a98548d2-fb46-40a7-bf01-9a0885309bc6",
       "name": "Should Run Procurement Specialist"
     },
     {
@@ -179,10 +179,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        976,
-        0
+        -256,
+        112
       ],
-      "id": "b429dac6-bb2e-439f-9fd6-14d3c7212e4b",
+      "id": "973117f7-bf73-4fea-a94c-9336f4cd09d9",
       "name": "If"
     },
     {
@@ -192,14 +192,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1232,
-        144
+        0,
+        256
       ],
-      "id": "875da61b-4f02-42be-a32f-2db9b32f6398",
+      "id": "b997a2ca-405e-4f6d-a1ad-498036343b80",
       "name": "Return Skipped Procurement Specialist"
     }
   ],
-  "pinData": {},
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
@@ -297,18 +296,30 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": true
   },
-  "versionId": "3b80c9c2-c5ac-472d-aa30-41e15e0efb2c",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
-  },
+  "versionId": "0d82c95d-8bcd-40c9-bf21-343cf3c818d0",
+  "meta": null,
+  "id": "uXxa1PiN0LtYwNdr",
   "nodeGroups": [],
-  "id": "XE16kijrzbXIFjhy",
-  "tags": []
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "question": "What are the top suppliers?",
+          "sessionId": "test-debug",
+          "selectedAgents": [
+            "procurement_specialist"
+          ]
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  }
 }
