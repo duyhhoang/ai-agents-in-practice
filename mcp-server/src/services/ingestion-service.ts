@@ -84,7 +84,7 @@ export async function runIngestionPipeline(triggerType: string, filename?: strin
   const preFileStates = await getFileStates();
 
   // 2. Log temporary "Running" execution
-  logDetailedExecution({
+  await logDetailedExecution({
     id: tempExecId,
     workflowName: "07_LLM_Entity_Extraction_v3_HTTP",
     timestamp: new Date().toISOString(),
@@ -148,14 +148,14 @@ export async function runIngestionPipeline(triggerType: string, filename?: strin
     const processedCount = files.filter(f => f.status === "Processed").length;
 
     // 7. Update execution log to Success
-    logDetailedExecution({
+    await logDetailedExecution({
       id: executionId,
       workflowName: "07_LLM_Entity_Extraction_v3_HTTP",
       timestamp: new Date().toISOString(),
       triggerType,
       status: "Success",
       durationMs: duration,
-      filesProcessed: processedCount || 1,
+      filesProcessed: processedCount,
       error: null,
       files
     }, tempExecId);
@@ -166,7 +166,7 @@ export async function runIngestionPipeline(triggerType: string, filename?: strin
       success: true,
       executionId,
       durationMs: duration,
-      filesProcessed: processedCount || 1,
+      filesProcessed: processedCount,
       files,
       details: n8nData
     };
@@ -174,7 +174,7 @@ export async function runIngestionPipeline(triggerType: string, filename?: strin
   } catch (err: any) {
     const duration = Date.now() - startTime;
     // Log execution as Failed
-    logDetailedExecution({
+    await logDetailedExecution({
       id: tempExecId,
       workflowName: "07_LLM_Entity_Extraction_v3_HTTP",
       timestamp: new Date().toISOString(),
