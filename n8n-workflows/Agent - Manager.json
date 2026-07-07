@@ -38,7 +38,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer REDACTED_API_KEY"
+              "value": "=Bearer {{ $env.LLM_AUTHORIZATION }}"
             },
             {
               "name": "Content-Type",
@@ -123,7 +123,7 @@
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "3018dc7b-4e37-434e-95d2-6b36af1e1e58",
+  "versionId": "223210ac-1541-4b61-9ff9-52b3bad91147",
   "meta": null,
   "id": "knllbSt9bGgQyQIZ",
   "nodeGroups": [],

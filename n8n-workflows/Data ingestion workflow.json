@@ -113,7 +113,7 @@
         "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
         "sendHeaders": true,
         "specifyHeaders": "json",
-        "jsonHeaders": "={{ JSON.stringify({ 'Authorization': $env.LLM_AUTHORIZATION, 'Content-Type': 'application/json' }) }}",
+        "jsonHeaders": "{\"Authorization\": \"=Bearer {{ $env.LLM_AUTHORIZATION }}\", \"Content-Type\": \"application/json\"}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ $json }}",
@@ -142,7 +142,7 @@
         "url": "http://atknoll32.air.cit.tum.de:3000/inference/chat/completions",
         "sendHeaders": true,
         "specifyHeaders": "json",
-        "jsonHeaders": "={{ JSON.stringify({ 'Authorization': $env.LLM_AUTHORIZATION, 'Content-Type': 'application/json' }) }}",
+        "jsonHeaders": "{\"Authorization\": \"=Bearer {{ $env.LLM_AUTHORIZATION }}\", \"Content-Type\": \"application/json\"}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ $json }}",
@@ -252,20 +252,20 @@
             {
               "id": "status",
               "name": "status",
-              "value": "LLM entity extraction completed",
-              "type": "string"
+              "type": "string",
+              "value": "LLM entity extraction completed"
             },
             {
               "id": "timestamp",
               "name": "timestamp",
-              "value": "={{ $now.toISO() }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
             },
             {
               "id": "executionId",
               "name": "executionId",
-              "value": "={{ $execution.id }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $execution.id }}"
             }
           ]
         },
@@ -502,7 +502,7 @@
     "saveDataOnErrorSelfHosted": true,
     "saveDataOnSuccessSelfHosted": true
   },
-  "versionId": "6ceb6d66-2721-4ced-b038-f6f0fe361a87",
+  "versionId": "ccb9120f-5132-4981-ae24-3f88ece1d766",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"

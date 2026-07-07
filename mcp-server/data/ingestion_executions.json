@@ -1,5 +1,14 @@
 [
   {
+    "id": "exec-b5be2cd0-0d6a-4d6c-9122-007dfdd7e0a8",
+    "timestamp": "2026-07-07T22:20:22.368Z",
+    "triggerType": "Upload Log (04_transport_movements.csv)",
+    "status": "Success",
+    "durationMs": 192,
+    "filesProcessed": 1,
+    "error": null
+  },
+  {
     "id": "exec-95b66066-c89f-4136-9d4c-77db8f239b40",
     "timestamp": "2026-07-07T11:27:53.399Z",
     "triggerType": "Manual Trigger",

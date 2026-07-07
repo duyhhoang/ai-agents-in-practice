@@ -344,7 +344,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
   };
 
   return (
-    <div className="flex h-screen w-full min-h-0 flex-col bg-slate-50 text-slate-800">
+    <div className="flex h-full w-full min-h-0 flex-col bg-slate-50 text-slate-800">
       {/* Header Controls */}
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 shadow-sm">
         <div>
