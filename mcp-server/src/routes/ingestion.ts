@@ -52,21 +52,21 @@ router.post("/ingestion/progress", (req, res) => {
   res.json({ success: true, progress: getActiveProgress() });
 });
 
-router.post("/ingestion/failure", (req, res) => {
+router.post("/ingestion/failure", async (req, res) => {
   const { workflowName, executionId, error } = req.body;
   const errorMsg = error || "n8n pipeline execution failed";
   const source = workflowName ? `n8n Error Trigger (${workflowName})` : "n8n Error Trigger";
 
   console.error(`[n8n Pipeline Failure Notification] Execution: ${executionId || "N/A"}, Workflow: ${workflowName || "Data Ingestion"}, Error: ${errorMsg}`);
   
-  logExecution(source, "Failed", 0, 0, errorMsg);
+  await logExecution(source, "Failed", 0, 0, errorMsg);
   updateProgress(null, `Error Trigger: ${errorMsg}`, 0, false);
 
   res.json({ success: true, message: "Failure notification logged" });
 });
 
-router.get("/ingestion/executions", (req, res) => {
-  res.json(getExecutions());
+router.get("/ingestion/executions", async (req, res) => {
+  res.json(await getExecutions());
 });
 
 router.get("/ingestion/status", async (req, res) => {
