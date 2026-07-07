@@ -8,8 +8,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
-        0
+        224,
+        -144
       ],
       "id": "a354c625-8907-4028-a373-69c36ae2feeb",
       "name": "Normalize Chat Input"
@@ -25,7 +25,7 @@
       "typeVersion": 2.1,
       "position": [
         0,
-        0
+        -144
       ],
       "id": "327ed70c-fec2-45f3-8e56-616f0465db65",
       "name": "Chat Webhook",
@@ -38,8 +38,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        416,
-        0
+        1120,
+        -144
       ],
       "id": "923faa7d-ed07-4a01-b17d-2ac93ae0a0b2",
       "name": "Route Question"
@@ -99,8 +99,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        832,
-        0
+        1568,
+        -144
       ],
       "id": "7c94c798-b318-4153-ab62-0e091111b7f3",
       "name": "Run Risk Analyst"
@@ -160,8 +160,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1040,
-        0
+        1792,
+        -144
       ],
       "id": "d29cd495-56c4-41b2-95bb-331b6f50359b",
       "name": "Run Logistics Specialist"
@@ -223,8 +223,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1248,
-        0
+        2016,
+        -144
       ],
       "id": "c06f2955-3282-46dc-9958-f25c87dce1d8",
       "name": "Run Sustainability Analyst"
@@ -284,8 +284,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1456,
-        0
+        2240,
+        -144
       ],
       "id": "84918db1-0ed6-42c4-b17f-f3d77d5d2739",
       "name": "Run Quality Analyst"
@@ -312,8 +312,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1872,
-        0
+        2688,
+        -144
       ],
       "id": "b7b5f1a6-5b7f-414e-86a6-2f95f58c1319",
       "name": "Run Manager Agent"
@@ -375,8 +375,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        624,
-        0
+        1344,
+        -144
       ],
       "id": "b028b586-f9f3-4bb8-be2d-4234a9513087",
       "name": "Run Procurement Specialist"
@@ -388,8 +388,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1664,
-        0
+        2464,
+        -144
       ],
       "id": "bb76658b-be5e-4c5c-9c3a-a23bf01d3a7e",
       "name": "Combine Specialist Results"
@@ -405,8 +405,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2080,
-        0
+        2912,
+        -144
       ],
       "id": "d024686f-8b0c-4aae-98af-7364818aca31",
       "name": "Respond to Frontend"
@@ -418,8 +418,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        280,
-        -150
+        448,
+        -144
       ],
       "id": "calc-embedding-node-id",
       "name": "Calculate Embedding & Query"
@@ -436,8 +436,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        380,
-        -150
+        672,
+        -144
       ],
       "id": "vector-search-node-id",
       "name": "Neo4j Vector Search"
@@ -449,8 +449,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        480,
-        -150
+        896,
+        -144
       ],
       "id": "parse-rag-chunks-id",
       "name": "Parse RAG Chunks"
@@ -607,7 +607,7 @@
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "b4638e68-c75c-467d-a244-1966edf80431",
+  "versionId": "ee99103f-008d-4dc2-a43b-1597a49b9b08",
   "meta": null,
   "id": "JapWg4BT2PAJfNTa",
   "nodeGroups": [],

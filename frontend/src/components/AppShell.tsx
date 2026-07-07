@@ -12,8 +12,11 @@ import {
   Activity,
   CheckCircle2,
   HelpCircle,
-  Cpu
+  Cpu,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
+import clsx from "clsx";
 import DashboardView from "./dashboard/DashboardView";
 import IngestionView from "./ingestion/IngestionView";
 import ExplorerView from "./explorer/ExplorerView";
@@ -33,6 +36,7 @@ type HealthState = {
 
 export default function AppShell() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
 
   // Functional Settings state hooks
   const [reasoning, setReasoning] = useState<string>("low");
@@ -115,23 +119,37 @@ export default function AppShell() {
   const isN8nOk = health.services.n8n?.status === "ok";
 
   return (
-    <main className="relative min-h-screen w-screen overflow-hidden bg-slate-50 text-slate-800 flex">
+    <main className="relative h-screen w-screen overflow-hidden bg-slate-50 text-slate-800 flex">
       {/* Sidebar navigation */}
-      <aside className="relative z-10 w-[280px] shrink-0 border-r border-slate-200 bg-white p-5 flex flex-col justify-between shadow-sm">
+      <aside
+        className={clsx(
+          "relative z-20 shrink-0 border-r border-slate-200 bg-white flex flex-col justify-between shadow-sm transition-all duration-300 ease-in-out h-full overflow-y-auto",
+          sidebarCollapsed ? "w-0 p-0 border-r-0 opacity-0 overflow-hidden" : "w-[280px] p-5"
+        )}
+      >
         <div>
           {/* Logo Header */}
-          <div className="mb-6 flex items-center gap-3 border-b border-slate-100 pb-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0065bd] text-white">
-              <Network size={20} />
-            </div>
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Technical University of Munich
+          <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0065bd] text-white">
+                <Network size={20} />
               </div>
-              <h1 className="text-md font-bold tracking-tight text-slate-800">
-                Supply Chain Portal
-              </h1>
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Technical University of Munich
+                </div>
+                <h1 className="text-md font-bold tracking-tight text-slate-800">
+                  Supply Chain Portal
+                </h1>
+              </div>
             </div>
+            <button
+              onClick={() => setSidebarCollapsed(true)}
+              className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer shrink-0"
+              title="Collapse Sidebar"
+            >
+              <ChevronLeft size={16} />
+            </button>
           </div>
 
           {/* Navigation Links */}
@@ -225,15 +243,31 @@ export default function AppShell() {
         </div>
       </aside>
 
+      {/* Floating Expand Sidebar Button */}
+      {sidebarCollapsed && (
+        <button
+          onClick={() => setSidebarCollapsed(false)}
+          className="fixed left-3 top-[18px] z-40 p-2 bg-white rounded-lg border border-slate-200 shadow-md hover:bg-slate-50 text-slate-600 transition cursor-pointer"
+          title="Expand Sidebar"
+        >
+          <ChevronRight size={18} />
+        </button>
+      )}
+
       {/* Main Panel content view */}
-      <section className="relative z-10 flex-1 overflow-hidden flex flex-col min-h-screen bg-slate-50">
+      <section
+        className={clsx(
+          "relative z-10 flex-1 overflow-hidden flex flex-col h-full bg-slate-50 transition-all duration-300",
+          sidebarCollapsed && "pl-14"
+        )}
+      >
         <div className="flex-1 h-full w-full relative">
           
-          <div className={activeTab === "dashboard" ? "h-full w-full" : "hidden"}>
+          <div className={activeTab === "dashboard" ? "h-full w-full overflow-y-auto" : "hidden"}>
             <DashboardView />
           </div>
 
-          <div className={activeTab === "chat" ? "h-full w-full" : "hidden"}>
+          <div className={activeTab === "chat" ? "h-full w-full overflow-y-auto" : "hidden"}>
             <ScalesDashboard />
           </div>
 
@@ -241,7 +275,7 @@ export default function AppShell() {
             <ExplorerView isActive={activeTab === "explorer"} />
           </div>
 
-          <div className={activeTab === "ingestion" ? "h-full w-full" : "hidden"}>
+          <div className={activeTab === "ingestion" ? "h-full w-full overflow-y-auto" : "hidden"}>
             <IngestionView />
           </div>
 
