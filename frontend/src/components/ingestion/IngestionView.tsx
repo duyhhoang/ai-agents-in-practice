@@ -10,7 +10,8 @@ import {
   XCircle, 
   AlertCircle,
   HelpCircle,
-  X
+  X,
+  Download
 } from "lucide-react";
 
 type IngestionFile = {
@@ -121,7 +122,7 @@ export default function IngestionView() {
   }
 
   function addLog(message: string, type: "system" | "success" | "error" = "system") {
-    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Europe/Berlin" });
     setLogs((prev) => [...prev, { timestamp: time, message, type }]);
   }
 
@@ -401,7 +402,7 @@ export default function IngestionView() {
                       <th className="p-3">Duration</th>
                       <th className="p-3">Files</th>
                       <th className="p-3 text-center">Status</th>
-                      <th className="p-3">Time</th>
+                      <th className="p-3">Date & Time</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -443,7 +444,7 @@ export default function IngestionView() {
                             )}
                           </td>
                           <td className="p-3 text-slate-400 text-[10px]">
-                            {new Date(exec.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            {new Date(exec.timestamp).toLocaleString([], { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Europe/Berlin' })}
                           </td>
                         </tr>
                       );
@@ -498,6 +499,19 @@ export default function IngestionView() {
                 <div className="rounded-lg bg-slate-50 border border-slate-100 p-3 text-[11px] text-slate-500 leading-relaxed font-sans">
                   <span className="font-bold text-slate-700 text-[9px] uppercase tracking-wider block mb-1">Vector Index Status</span>
                   This document has been mapped to a <code className="bg-slate-100 px-1 py-0.5 rounded text-[#0065bd] font-mono text-[9px]">:ProcessedFile</code> node in Neo4j. Its textual content is chunked and stored along with a 1536-dimensional embedding vector in the <code className="bg-slate-100 px-1 py-0.5 rounded text-[#0065bd] font-mono text-[9px]">file_embeddings</code> vector index, enabling multi-agent semantic search retrieval (RAG).
+                </div>
+
+                <div className="pt-2">
+                  <a
+                    href={`/api/ingestion/files/${encodeURIComponent(selectedFile.name)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition border border-slate-200 cursor-pointer"
+                  >
+                    <Download size={14} />
+                    Open / Download File
+                  </a>
                 </div>
               </div>
             ) : (
@@ -560,7 +574,7 @@ export default function IngestionView() {
               </div>
               <div className="flex justify-between border-b border-slate-50 pb-2">
                 <span className="text-slate-400">Timestamp:</span>
-                <span className="text-slate-700">{new Date(selectedExecution.timestamp).toLocaleString()}</span>
+                <span className="text-slate-700">{new Date(selectedExecution.timestamp).toLocaleString([], { timeZone: 'Europe/Berlin' })}</span>
               </div>
               <div className="flex justify-between border-b border-slate-50 pb-2">
                 <span className="text-slate-400">Trigger Source:</span>

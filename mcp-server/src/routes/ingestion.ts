@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import fs from "fs";
 import path from "path";
 import multer from "multer";
@@ -19,6 +19,9 @@ const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, "../../data-pro
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
+
+// Serve uploaded files statically
+router.use("/ingestion/files", express.static(uploadDir));
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -89,9 +92,19 @@ router.get("/ingestion/executions", (req, res) => {
     const stdout = execSync(cmd, { timeout: 4000, encoding: "utf-8" });
     const rawList = JSON.parse(stdout.trim());
 
+    const parseN8nDate = (str: string | null) => {
+      if (!str) return null;
+      // SQLite stores timestamps as "YYYY-MM-DD HH:MM:SS.SSS" in UTC.
+      // JS Date parses it as local time unless we make it a proper ISO format with "T" and "Z".
+      const isoStr = str.replace(" ", "T") + "Z";
+      return new Date(isoStr);
+    };
+
     const formatted = rawList.map((row: any) => {
-      const startTime = row.startedAt ? new Date(row.startedAt).getTime() : Date.now();
-      const stopTime = row.stoppedAt ? new Date(row.stoppedAt).getTime() : startTime;
+      const startDate = parseN8nDate(row.startedAt);
+      const stopDate = parseN8nDate(row.stoppedAt);
+      const startTime = startDate ? startDate.getTime() : Date.now();
+      const stopTime = stopDate ? stopDate.getTime() : startTime;
       const durationMs = Math.max(0, stopTime - startTime);
 
       const statusMap: Record<string, "Success" | "Failed"> = {
@@ -106,7 +119,7 @@ router.get("/ingestion/executions", (req, res) => {
 
       return {
         id: String(row.id),
-        timestamp: row.startedAt ? new Date(row.startedAt).toISOString() : new Date().toISOString(),
+        timestamp: startDate ? startDate.toISOString() : new Date().toISOString(),
         triggerType: triggerSource,
         status: statusMap[row.status] || (row.status === "running" ? "Running" : "Failed"),
         durationMs,
@@ -186,7 +199,7 @@ router.post(["/upload", "/api/upload", "/api/ingestion/upload"], upload.single("
     console.log(`[Upload] Triggering n8n pipeline: ${webhookUrl}`);
     updateProgress(filename, "Triggering n8n pipeline...", 15, true);
     let n8nRes = await fetch(webhookUrl, { method: "POST" });
-    if (!n8nRes.ok && n8nRes.status === 405) {
+    if (!n8nRes.ok && (n8nRes.status === 405 || n8nRes.status === 404)) {
       n8nRes = await fetch(webhookUrl, { method: "GET" });
     }
     const duration = Date.now() - startTime;
@@ -251,7 +264,7 @@ router.post("/ingestion/trigger", async (req, res) => {
   const startTime = Date.now();
   try {
     let n8nRes = await fetch(webhookUrl, { method: "POST" });
-    if (!n8nRes.ok && n8nRes.status === 405) {
+    if (!n8nRes.ok && (n8nRes.status === 405 || n8nRes.status === 404)) {
       n8nRes = await fetch(webhookUrl, { method: "GET" });
     }
     const duration = Date.now() - startTime;

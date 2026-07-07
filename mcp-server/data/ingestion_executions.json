@@ -1,5 +1,59 @@
 [
   {
+    "id": "exec-8c1fe1ca-4de4-4bcc-8687-290049099f2e",
+    "timestamp": "2026-07-07T11:05:12.635Z",
+    "triggerType": "Manual Trigger",
+    "status": "Success",
+    "durationMs": 54,
+    "filesProcessed": 1,
+    "error": null
+  },
+  {
+    "id": "exec-9add3a2e-7a96-401e-a85e-560cbb440a8c",
+    "timestamp": "2026-07-07T11:02:10.911Z",
+    "triggerType": "Upload Log (13_eol_material_recovery.csv)",
+    "status": "Success",
+    "durationMs": 71,
+    "filesProcessed": 1,
+    "error": null
+  },
+  {
+    "id": "exec-f222e277-b24c-43d8-a6eb-92be681e8b06",
+    "timestamp": "2026-07-07T10:58:35.214Z",
+    "triggerType": "Upload Log (insp_03_installation_site_inspection.txt)",
+    "status": "Success",
+    "durationMs": 147,
+    "filesProcessed": 1,
+    "error": null
+  },
+  {
+    "id": "exec-64f5f9aa-0c99-4d87-b32f-f8f3bd69a3a0",
+    "timestamp": "2026-07-06T20:45:02.720Z",
+    "triggerType": "Upload Log (02_process_execution_log.csv)",
+    "status": "Failed",
+    "durationMs": 11,
+    "filesProcessed": 0,
+    "error": "n8n webhook responded with status 404"
+  },
+  {
+    "id": "exec-30622b7e-c41e-443a-a998-7f3b243d9af9",
+    "timestamp": "2026-07-06T20:44:53.504Z",
+    "triggerType": "Upload Log (01_charging_stations.csv)",
+    "status": "Failed",
+    "durationMs": 38,
+    "filesProcessed": 0,
+    "error": "n8n webhook responded with status 404"
+  },
+  {
+    "id": "exec-2676",
+    "timestamp": "2026-07-06T20:40:42.849Z",
+    "triggerType": "Upload Log (15_emissions_log.csv)",
+    "status": "Success",
+    "durationMs": 184,
+    "filesProcessed": 1,
+    "error": null
+  },
+  {
     "id": "exec-9797",
     "timestamp": "2026-07-03T14:49:43.852Z",
     "triggerType": "Upload Log (erp_goods_movements.csv)",

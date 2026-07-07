@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/api/health",
-        destination: "http://localhost:8000/api/health",
+        destination: "http://localhost:8000/health",
       },
       {
         source: "/api/subgraph",
@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/api/ingestion/:path*",
-        destination: "http://localhost:8000/api/ingestion/:path*",
+        destination: "http://localhost:8000/ingestion/:path*",
       },
       {
         source: "/upload",
