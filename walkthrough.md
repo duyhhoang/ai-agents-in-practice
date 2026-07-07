@@ -47,7 +47,6 @@ We have completed all recommended bug fixes, architectural improvements, securit
   - Replaced custom `getHash()` with native Node `crypto.createHash("md5")`.
   - Added safe optional chaining (`data?.choices?.[0]?.message?.content`) and detailed HTTP status error reporting in `callLLM()`.
 
----
 
 ## 2. Verification & Test Results
 
