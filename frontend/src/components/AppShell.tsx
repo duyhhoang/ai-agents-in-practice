@@ -284,7 +284,7 @@ export default function AppShell() {
                     ))}
                   </div>
                   <p className="text-[10px] text-slate-400">
-                    Auto-routing attempts n8n Chat Orchestrator workflows first, automatically falling back to Express MCP server if n8n is offline.
+                    n8n serves as a multi-agent orchestrator utilizing local similarity fallback, while Express MCP acts as the direct high-performance RAG API (supporting semantic Gemini embeddings when configured).
                   </p>
                 </div>
 

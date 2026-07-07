@@ -3,7 +3,7 @@ import neo4j from "neo4j-driver";
 import crypto from "crypto";
 import { getNeo4jDriver } from "../neo4j-client.js";
 import { convertNeo4jTypes } from "../utils.js";
-import { getEmbedding } from "../services/embedding.js";
+import { getEmbedding, isMockEmbedding } from "../services/embedding.js";
 
 const router = Router();
 
@@ -354,6 +354,7 @@ Finance & Risk Specialist Insights: ${financeAnalysis}${contextStr}`;
       tableColumns,
       tableRows,
       evidenceGraph,
+      embeddingMode: isMockEmbedding() ? "fallback" : "gemini",
       evidenceTrace: {
         toolsUsed,
         cypherQueries,

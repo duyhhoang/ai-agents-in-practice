@@ -52,6 +52,7 @@ export type ChatResponse = {
   sessionId?: string;
   timestamp?: string;
   engineUsed?: string;
+  embeddingMode?: string;
   error?: string;
 };
 
