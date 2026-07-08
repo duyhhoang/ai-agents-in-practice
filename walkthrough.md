@@ -99,3 +99,26 @@ graph TD
     Manager -->|Synthesis| LLM
     QueryAPI -->|Read-Only Cypher| Neo4j
 ```
+
+---
+
+## 4. Phase 6: Data Agnosticity & Generalization Refactoring
+
+We have enhanced the data agnosticity of the platform, shifting it from an EV-charger-specific model to a generalized supply chain framework that automatically adapts to the schema of the loaded dataset.
+
+### 🌐 1. Dynamic Neo4j Schema Discovery
+- **Changes**: Added `getDatabaseSchema` in [neo4j-client.ts](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/mcp-server/src/neo4j-client.ts). It queries active node labels, relationship types, and properties at runtime, falling back to the default EV Charging Station schema if the database is uninitialized.
+- **Planner Integration**: Integrated dynamic schema discovery into the `Database Specialist` agent prompt in [chat.ts](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/mcp-server/src/routes/chat.ts). The planner now generates Cypher queries aligned to the actual database state of any loaded supply chain dataset.
+
+### ⚙️ 2. Schema-Agnostic MCP Tools & Analytics
+- **Changes**:
+  - **`subgraph-extract`**: Generalized the ID lookup to handle unrecognized labels by defaulting to `id` or `canonical_id` alongside specific legacy keys.
+  - **`analytics`**: The bottleneck and critical path analyses in [mcp-tools.ts](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/mcp-server/src/services/mcp-tools.ts) now dynamically discover the start asset label (by matching the source label of `UNDERGOES` relationships) and process label, rather than hardcoding `ChargingStation` and `Process`.
+  - Bottleneck analysis now calculates incoming degree centrality dynamically (all incoming relationships on non-file nodes) instead of a static list.
+
+### 📥 3. Adaptive Ingestion Prompts (n8n Workflows)
+- **Changes**: Generalized LLM extraction prompts in [Data ingestion workflow.json](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/n8n-workflows/Data%20ingestion%20workflow.json) to instruct the LLM to extract any relevant supply chain entity types/properties, and updated the Cypher builder code block to support merging custom nodes using standard ID fields.
+
+### 📊 4. Metadata-Driven Frontend Dashboard
+- **Changes**: Restructured [DashboardView.tsx](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/frontend/src/components/dashboard/DashboardView.tsx) to query the active undergoes-relation source label. It dynamically adapts dashboard labels, card counts, and unit select dropdown values from `ChargingStation` to any discovered custom asset (e.g. `Product` or `Asset`).
+
