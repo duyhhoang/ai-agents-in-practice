@@ -9,7 +9,7 @@ test("getHash - returns deterministic MD5 hex string", () => {
   const hash1 = getHash(text);
   const hash2 = getHash(text);
   assert.equal(hash1, hash2);
-  assert.equal(hash1.length, 32); // MD5 hex length
+  assert.ok(hash1.length <= 8); // 32-bit hashCode hex length
   assert.notEqual(hash1, getHash("Different text"));
 });
 
