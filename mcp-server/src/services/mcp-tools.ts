@@ -169,7 +169,7 @@ export function registerMcpTools(mcpServer: Server): void {
                           entity_type === "Process" ? "process_id" :
                           entity_type === "Material" ? "material_id" : "id";
 
-          let matchClause = `MATCH (start:${entity_type} {${idField}: $entity_id})`;
+          let matchClause = `MATCH (start:${entity_type}) WHERE start.${idField} = $entity_id OR start.id = $entity_id OR start.canonical_id = $entity_id`;
           const queryParams: any = { entity_id, depth };
           if (entity_type === "Process" && unit_id) {
             const compoundId = `${unit_id}_${entity_id}`;
@@ -186,14 +186,14 @@ export function registerMcpTools(mcpServer: Server): void {
             YIELD nodes, relationships
             RETURN 
               [n IN nodes | {
-                id: coalesce(n.actor_id, n.location_code, n.unit_id, n.material_id, n.process_id, n.id),
+                id: coalesce(n.actor_id, n.location_code, n.unit_id, n.material_id, n.process_id, n.canonical_id, n.id, elementId(n)),
                 label: labels(n)[0],
-                name: coalesce(n.name, n.actor_name, n.location_name, n.material_name, n.serial_number, n.process_name, n.id),
+                name: coalesce(n.name, n.actor_name, n.location_name, n.material_name, n.serial_number, n.process_name, n.id, elementId(n)),
                 properties: properties(n)
               }] AS nodes,
               [r IN relationships | {
-                source: coalesce(startNode(r).actor_id, startNode(r).location_code, startNode(r).unit_id, startNode(r).material_id, startNode(r).process_id, startNode(r).id),
-                target: coalesce(endNode(r).actor_id, endNode(r).location_code, endNode(r).unit_id, endNode(r).material_id, endNode(r).process_id, endNode(r).id),
+                source: coalesce(startNode(r).actor_id, startNode(r).location_code, startNode(r).unit_id, startNode(r).material_id, startNode(r).process_id, startNode(r).canonical_id, startNode(r).id, elementId(startNode(r))),
+                target: coalesce(endNode(r).actor_id, endNode(r).location_code, endNode(r).unit_id, endNode(r).material_id, endNode(r).process_id, endNode(r).canonical_id, endNode(r).id, elementId(endNode(r))),
                 type: type(r),
                 properties: properties(r)
               }] AS relationships
@@ -263,23 +263,49 @@ export function registerMcpTools(mcpServer: Server): void {
         const session = driver.session();
         
         try {
+          // Dynamic discovery of product asset and process labels
+          let startLabel = "ChargingStation";
+          let endLabel = "Process";
+
+          try {
+            const startRes = await session.executeRead(tx => tx.run(`
+              MATCH (start)-[:UNDERGOES]->()
+              RETURN DISTINCT labels(start)[0] AS label
+              LIMIT 1
+            `));
+            if (startRes.records.length > 0 && startRes.records[0].get("label")) {
+              startLabel = startRes.records[0].get("label");
+            }
+
+            const endRes = await session.executeRead(tx => tx.run(`
+              MATCH ()-[:UNDERGOES]->(end)
+              RETURN DISTINCT labels(end)[0] AS label
+              LIMIT 1
+            `));
+            if (endRes.records.length > 0 && endRes.records[0].get("label")) {
+              endLabel = endRes.records[0].get("label");
+            }
+          } catch (e) {
+            console.warn("Dynamic label discovery failed, defaulting to ChargingStation/Process:", e);
+          }
+
           if (type === "bottleneck_analysis") {
             const query = `
               MATCH (n)
-              WHERE NOT n:ProcessedFile
-              OPTIONAL MATCH (cs:ChargingStation)-[:UNDERGOES]->(n)
-              WITH n, cs, COUNT { (n)<-[:UNDERGOES|USES_MATERIAL|SUPPLIES|EXECUTED_BY|LOCATED_IN]-() } AS dependency_count
+              WHERE NOT n:ProcessedFile AND NOT n:ProcessedChunk
+              OPTIONAL MATCH (cs:\${startLabel})-[:UNDERGOES]->(n)
+              WITH n, cs, COUNT { (n)<-[]-() } AS dependency_count
               WHERE dependency_count > 0
               RETURN 
                 CASE 
-                  WHEN 'Process' IN labels(n) THEN 
+                  WHEN $endLabel IN labels(n) THEN 
                     CASE
                       WHEN coalesce(n.unit_id, cs.unit_id) IS NOT NULL
-                           AND NOT n.process_id STARTS WITH coalesce(n.unit_id, cs.unit_id) + '_'
-                      THEN coalesce(n.unit_id, cs.unit_id) + '_' + n.process_id
-                      ELSE n.process_id
+                           AND NOT coalesce(n.process_id, n.id) STARTS WITH coalesce(n.unit_id, cs.unit_id) + '_'
+                      THEN coalesce(n.unit_id, cs.unit_id) + '_' + coalesce(n.process_id, n.id)
+                      ELSE coalesce(n.process_id, n.id)
                     END
-                  ELSE coalesce(n.actor_id, n.location_code, n.unit_id, n.material_id, n.id)
+                  ELSE coalesce(n.actor_id, n.location_code, n.unit_id, n.material_id, n.canonical_id, n.id)
                 END AS id,
                 labels(n)[0] AS label,
                 coalesce(n.name, n.actor_name, n.location_name, n.material_name, n.process_name, n.id) AS name,
@@ -287,7 +313,7 @@ export function registerMcpTools(mcpServer: Server): void {
               ORDER BY in_degree DESC
               LIMIT 10
             `;
-            const result = await session.executeRead(tx => tx.run(query));
+            const result = await session.executeRead(tx => tx.run(query, { endLabel }));
             const records = result.records.map(r => r.toObject());
             const bottlenecks = convertNeo4jTypes(records);
             return {
@@ -300,11 +326,11 @@ export function registerMcpTools(mcpServer: Server): void {
           
           else if (type === "critical_path") {
             const query = `
-              MATCH p = (start:ChargingStation)-[:UNDERGOES*1..6]->(end:Process)
+              MATCH p = (start:\${startLabel})-[:UNDERGOES*1..6]->(end:\${endLabel})
               WHERE NOT (end)-[:UNDERGOES]->()
               RETURN 
-                start.unit_id AS unit_id,
-                [n IN nodes(p) | coalesce(n.process_id, n.unit_id)] AS process_path,
+                coalesce(start.unit_id, start.id, start.canonical_id) AS unit_id,
+                [n IN nodes(p) | coalesce(n.process_id, n.unit_id, n.canonical_id, n.id)] AS process_path,
                 length(p) AS path_length
               ORDER BY path_length DESC
               LIMIT 5
@@ -323,26 +349,26 @@ export function registerMcpTools(mcpServer: Server): void {
           else {
             const query = `
               MATCH (n)
-              WHERE NOT n:ProcessedFile
-              OPTIONAL MATCH (cs:ChargingStation)-[:UNDERGOES]->(n)
+              WHERE NOT n:ProcessedFile AND NOT n:ProcessedChunk
+              OPTIONAL MATCH (cs:\${startLabel})-[:UNDERGOES]->(n)
               WITH n, cs, COUNT { (n)-[]-() } AS degree
               RETURN 
                 CASE 
-                  WHEN 'Process' IN labels(n) THEN 
+                  WHEN $endLabel IN labels(n) THEN 
                     CASE
                       WHEN coalesce(n.unit_id, cs.unit_id) IS NOT NULL
-                           AND NOT n.process_id STARTS WITH coalesce(n.unit_id, cs.unit_id) + '_'
-                      THEN coalesce(n.unit_id, cs.unit_id) + '_' + n.process_id
-                      ELSE n.process_id
+                           AND NOT coalesce(n.process_id, n.id) STARTS WITH coalesce(n.unit_id, cs.unit_id) + '_'
+                      THEN coalesce(n.unit_id, cs.unit_id) + '_' + coalesce(n.process_id, n.id)
+                      ELSE coalesce(n.process_id, n.id)
                     END
-                  ELSE coalesce(n.actor_id, n.location_code, n.unit_id, n.material_id, n.id)
+                  ELSE coalesce(n.actor_id, n.location_code, n.unit_id, n.material_id, n.canonical_id, n.id)
                 END AS id,
                 labels(n)[0] AS label,
                 degree
               ORDER BY degree DESC
               LIMIT 10
             `;
-            const result = await session.executeRead(tx => tx.run(query));
+            const result = await session.executeRead(tx => tx.run(query, { endLabel }));
             const records = result.records.map(r => r.toObject());
             const centrality = convertNeo4jTypes(records);
             return {
