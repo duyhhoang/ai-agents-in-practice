@@ -123,7 +123,7 @@ export default function AppShell() {
       {/* Sidebar navigation */}
       <aside
         className={clsx(
-          "relative z-20 shrink-0 border-r border-slate-200 bg-white flex flex-col justify-between shadow-sm transition-all duration-300 ease-in-out h-full overflow-y-auto",
+          "relative z-20 shrink-0 border-r border-slate-200 bg-white flex flex-col justify-between shadow-sm transition-all duration-300 ease-in-out h-full overflow-hidden",
           sidebarCollapsed ? "w-0 p-0 border-r-0 opacity-0 overflow-hidden" : "w-[280px] p-5"
         )}
       >
@@ -221,7 +221,7 @@ export default function AppShell() {
           <div className="group relative flex items-center gap-1.5 text-[10px] text-slate-600 font-semibold cursor-help">
             <span className={`h-1.5 w-1.5 rounded-full ${isNeo4jOk ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
             <span>Neo4j: {isNeo4jOk ? "Connected" : (health.services.neo4j?.status || "Checking")}</span>
-            <div className="pointer-events-none absolute left-[255px] bottom-0 z-50 w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] text-slate-500 font-normal leading-relaxed normal-case tracking-normal">
+            <div className="pointer-events-none absolute left-0 bottom-6 z-50 w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] text-slate-500 font-normal leading-relaxed normal-case tracking-normal">
               Neo4j Database status: {health.services.neo4j?.message || "Connected at port 7687"}. Serving graph schema and vector embeddings index.
             </div>
           </div>
@@ -229,7 +229,7 @@ export default function AppShell() {
           <div className="group relative flex items-center gap-1.5 text-[10px] text-slate-600 font-semibold cursor-help">
             <span className={`h-1.5 w-1.5 rounded-full ${isN8nOk ? "bg-emerald-500" : "bg-amber-500"}`} />
             <span>n8n: {isN8nOk ? "Linked (:5678)" : (health.services.n8n?.status || "Standby")}</span>
-            <div className="pointer-events-none absolute left-[255px] bottom-0 z-50 w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] text-slate-500 font-normal leading-relaxed normal-case tracking-normal">
+            <div className="pointer-events-none absolute left-0 bottom-6 z-50 w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] text-slate-500 font-normal leading-relaxed normal-case tracking-normal">
               n8n Workflow Engine: {health.services.n8n?.message || "Active at port 5678"}. Handles workflow extraction and Chat Orchestrator.
             </div>
           </div>
