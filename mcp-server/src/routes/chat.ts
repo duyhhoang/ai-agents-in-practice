@@ -1,7 +1,7 @@
 import { Router } from "express";
 import neo4j from "neo4j-driver";
 import crypto from "crypto";
-import { getNeo4jDriver } from "../neo4j-client.js";
+import { getNeo4jDriver, getDatabaseSchema } from "../neo4j-client.js";
 import { convertNeo4jTypes } from "../utils.js";
 import { getEmbedding, isMockEmbedding } from "../services/embedding.js";
 
@@ -29,9 +29,22 @@ function getNeo4jId(obj: any): string {
 
 function nodeToEvidenceNode(node: any): any {
   const props = convertNeo4jTypes(node.properties) || {};
-  const id = props.actor_id || props.location_code || props.unit_id || props.material_id || props.process_id || props.id || getNeo4jId(node) || "unknown";
+  
+  // Find fallback ID property from keys ending in '_id' or '_code'
+  let fallbackId = "";
+  let fallbackName = "";
+  for (const k of Object.keys(props)) {
+    if (!fallbackId && (k.endsWith("_id") || k.endsWith("_code"))) {
+      fallbackId = props[k];
+    }
+    if (!fallbackName && (k.endsWith("_name") || k === "title" || k === "serial_number")) {
+      fallbackName = props[k];
+    }
+  }
+
+  const id = props.actor_id || props.location_code || props.unit_id || props.material_id || props.process_id || props.canonical_id || props.id || fallbackId || getNeo4jId(node) || "unknown";
   const label = node.labels[0] || "Entity";
-  const name = props.name || props.actor_name || props.location_name || props.material_name || props.serial_number || props.process_name || id;
+  const name = props.name || props.actor_name || props.location_name || props.material_name || props.serial_number || props.process_name || fallbackName || id;
   return {
     id,
     label,
@@ -212,20 +225,11 @@ Keep it extremely brief (1-2 sentences max, no bullet points).`;
     const coordinatorPlan = await callLLM(coordinatorPlanSystem, `User query: "${prompt}"${contextStr}`, 0.3, baseReasoning);
     console.log("[Agent: Coordinator] Plan:", coordinatorPlan);
 
+    const activeSchema = await getDatabaseSchema(driver);
+
     const cypherSystem = `You are a Neo4j Cypher query generator for a supply chain lifecycle database.
 Based on the user's question, write a Cypher query to retrieve the relevant data.
-The database schema contains these nodes:
-- ChargingStation {unit_id, serial_number, product_variant, manufacture_date, country, installation_site_id}
-- Process {unit_id, process_id, process_name, lifecycle_phase, start_date, end_date, duration_days, status, cost_eur}
-- Actor {actor_id, actor_name, region, country}
-- Location {location_code, location_name, country}
-- Transport {transport_id, unit_id, route_from, route_to, mode, distance_km, cost_eur}
-
-Relationships:
-- (cs:ChargingStation)-[:UNDERGOES]->(p:Process)
-- (p:Process)-[:EXECUTED_BY]->(a:Actor)
-- (cs:ChargingStation)-[:LOCATED_IN]->(l:Location)
-- (t:Transport)-[:FOR_UNIT]->(cs:ChargingStation)
+${activeSchema}
 
 Output ONLY the raw Cypher query inside a \`\`\`cypher code block. Do not write explanations.`;
 
