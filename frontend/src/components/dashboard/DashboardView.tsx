@@ -40,12 +40,67 @@ export default function DashboardView() {
   const [loadingLifecycle, setLoadingLifecycle] = useState(false);
   const [selectedStep, setSelectedStep] = useState<ProcessStep | null>(null);
 
+  const [assetLabel, setAssetLabel] = useState("ChargingStation");
+  const [assetIdField, setAssetIdField] = useState("unit_id");
+  const [discovered, setDiscovered] = useState(false);
+
+  // Discovery effect
+  useEffect(() => {
+    async function discover() {
+      try {
+        const query = `
+          MATCH (start)-[:UNDERGOES]->()
+          RETURN DISTINCT labels(start)[0] AS label
+          LIMIT 1
+        `;
+        const res = await fetch("/api/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.results && data.results[0] && data.results[0].label) {
+            const discoveredLabel = data.results[0].label;
+            setAssetLabel(discoveredLabel);
+
+            const keysQuery = `
+              MATCH (n:\${discoveredLabel})
+              RETURN keys(n) AS keys
+              LIMIT 1
+            `;
+            const keysRes = await fetch("/api/query", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ query: keysQuery })
+            });
+            if (keysRes.ok) {
+              const keysData = await keysRes.json();
+              if (keysData.results && keysData.results[0]) {
+                const keys = keysData.results[0].keys || [];
+                const idField = keys.find((k: string) => k === "unit_id" || k === "product_id" || k === "canonical_id" || k === "id" || k.endsWith("_id") || k.endsWith("_code")) || "id";
+                setAssetIdField(idField);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Schema discovery failed:", err);
+      } finally {
+        setDiscovered(true);
+      }
+    }
+    discover();
+  }, []);
+
   // Fetch db stats dynamically
   useEffect(() => {
+    if (!discovered) return;
+
     async function fetchStats() {
       try {
         const query = `
-          CALL { MATCH (cs:ChargingStation) RETURN count(cs) AS cs_count }
+          CALL { MATCH (cs:\${assetLabel}) RETURN count(cs) AS cs_count }
           CALL { MATCH (p:Process) RETURN count(p) AS p_count }
           CALL { MATCH (a:Actor) RETURN count(a) AS a_count }
           CALL { MATCH (l:Location) RETURN count(l) AS l_count }
@@ -77,7 +132,7 @@ export default function DashboardView() {
 
     async function fetchUnits() {
       try {
-        const query = `MATCH (cs:ChargingStation) RETURN cs.unit_id AS unitId ORDER BY unitId`;
+        const query = `MATCH (cs:\${assetLabel}) RETURN cs.\${assetIdField} AS unitId ORDER BY unitId`;
         const res = await fetch("/api/query", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -100,27 +155,27 @@ export default function DashboardView() {
 
     fetchStats();
     fetchUnits();
-  }, []);
+  }, [discovered, assetLabel, assetIdField]);
 
   // Fetch unit lifecycle processes
   useEffect(() => {
-    if (!selectedUnit) return;
+    if (!selectedUnit || !discovered) return;
 
     async function fetchLifecycle() {
       setLoadingLifecycle(true);
       setSelectedStep(null);
       try {
         const query = `
-          MATCH (cs:ChargingStation {unit_id: $unitId})-[:UNDERGOES]->(p:Process)
+          MATCH (cs:\${assetLabel} {\${assetIdField}: $unitId})-[:UNDERGOES]->(p:Process)
           OPTIONAL MATCH (p)-[:EXECUTED_BY]->(a:Actor)
-          RETURN p.process_id AS process_id, 
+          RETURN coalesce(p.process_id, p.id) AS process_id, 
                  p.process_name AS process_name, 
                  p.lifecycle_phase AS phase, 
                  p.cost_eur AS cost, 
                  p.duration_days AS duration, 
                  p.status AS status, 
                  a.actor_name AS actor
-          ORDER BY p.process_id
+          ORDER BY process_id
         `;
         const res = await fetch("/api/query", {
           method: "POST",
@@ -141,7 +196,7 @@ export default function DashboardView() {
     }
 
     fetchLifecycle();
-  }, [selectedUnit]);
+  }, [selectedUnit, discovered, assetLabel, assetIdField]);
 
   return (
     <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
@@ -164,7 +219,7 @@ export default function DashboardView() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           icon={<Activity className="text-[#0065bd]" size={18} />}
-          label="Charging Stations"
+          label={assetLabel === "ChargingStation" ? "Charging Stations" : `${assetLabel}s`}
           value={loadingStats ? "..." : stats.stations.toString()}
         />
         <StatCard
@@ -193,15 +248,15 @@ export default function DashboardView() {
             <div>
               <h2 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
                 <Activity className="text-[#0065bd]" size={18} />
-                End-to-End Unit Lifecycle Tracer
+                End-to-End {assetLabel === "ChargingStation" ? "Unit" : assetLabel} Lifecycle Tracer
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Select a physical EV charging unit to retrieve its structured processes path. Click any card to inspect.
+                Select a physical {assetLabel === "ChargingStation" ? "EV charging unit" : assetLabel.toLowerCase()} to retrieve its structured processes path. Click any card to inspect.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Select Unit:</span>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Select {assetLabel === "ChargingStation" ? "Unit" : assetLabel}:</span>
               <select
                 value={selectedUnit}
                 onChange={(e) => setSelectedUnit(e.target.value)}
@@ -223,7 +278,7 @@ export default function DashboardView() {
             </div>
           ) : lifecycle.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-slate-400 font-mono text-xs">
-              No processes logged for this unit.
+              No processes logged for this {assetLabel === "ChargingStation" ? "unit" : assetLabel.toLowerCase()}.
             </div>
           ) : (
             <div className="relative pl-6 border-l border-slate-200 space-y-4 ml-4 py-1">
