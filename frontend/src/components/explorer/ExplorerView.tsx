@@ -76,7 +76,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
       if (obj.identity !== undefined) return String(obj.identity);
       
       const props = obj.properties || {};
-      const businessId = props.actor_id || props.location_code || props.unit_id || props.material_id || props.process_id;
+      const businessId = props.actor_id || props.location_code || props.unit_id || props.material_id || props.process_id || props.canonical_id || props.id;
       if (businessId) return String(businessId);
       
       return "";
@@ -88,7 +88,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
       
       const props = node.properties || {};
       const label = node.labels[0] || "Entity";
-      const name = props.name || props.actor_name || props.location_name || props.material_name || props.serial_number || props.process_name || id;
+      const name = props.name || props.actor_name || props.location_name || props.material_name || props.serial_number || props.process_name || props.title || id;
       
       nodesMap.set(id, {
         id,
@@ -153,7 +153,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
         if (data.results) {
           const labels = data.results
             .map((r: any) => r.label as string)
-            .filter((l: string) => l && l !== "ProcessedFile");
+            .filter((l: string) => l && l !== "ProcessedFile" && l !== "ProcessedChunk");
           setDbLabels(labels);
         }
       }
@@ -216,9 +216,9 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
     
     if (!term) {
       if (amateurType === "All") {
-        query = `MATCH (n) WHERE NOT n:ProcessedFile OPTIONAL MATCH (n)-[r]-(m) WHERE NOT m:ProcessedFile RETURN n, r, m LIMIT ${resultLimit}`;
+        query = `MATCH (n) WHERE NOT n:ProcessedFile AND NOT n:ProcessedChunk OPTIONAL MATCH (n)-[r]-(m) WHERE NOT m:ProcessedFile AND NOT m:ProcessedChunk RETURN n, r, m LIMIT ${resultLimit}`;
       } else {
-        query = `MATCH (n:${amateurType}) OPTIONAL MATCH (n)-[r]-(m) WHERE NOT m:ProcessedFile RETURN n, r, m LIMIT ${resultLimit}`;
+        query = `MATCH (n:${amateurType}) OPTIONAL MATCH (n)-[r]-(m) WHERE NOT m:ProcessedFile AND NOT m:ProcessedChunk RETURN n, r, m LIMIT ${resultLimit}`;
       }
     } else {
       const sanitizedTerm = term.replace(/[\\^$*+?.()|[\]{}]/g, "\\$&").replace(/'/g, "\\'");
@@ -228,7 +228,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
       if (amateurType === "All") {
         query = `
           MATCH (n)
-          WHERE NOT n:ProcessedFile AND (
+          WHERE NOT n:ProcessedFile AND NOT n:ProcessedChunk AND (
             n.actor_name =~ $searchTerm OR 
             n.location_name =~ $searchTerm OR 
             n.material_name =~ $searchTerm OR 
@@ -237,10 +237,11 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
             n.actor_id =~ $searchTerm OR
             n.material_id =~ $searchTerm OR
             n.process_id =~ $searchTerm OR
-            n.name =~ $searchTerm
+            n.name =~ $searchTerm OR
+            any(key in keys(n) WHERE toString(n[key]) =~ $searchTerm)
           )
           OPTIONAL MATCH (n)-[r]-(m)
-          WHERE NOT m:ProcessedFile
+          WHERE NOT m:ProcessedFile AND NOT m:ProcessedChunk
           RETURN n, r, m LIMIT ${resultLimit}
         `;
       } else {
@@ -250,14 +251,20 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
           amateurType === "Actor" ? ["n.actor_name", "n.actor_id"] :
           amateurType === "Location" ? ["n.location_name", "n.location_code"] :
           amateurType === "Material" ? ["n.material_name", "n.material_id"] :
-          amateurType === "Transport" ? ["n.transport_id"] : ["n.name"];
+          amateurType === "Transport" ? ["n.transport_id"] : [];
         
-        const whereClause = searchFields.map(f => `${f} =~ $searchTerm`).join(" OR ");
+        let whereClause = "";
+        if (searchFields.length > 0) {
+          whereClause = searchFields.map(f => `${f} =~ $searchTerm`).join(" OR ");
+        } else {
+          whereClause = `any(key in keys(n) WHERE toString(n[key]) =~ $searchTerm)`;
+        }
+
         query = `
           MATCH (n:${amateurType})
           WHERE ${whereClause}
           OPTIONAL MATCH (n)-[r]-(m)
-          WHERE NOT m:ProcessedFile
+          WHERE NOT m:ProcessedFile AND NOT m:ProcessedChunk
           RETURN n, r, m LIMIT ${resultLimit}
         `;
       }
