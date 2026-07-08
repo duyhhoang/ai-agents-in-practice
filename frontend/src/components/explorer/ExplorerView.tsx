@@ -368,7 +368,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
         
         {/* Left Side: Search, Filters & Cypher Console (Collapsible) */}
         <aside className={clsx(
-          "shrink-0 bg-white flex flex-col gap-4 overflow-y-auto shadow-sm transition-all duration-300 relative",
+          "shrink-0 bg-white flex flex-col gap-4 overflow-y-auto overflow-x-hidden shadow-sm transition-all duration-300 relative",
           sidebarCollapsed ? "w-0 border-r-0 opacity-0 overflow-hidden p-0" : "w-[320px] border-r border-slate-200 p-4"
         )}>
           {/* Guided Search vs Cypher toggle */}
@@ -398,7 +398,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Guided Query Parameters</h3>
                 <div className="group relative cursor-pointer text-slate-400 hover:text-slate-600">
                   <HelpCircle size={14} />
-                  <div className="pointer-events-none absolute left-6 -top-4 z-50 w-52 rounded-lg border border-slate-200 bg-white p-2.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[10px] text-slate-500 font-sans font-normal leading-normal normal-case">
+                  <div className="pointer-events-none absolute right-6 -top-4 z-50 w-52 rounded-lg border border-slate-200 bg-white p-2.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[10px] text-slate-500 font-sans font-normal leading-normal normal-case">
                     Guided Search automatically compiles node types, search terms, and limit parameters into Cypher queries behind the scenes.
                   </div>
                 </div>
@@ -534,7 +534,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Canvas Category Toggle</h3>
               <div className="group relative cursor-pointer text-slate-400 hover:text-slate-600">
                 <HelpCircle size={14} />
-                <div className="pointer-events-none absolute left-6 -top-4 z-50 w-52 rounded-lg border border-slate-200 bg-white p-2.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[10px] text-slate-500 font-sans font-normal leading-normal normal-case">
+                <div className="pointer-events-none absolute right-6 -top-4 z-50 w-52 rounded-lg border border-slate-200 bg-white p-2.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[10px] text-slate-500 font-sans font-normal leading-normal normal-case">
                   Displays only the categories currently fetched and visible on the canvas. Hides or shows nodes on the screen without re-querying the database.
                 </div>
               </div>
@@ -698,7 +698,7 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
 
         {/* Right Side: Properties Panel (Collapsible) */}
         <aside className={clsx(
-          "shrink-0 bg-white flex flex-col h-full overflow-y-auto shadow-sm transition-all duration-300 relative",
+          "shrink-0 bg-white flex flex-col h-full overflow-y-auto overflow-x-hidden shadow-sm transition-all duration-300 relative",
           inspectorCollapsed ? "w-0 border-l-0 opacity-0 overflow-hidden p-0" : "w-[320px] border-l border-slate-200 p-5"
         )}>
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 shrink-0">
