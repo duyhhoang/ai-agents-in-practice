@@ -1,5 +1,14 @@
 [
   {
+    "id": "exec-b01d85ee-535d-43cd-9612-2b0668523e51",
+    "timestamp": "2026-07-08T17:02:06.635Z",
+    "triggerType": "Upload Log (email_01_pcb_delay_notification.txt)",
+    "status": "Success",
+    "durationMs": 77,
+    "filesProcessed": 1,
+    "error": null
+  },
+  {
     "id": "exec-b5be2cd0-0d6a-4d6c-9122-007dfdd7e0a8",
     "timestamp": "2026-07-07T22:20:22.368Z",
     "triggerType": "Upload Log (04_transport_movements.csv)",

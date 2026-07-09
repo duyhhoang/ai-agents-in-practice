@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getNeo4jDriver } from "../neo4j-client.js";
 import { convertNeo4jTypes, isForbiddenCypherQuery } from "../utils.js";
+import { getEmbedding, isMockEmbedding } from "../services/embedding.js";
 
 const router = Router();
 
@@ -119,6 +120,22 @@ router.post("/diagram", (req, res) => {
   puml += "\n@enduml";
   res.setHeader("Content-Type", "text/plain");
   res.send(puml);
+});
+
+// Endpoint to calculate embeddings dynamically (Gemini or Mock fallback)
+router.post("/embedding", async (req, res) => {
+  const { text } = req.body;
+  if (!text || typeof text !== "string") {
+    return res.status(400).json({ error: "Text must be a valid string." });
+  }
+  try {
+    const embedding = await getEmbedding(text);
+    const mode = isMockEmbedding() ? "fallback" : "gemini";
+    res.json({ embedding, embeddingMode: mode });
+  } catch (err: any) {
+    console.error("API Embedding error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
