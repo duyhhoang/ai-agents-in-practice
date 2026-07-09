@@ -70,7 +70,7 @@ router.post("/subgraph", async (req, res) => {
           type: type(r)
         }] AS relationships
     `;
-    const result = await session.run(query, { entity_id, depth: depth || 1 });
+    const result = await session.executeRead(tx => tx.run(query, { entity_id, depth: depth || 1 }));
     if (result.records.length > 0) {
       const record = result.records[0].toObject();
       res.json(convertNeo4jTypes(record));

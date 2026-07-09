@@ -41,7 +41,7 @@ const upload = multer({ storage });
 router.get("/ingestion/progress", (req, res) => {
   const activeProgress = getActiveProgress();
   const ageMs = Date.now() - new Date(activeProgress.updatedAt).getTime();
-  if (ageMs > 900000 && activeProgress.active) { // 15 minutes timeout
+  if (ageMs > 3600000 && activeProgress.active) { // 1 hour timeout
     updateProgress(activeProgress.fileName, activeProgress.step, activeProgress.percent, false);
   }
   res.json(getActiveProgress());
