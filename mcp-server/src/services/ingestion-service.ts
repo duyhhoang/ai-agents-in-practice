@@ -192,7 +192,30 @@ export async function completeIngestionPipeline(
   status: "success" | "failed",
   errorMsg?: string
 ): Promise<void> {
-  const pending = pendingExecutions.get(executionId);
+  let pending = pendingExecutions.get(executionId);
+  
+  if (!pending && pendingExecutions.size > 0) {
+    const keys = Array.from(pendingExecutions.keys());
+    if (keys.length === 1) {
+      pending = pendingExecutions.get(keys[0]);
+      console.log(`[Ingestion Callback] Mapped n8n execution ID ${executionId} to pending temp ID ${keys[0]}`);
+    } else {
+      let bestKey = keys[0];
+      let minDiff = Infinity;
+      const now = Date.now();
+      for (const key of keys) {
+        const p = pendingExecutions.get(key)!;
+        const diff = Math.abs(now - p.startTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          bestKey = key;
+        }
+      }
+      pending = pendingExecutions.get(bestKey);
+      console.log(`[Ingestion Callback] Mapped n8n execution ID ${executionId} to closest pending temp ID ${bestKey}`);
+    }
+  }
+
   if (!pending) {
     console.warn(`[Ingestion Callback] No pending execution context found for n8n execution: ${executionId}. Processing generic callback.`);
     
@@ -211,10 +234,7 @@ export async function completeIngestionPipeline(
 
   try {
     if (status === "success") {
-      updateProgress(filename || "Batch Pipeline", "Generating vector chunk embeddings...", 75, true);
-      await initializeEmbeddings();
-
-      updateProgress(filename || "Batch Pipeline", "Capturing post-file states...", 90, true);
+      updateProgress(filename || "Batch Pipeline", "Capturing post-file states...", 65, true);
       const postFileStates = await getFileStates();
 
       // Compare states to determine status
@@ -245,6 +265,14 @@ export async function completeIngestionPipeline(
         : files;
 
       const processedCount = filteredFiles.filter(f => f.status === "Processed").length;
+      const processedFileNames = filteredFiles.filter(f => f.status === "Processed").map(f => f.name);
+
+      if (processedFileNames.length > 0) {
+        updateProgress(filename || "Batch Pipeline", "Generating vector chunk embeddings...", 80, true);
+        await initializeEmbeddings(processedFileNames);
+      } else {
+        console.log(`[Ingestion Callback] No files were newly processed. Skipping embedding generation.`);
+      }
 
       // Update Neo4j Execution Log
       await logDetailedExecution({
@@ -291,5 +319,12 @@ export async function completeIngestionPipeline(
   } finally {
     pendingExecutions.delete(executionId);
     pendingExecutions.delete(tempExecId);
+    const keys = Array.from(pendingExecutions.keys());
+    for (const key of keys) {
+      const p = pendingExecutions.get(key)!;
+      if (p.tempExecId === tempExecId || key === tempExecId) {
+        pendingExecutions.delete(key);
+      }
+    }
   }
 }
