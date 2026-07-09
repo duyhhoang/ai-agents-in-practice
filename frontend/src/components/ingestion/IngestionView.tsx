@@ -176,6 +176,14 @@ export default function IngestionView() {
         if (data.answer) {
           addLog(data.answer.replace(/\*\*/g, ""), "success");
         }
+        setProgress(prev => ({
+          ...prev,
+          active: true,
+          fileName: file.name,
+          step: "Triggered background pipeline...",
+          percent: 15,
+          updatedAt: new Date().toISOString()
+        }));
         loadFiles();
       } else {
         addLog(`Upload failure: ${data.error || "Unknown server error."}`, "error");
@@ -201,7 +209,15 @@ export default function IngestionView() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        addLog(`Ingestion completed in ${(data.duration_ms / 1000).toFixed(2)}s. Processed ${data.processed_files} files.`, "success");
+        addLog(`Ingestion pipeline triggered successfully in the background (Execution: ${data.executionId || "N/A"}).`, "success");
+        setProgress(prev => ({
+          ...prev,
+          active: true,
+          fileName: "All files",
+          step: "Manual trigger initiated...",
+          percent: 15,
+          updatedAt: new Date().toISOString()
+        }));
         loadFiles();
       } else {
         addLog(`Ingestion failed: ${data.error || "n8n response code " + res.status}`, "error");
