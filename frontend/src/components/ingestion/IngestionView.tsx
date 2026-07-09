@@ -97,6 +97,14 @@ export default function IngestionView() {
     return () => clearInterval(interval);
   }, []);
 
+  const prevActiveRef = useRef(false);
+  useEffect(() => {
+    if (prevActiveRef.current && !progress.active) {
+      loadFiles();
+    }
+    prevActiveRef.current = progress.active;
+  }, [progress.active]);
+
   // Load execution history
   async function loadExecutions() {
     try {

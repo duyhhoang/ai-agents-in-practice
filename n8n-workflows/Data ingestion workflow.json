@@ -49,7 +49,7 @@
     },
     {
       "parameters": {
-        "fileSelector": "/home/node/.n8n-files/*",
+        "fileSelector": "={{ $('Webhook Trigger').first()?.json?.query?.filename || $('Webhook Trigger').first()?.json?.body?.filename ? '/home/node/.n8n-files/' + ($('Webhook Trigger').first()?.json?.query?.filename || $('Webhook Trigger').first()?.json?.body?.filename) : '/home/node/.n8n-files/*' }}",
         "options": {}
       },
       "id": "b2ef3d31-e5d0-4eff-a471-b2a543da6dcb",
@@ -305,6 +305,53 @@
         1616,
         352
       ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://host.docker.internal:8000/api/ingestion/complete",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"executionId\": \"{{ $execution.id }}\",\n  \"status\": \"success\",\n  \"filename\": \"{{ $('Webhook Trigger').first()?.json?.query?.filename || $('Webhook Trigger').first()?.json?.body?.filename || '' }}\"\n}",
+        "options": {}
+      },
+      "id": "notify-backend-success-uuid",
+      "name": "Notify Backend Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1616,
+        160
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "error-trigger-uuid",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://host.docker.internal:8000/api/ingestion/complete",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"executionId\": \"{{ $execution.id }}\",\n  \"status\": \"failed\",\n  \"filename\": \"{{ $('Webhook Trigger').first()?.json?.query?.filename || $('Webhook Trigger').first()?.json?.body?.filename || '' }}\",\n  \"error\": \"{{ $json.execution?.error?.message || 'Workflow failed' }}\"\n}",
+        "options": {}
+      },
+      "id": "notify-backend-failure-uuid",
+      "name": "Notify Backend Failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1616,
+        -60
+      ]
     }
   ],
   "connections": {
@@ -485,6 +532,28 @@
         [
           {
             "node": "LLM Call 2: Extract Entities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Import Complete": {
+      "main": [
+        [
+          {
+            "node": "Notify Backend Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Notify Backend Failure",
             "type": "main",
             "index": 0
           }

@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import { getNeo4jDriver } from "../neo4j-client.js";
 import { getHash } from "../utils.js";
 import { initializeEmbeddings } from "./embedding.js";
-import { logDetailedExecution, ExecutionRunFile } from "./execution-logger.js";
+import { logDetailedExecution, ExecutionRunFile, ExecutionRun } from "./execution-logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -75,6 +75,14 @@ export async function getFileStates(): Promise<Map<string, { hash: string; proce
   return fileStates;
 }
 
+export const pendingExecutions = new Map<string, {
+  triggerType: string;
+  filename?: string;
+  startTime: number;
+  tempExecId: string;
+  preFileStates: Map<string, { hash: string; processed: boolean }>;
+}>();
+
 export async function runIngestionPipeline(triggerType: string, filename?: string): Promise<any> {
   const webhookUrl = process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/trigger-extraction";
   const startTime = Date.now();
@@ -82,6 +90,16 @@ export async function runIngestionPipeline(triggerType: string, filename?: strin
 
   // 1. Capture pre-file states
   const preFileStates = await getFileStates();
+
+  // Filter if filename is specified
+  if (filename) {
+    const fileKey = filename.toLowerCase();
+    const state = preFileStates.get(fileKey);
+    preFileStates.clear();
+    if (state) {
+      preFileStates.set(fileKey, state);
+    }
+  }
 
   // 2. Log temporary "Running" execution
   await logDetailedExecution({
@@ -103,12 +121,13 @@ export async function runIngestionPipeline(triggerType: string, filename?: strin
   try {
     // 3. Trigger webhook
     updateProgress(filename || "Batch Pipeline", "Triggering n8n pipeline...", 15, true);
-    let n8nRes = await fetch(webhookUrl, { method: "POST" });
+    
+    const targetUrl = webhookUrl + (filename ? `?filename=${encodeURIComponent(filename)}` : "");
+    let n8nRes = await fetch(targetUrl, { method: "POST" });
     if (!n8nRes.ok && (n8nRes.status === 405 || n8nRes.status === 404)) {
-      n8nRes = await fetch(webhookUrl, { method: "GET" });
+      n8nRes = await fetch(targetUrl, { method: "GET" });
     }
 
-    const duration = Date.now() - startTime;
     if (!n8nRes.ok) {
       throw new Error(`n8n webhook responded with status ${n8nRes.status}`);
     }
@@ -116,59 +135,31 @@ export async function runIngestionPipeline(triggerType: string, filename?: strin
     const n8nData = await n8nRes.json().catch(() => ({}));
     const executionId = n8nData.executionId || tempExecId;
 
-    // 4. Refresh embeddings
-    updateProgress(filename || "Batch Pipeline", "Generating vector chunk embeddings...", 75, true);
-    await initializeEmbeddings();
-
-    // 5. Capture post-file states
-    const postFileStates = await getFileStates();
-
-    // 6. Compare file states to determine Processed vs Skipped vs Failed
-    const files: ExecutionRunFile[] = Array.from(postFileStates.entries()).map(([name, postState]) => {
-      const preState = preFileStates.get(name);
-      let status: "Processed" | "Skipped" | "Failed" = "Skipped";
-
-      if (!preState || !preState.processed) {
-        if (postState.processed) {
-          status = "Processed";
-        } else {
-          status = "Failed";
-        }
-      } else {
-        status = "Skipped";
-      }
-
-      return {
-        name,
-        hash: postState.hash,
-        status
-      };
-    });
-
-    const processedCount = files.filter(f => f.status === "Processed").length;
-
-    // 7. Update execution log to Success
-    await logDetailedExecution({
-      id: executionId,
-      workflowName: "07_LLM_Entity_Extraction_v3_HTTP",
-      timestamp: new Date().toISOString(),
+    // Save running execution context
+    pendingExecutions.set(executionId, {
       triggerType,
-      status: "Success",
-      durationMs: duration,
-      filesProcessed: processedCount,
-      error: null,
-      files
-    }, tempExecId);
+      filename,
+      startTime,
+      tempExecId,
+      preFileStates
+    });
+    
+    if (executionId !== tempExecId) {
+      pendingExecutions.set(tempExecId, {
+        triggerType,
+        filename,
+        startTime,
+        tempExecId,
+        preFileStates
+      });
+    }
 
-    updateProgress(filename || "Batch Pipeline", "Ingestion complete!", 100, false);
+    updateProgress(filename || "Batch Pipeline", "Extracting supply chain entities (n8n)...", 40, true);
 
     return {
       success: true,
       executionId,
-      durationMs: duration,
-      filesProcessed: processedCount,
-      files,
-      details: n8nData
+      status: "Running"
     };
 
   } catch (err: any) {
@@ -193,5 +184,112 @@ export async function runIngestionPipeline(triggerType: string, filename?: strin
 
     updateProgress(filename || "Batch Pipeline", `Failed: ${err.message}`, 0, false);
     throw err;
+  }
+}
+
+export async function completeIngestionPipeline(
+  executionId: string,
+  status: "success" | "failed",
+  errorMsg?: string
+): Promise<void> {
+  const pending = pendingExecutions.get(executionId);
+  if (!pending) {
+    console.warn(`[Ingestion Callback] No pending execution context found for n8n execution: ${executionId}. Processing generic callback.`);
+    
+    if (status === "success") {
+      updateProgress("External Run", "Generating vector chunk embeddings...", 75, true);
+      await initializeEmbeddings();
+      updateProgress("External Run", "Ingestion complete!", 100, false);
+    } else {
+      updateProgress("External Run", `Failed: ${errorMsg || "Unknown error"}`, 0, false);
+    }
+    return;
+  }
+
+  const duration = Date.now() - pending.startTime;
+  const { tempExecId, preFileStates, triggerType, filename } = pending;
+
+  try {
+    if (status === "success") {
+      updateProgress(filename || "Batch Pipeline", "Generating vector chunk embeddings...", 75, true);
+      await initializeEmbeddings();
+
+      updateProgress(filename || "Batch Pipeline", "Capturing post-file states...", 90, true);
+      const postFileStates = await getFileStates();
+
+      // Compare states to determine status
+      const files: ExecutionRunFile[] = Array.from(postFileStates.entries()).map(([name, postState]) => {
+        const preState = preFileStates.get(name);
+        let fileStatus: "Processed" | "Skipped" | "Failed" = "Skipped";
+
+        if (!preState || !preState.processed) {
+          if (postState.processed) {
+            fileStatus = "Processed";
+          } else {
+            fileStatus = "Failed";
+          }
+        } else {
+          fileStatus = "Skipped";
+        }
+
+        return {
+          name,
+          hash: postState.hash,
+          status: fileStatus
+        };
+      });
+
+      // Filter files if targeted run
+      const filteredFiles = filename 
+        ? files.filter(f => f.name.toLowerCase() === filename.toLowerCase())
+        : files;
+
+      const processedCount = filteredFiles.filter(f => f.status === "Processed").length;
+
+      // Update Neo4j Execution Log
+      await logDetailedExecution({
+        id: executionId,
+        workflowName: "07_LLM_Entity_Extraction_v3_HTTP",
+        timestamp: new Date().toISOString(),
+        triggerType,
+        status: "Success",
+        durationMs: duration,
+        filesProcessed: processedCount,
+        error: null,
+        files: filteredFiles
+      }, tempExecId);
+
+      updateProgress(filename || "Batch Pipeline", "Ingestion complete!", 100, false);
+      console.log(`[Ingestion Callback] Execution ${executionId} completed successfully in ${(duration / 1000).toFixed(2)}s.`);
+    } else {
+      // Failed run callback
+      const files: ExecutionRunFile[] = Array.from(preFileStates.entries()).map(([name, state]) => ({
+        name,
+        hash: state.hash,
+        status: "Failed" as const,
+        error: errorMsg || "n8n workflow failed"
+      }));
+
+      await logDetailedExecution({
+        id: executionId,
+        workflowName: "07_LLM_Entity_Extraction_v3_HTTP",
+        timestamp: new Date().toISOString(),
+        triggerType,
+        status: "Failed",
+        durationMs: duration,
+        filesProcessed: 0,
+        error: errorMsg || "n8n workflow failed",
+        files
+      }, tempExecId);
+
+      updateProgress(filename || "Batch Pipeline", `Failed: ${errorMsg}`, 0, false);
+      console.error(`[Ingestion Callback] Execution ${executionId} failed: ${errorMsg}`);
+    }
+  } catch (err: any) {
+    console.error(`[Ingestion Callback] Error processing callback:`, err);
+    updateProgress(filename || "Batch Pipeline", `Callback Error: ${err.message}`, 0, false);
+  } finally {
+    pendingExecutions.delete(executionId);
+    pendingExecutions.delete(tempExecId);
   }
 }
