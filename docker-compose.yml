@@ -41,6 +41,7 @@ services:
       - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
       - LLM_AUTHORIZATION=Bearer ${CLUSTER_API_KEY}
       - LLM_SERVER_URL=http://atknoll32.air.cit.tum.de:3000/inference/chat/completions
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
     volumes:
       - n8n_data:/home/node/.n8n
       - ./data-processors:/home/node/.n8n-files

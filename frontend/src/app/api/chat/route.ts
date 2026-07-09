@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
           ...result.data, 
           engineUsed: "n8n Workflow Engine (:5678)",
-          embeddingMode: "fallback"
+          embeddingMode: result.data.embeddingMode || "fallback"
         });
       }
       return NextResponse.json(
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ 
           ...result.data, 
           engineUsed: "Express MCP Server (:8000)",
-          embeddingMode: result.data.embeddingMode || "gemini"
+          embeddingMode: result.data.embeddingMode || "fallback"
         });
       }
       return NextResponse.json(
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         ...n8nResult.data, 
         engineUsed: "n8n Workflow Engine (:5678)",
-        embeddingMode: "fallback"
+        embeddingMode: n8nResult.data.embeddingMode || "fallback"
       });
     }
 
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         ...expressResult.data, 
         engineUsed: "Express MCP Engine (:8000 - Fallback)",
-        embeddingMode: expressResult.data.embeddingMode || "gemini"
+        embeddingMode: expressResult.data.embeddingMode || "fallback"
       });
     }
 
