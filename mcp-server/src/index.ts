@@ -7,6 +7,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { closeNeo4jDriver } from "./neo4j-client.js";
 import { initializeEmbeddings } from "./services/embedding.js";
+import { cleanupStuckRunningExecutions } from "./services/execution-logger.js";
 import { registerMcpTools } from "./services/mcp-tools.js";
 import healthRouter from "./routes/health.js";
 import queryRouter from "./routes/query.js";
@@ -114,8 +115,8 @@ if (useStdio) {
     console.log(`- REST Ingestion Status endpoint: http://localhost:${PORT}/api/ingestion/status`);
     console.log(`- Multi-Agent Chat endpoint: http://localhost:${PORT}/chat`);
     
-    // Initialize vector embeddings at startup
-    initializeEmbeddings();
+    // Clean up stuck executions and initialize vector embeddings at startup
+    cleanupStuckRunningExecutions().then(() => initializeEmbeddings());
   });
 
   // Graceful shutdown
