@@ -81,8 +81,8 @@ export async function getEmbedding(text: string): Promise<number[]> {
  * Startup function to read files from data-processors, chunk them into ProcessedChunk nodes,
  * and update ProcessedFile & ProcessedChunk nodes in Neo4j with vector embeddings.
  */
-export async function initializeEmbeddings(): Promise<void> {
-  console.log("[Embedding Init] Initializing chunked vector embeddings...");
+export async function initializeEmbeddings(targetFiles?: string[]): Promise<void> {
+  console.log(`[Embedding Init] Initializing chunked vector embeddings${targetFiles ? ` for target files: ${targetFiles.join(", ")}` : "" }...`);
   const driver = getNeo4jDriver();
   const session = driver.session();
   try {
@@ -109,9 +109,19 @@ export async function initializeEmbeddings(): Promise<void> {
     await session.run(createChunkIndexQuery);
     console.log("[Embedding Init] Vector indices 'file_embeddings' and 'chunk_embeddings' verified.");
 
-    const result = await session.run("MATCH (f:ProcessedFile) RETURN f.name AS name");
-    const dbFiles = result.records.map(r => r.get("name") as string);
-    console.log(`[Embedding Init] Found ${dbFiles.length} ProcessedFile nodes in Neo4j.`);
+    let dbFiles: string[] = [];
+    if (targetFiles && targetFiles.length > 0) {
+      dbFiles = targetFiles;
+    } else {
+      const result = await session.run("MATCH (f:ProcessedFile) WHERE f.embedding IS NULL RETURN f.name AS name");
+      dbFiles = result.records.map(r => r.get("name") as string);
+      console.log(`[Embedding Init] Found ${dbFiles.length} ProcessedFile nodes missing embeddings in Neo4j.`);
+    }
+
+    if (dbFiles.length === 0) {
+      console.log("[Embedding Init] No files to process.");
+      return;
+    }
 
     const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, "../../data-processors");
     let updatedCount = 0;
