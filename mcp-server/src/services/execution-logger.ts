@@ -169,3 +169,26 @@ export async function logDetailedExecution(run: ExecutionRun, oldId?: string): P
     await session.close();
   }
 }
+
+export async function cleanupStuckRunningExecutions(): Promise<void> {
+  const driver = getNeo4jDriver();
+  const session = driver.session();
+  try {
+    const result = await session.executeWrite((tx) =>
+      tx.run(`
+        MATCH (e:IngestionExecution {status: 'Running'})
+        SET e.status = 'Failed',
+            e.error = 'Execution terminated abnormally or timed out'
+        RETURN count(e) AS count
+      `)
+    );
+    const count = result.records[0]?.get("count")?.toNumber() || 0;
+    if (count > 0) {
+      console.log(`[Execution Logger] Cleaned up ${count} stuck 'Running' executions.`);
+    }
+  } catch (err) {
+    console.error("[Execution Logger] Error cleaning up stuck executions:", err);
+  } finally {
+    await session.close();
+  }
+}
