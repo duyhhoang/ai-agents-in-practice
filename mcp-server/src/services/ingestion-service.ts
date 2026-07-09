@@ -237,24 +237,26 @@ export async function completeIngestionPipeline(
       updateProgress(filename || "Batch Pipeline", "Capturing post-file states...", 65, true);
       const postFileStates = await getFileStates();
 
-      // Compare states to determine status
-      const files: ExecutionRunFile[] = Array.from(postFileStates.entries()).map(([name, postState]) => {
-        const preState = preFileStates.get(name);
+      // Compare states to determine status for only targeted files
+      const files: ExecutionRunFile[] = Array.from(preFileStates.entries()).map(([name, preState]) => {
+        const postState = postFileStates.get(name);
         let fileStatus: "Processed" | "Skipped" | "Failed" = "Skipped";
 
-        if (!preState || !preState.processed) {
-          if (postState.processed) {
+        if (postState) {
+          if (!preState.processed && postState.processed) {
             fileStatus = "Processed";
+          } else if (preState.processed) {
+            fileStatus = "Skipped";
           } else {
             fileStatus = "Failed";
           }
         } else {
-          fileStatus = "Skipped";
+          fileStatus = "Failed";
         }
 
         return {
           name,
-          hash: postState.hash,
+          hash: postState ? postState.hash : preState.hash,
           status: fileStatus
         };
       });
