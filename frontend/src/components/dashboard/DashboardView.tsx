@@ -65,7 +65,7 @@ export default function DashboardView() {
             setAssetLabel(discoveredLabel);
 
             const keysQuery = `
-              MATCH (n:\${discoveredLabel})
+              MATCH (n:${discoveredLabel})
               RETURN keys(n) AS keys
               LIMIT 1
             `;
@@ -100,7 +100,7 @@ export default function DashboardView() {
     async function fetchStats() {
       try {
         const query = `
-          CALL { MATCH (cs:\${assetLabel}) RETURN count(cs) AS cs_count }
+          CALL { MATCH (cs:${assetLabel}) RETURN count(cs) AS cs_count }
           CALL { MATCH (p:Process) RETURN count(p) AS p_count }
           CALL { MATCH (a:Actor) RETURN count(a) AS a_count }
           CALL { MATCH (l:Location) RETURN count(l) AS l_count }
@@ -132,7 +132,7 @@ export default function DashboardView() {
 
     async function fetchUnits() {
       try {
-        const query = `MATCH (cs:\${assetLabel}) RETURN cs.\${assetIdField} AS unitId ORDER BY unitId`;
+        const query = `MATCH (cs:${assetLabel}) RETURN cs.${assetIdField} AS unitId ORDER BY unitId`;
         const res = await fetch("/api/query", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -166,7 +166,7 @@ export default function DashboardView() {
       setSelectedStep(null);
       try {
         const query = `
-          MATCH (cs:\${assetLabel} {\${assetIdField}: $unitId})-[:UNDERGOES]->(p:Process)
+          MATCH (cs:${assetLabel} {${assetIdField}: $unitId})-[:UNDERGOES]->(p:Process)
           OPTIONAL MATCH (p)-[:EXECUTED_BY]->(a:Actor)
           RETURN coalesce(p.process_id, p.id) AS process_id, 
                  p.process_name AS process_name, 
