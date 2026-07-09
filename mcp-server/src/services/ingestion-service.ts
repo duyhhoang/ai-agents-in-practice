@@ -61,7 +61,7 @@ export async function getFileStates(): Promise<Map<string, { hash: string; proce
         const filePath = path.join(uploadDir, file);
         const stats = fs.statSync(filePath);
         if (!stats.isFile()) continue;
-        const text = fs.readFileSync(filePath, "utf-8");
+        const text = fs.readFileSync(filePath, "utf-8").replace(/\r\n/g, "\n");
         const hash = getHash(text);
         const processed = processedMap.has(file.toLowerCase()) && processedMap.get(file.toLowerCase()) === hash;
         fileStates.set(file.toLowerCase(), { hash, processed });

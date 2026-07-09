@@ -99,7 +99,7 @@ router.get("/ingestion/status", async (req, res) => {
       const stats = fs.statSync(filePath);
       if (!stats.isFile()) continue;
 
-      const text = fs.readFileSync(filePath, "utf-8");
+      const text = fs.readFileSync(filePath, "utf-8").replace(/\r\n/g, "\n");
       const hash = getHash(text);
       const processed = processedMap.has(file.toLowerCase()) || processedHashes.has(hash);
 
