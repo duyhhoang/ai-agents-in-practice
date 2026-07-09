@@ -317,9 +317,11 @@ export default function AppShell() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-[10px] text-slate-400">
-                    n8n serves as a multi-agent orchestrator utilizing local similarity fallback, while Express MCP acts as the direct high-performance RAG API (supporting semantic Gemini embeddings when configured).
-                  </p>
+                  <div className="text-[10px] text-slate-400 space-y-1 leading-normal">
+                    <p><strong>Auto:</strong> Routes to n8n first (multi-agent workflow with 5 specialized sub-agents); falls back to Express MCP if n8n is offline.</p>
+                    <p><strong>n8n:</strong> Forces the n8n Chat Orchestrator with its full agent workflow.</p>
+                    <p><strong>Express:</strong> Uses the built-in Express multi-agent pipeline with dynamic schema discovery and direct Gemini embeddings.</p>
+                  </div>
                 </div>
 
                 {/* LLM Reasoning level */}

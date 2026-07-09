@@ -293,7 +293,7 @@ export function registerMcpTools(mcpServer: Server): void {
             const query = `
               MATCH (n)
               WHERE NOT n:ProcessedFile AND NOT n:ProcessedChunk
-              OPTIONAL MATCH (cs:\${startLabel})-[:UNDERGOES]->(n)
+              OPTIONAL MATCH (cs:${startLabel})-[:UNDERGOES]->(n)
               WITH n, cs, COUNT { (n)<-[]-() } AS dependency_count
               WHERE dependency_count > 0
               RETURN 
@@ -326,7 +326,7 @@ export function registerMcpTools(mcpServer: Server): void {
           
           else if (type === "critical_path") {
             const query = `
-              MATCH p = (start:\${startLabel})-[:UNDERGOES*1..6]->(end:\${endLabel})
+              MATCH p = (start:${startLabel})-[:UNDERGOES*1..6]->(end:${endLabel})
               WHERE NOT (end)-[:UNDERGOES]->()
               RETURN 
                 coalesce(start.unit_id, start.id, start.canonical_id) AS unit_id,
@@ -350,7 +350,7 @@ export function registerMcpTools(mcpServer: Server): void {
             const query = `
               MATCH (n)
               WHERE NOT n:ProcessedFile AND NOT n:ProcessedChunk
-              OPTIONAL MATCH (cs:\${startLabel})-[:UNDERGOES]->(n)
+              OPTIONAL MATCH (cs:${startLabel})-[:UNDERGOES]->(n)
               WITH n, cs, COUNT { (n)-[]-() } AS degree
               RETURN 
                 CASE 
