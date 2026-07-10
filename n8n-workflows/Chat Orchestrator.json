@@ -8,10 +8,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        224,
-        -144
+        80,
+        0
       ],
-      "id": "a354c625-8907-4028-a373-69c36ae2feeb",
+      "id": "856393fa-73c8-4ee1-91c6-1d0432bdcde7",
       "name": "Normalize Chat Input"
     },
     {
@@ -24,33 +24,33 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        -144
+        -128,
+        0
       ],
-      "id": "327ed70c-fec2-45f3-8e56-616f0465db65",
+      "id": "028ddddb-ba7d-4f78-8c65-6ce121825d83",
       "name": "Chat Webhook",
       "webhookId": "e643ee31-e8f5-4135-a542-39f71461bfd7"
     },
     {
       "parameters": {
-        "jsCode": "const question = $json.question || \"\";\nconst q = question.toLowerCase();\n\nconst selectedAgents = [];\n\nconst procurementKeywords = [\n  \"supplier\",\n  \"suppliers\",\n  \"purchase order\",\n  \"po\",\n  \"procurement\",\n  \"sourcing\",\n  \"vendor\",\n  \"lead time\",\n  \"material\",\n  \"materials\"\n];\n\nconst riskKeywords = [\n  \"risk\",\n  \"risky\",\n  \"delay\",\n  \"delayed\",\n  \"bottleneck\",\n  \"critical\",\n  \"failure\",\n  \"incident\",\n  \"audit\",\n  \"maintenance\"\n];\n\nconst logisticsKeywords = [\n  \"shipment\",\n  \"shipping\",\n  \"transport\",\n  \"route\",\n  \"delivery\",\n  \"freight\",\n  \"warehouse\",\n  \"location\",\n  \"logistics\"\n];\n\nconst sustainabilityKeywords = [\n  \"carbon\",\n  \"emission\",\n  \"emissions\",\n  \"co2\",\n  \"recycling\",\n  \"waste\",\n  \"sustainability\",\n  \"environment\",\n  \"environmental\"\n];\n\nconst qualityKeywords = [\n  \"quality\",\n  \"test\",\n  \"testing\",\n  \"defect\",\n  \"inspection\",\n  \"audit\",\n  \"report\"\n];\n\nconst runProcurement = procurementKeywords.some(k => q.includes(k));\nconst runRisk = riskKeywords.some(k => q.includes(k));\nconst runLogistics = logisticsKeywords.some(k => q.includes(k));\nconst runSustainability = sustainabilityKeywords.some(k => q.includes(k));\nconst runQuality = qualityKeywords.some(k => q.includes(k));\n\nif (runProcurement) selectedAgents.push(\"procurement_specialist\");\nif (runRisk) selectedAgents.push(\"risk_analyst\");\nif (runLogistics) selectedAgents.push(\"logistics_specialist\");\nif (runSustainability) selectedAgents.push(\"sustainability_analyst\");\nif (runQuality) selectedAgents.push(\"quality_analyst\");\n\n// fallback: if nothing matches, run manager with general context later\nif (selectedAgents.length === 0) {\n  selectedAgents.push(\"procurement_specialist\", \"risk_analyst\");\n}\n\nreturn [\n  {\n    json: {\n      ...$json,\n      selectedAgents,\n      runProcurement,\n      runRisk,\n      runLogistics,\n      runSustainability,\n      runQuality,\n    },\n  },\n];"
+        "jsCode": "let incoming = $json || {};\n\nlet question =\n  incoming.question ||\n  incoming.message ||\n  incoming.chatInput ||\n  incoming.prompt ||\n  incoming.body?.question ||\n  incoming.body?.message ||\n  incoming.body?.chatInput ||\n  incoming.body?.prompt ||\n  \"\";\n\n// fallback: read directly from Normalize Chat Input node\ntry {\n  const normalized = $(\"Normalize Chat Input\").first().json;\n  question =\n    question ||\n    normalized.question ||\n    normalized.message ||\n    normalized.body?.question ||\n    normalized.body?.message ||\n    \"\";\n} catch (e) {\n  // ignore\n}\n\nquestion = String(question || \"\").trim();\nconst q = question.toLowerCase();\n\nconst selectedAgents = [];\n\nconst isChargingStationQuestion =\n  q.includes(\"charging station\") ||\n  q.includes(\"charging stations\") ||\n  q.includes(\"station\") ||\n  q.includes(\"stations\") ||\n  q.includes(\"located\") ||\n  q.includes(\"location\") ||\n  q.includes(\"site\") ||\n  q.includes(\"sites\") ||\n  q.includes(\"country\") ||\n  q.includes(\"countries\");\n\nconst isProcurementQuestion =\n  q.includes(\"purchase\") ||\n  q.includes(\"purchasing\") ||\n  q.includes(\"purchase order\") ||\n  q.includes(\"purchase orders\") ||\n  q.includes(\"po-\") ||\n  /\\bpo\\b/.test(q) ||\n  q.includes(\"order\") ||\n  q.includes(\"orders\") ||\n  q.includes(\"supplier\") ||\n  q.includes(\"vendor\") ||\n  q.includes(\"material\") ||\n  q.includes(\"inventory\") ||\n  q.includes(\"stock\") ||\n  q.includes(\"closed\") ||\n  q.includes(\"open\") ||\n  q.includes(\"status\");\n\nconst isRiskQuestion =\n  q.includes(\"risk\") ||\n  q.includes(\"risky\") ||\n  q.includes(\"delay\") ||\n  q.includes(\"delayed\") ||\n  q.includes(\"bottleneck\") ||\n  q.includes(\"critical\") ||\n  q.includes(\"failure\") ||\n  q.includes(\"incident\") ||\n  q.includes(\"disruption\");\n\nconst isQualityQuestion =\n  q.includes(\"quality\") ||\n  q.includes(\"test\") ||\n  q.includes(\"testing\") ||\n  q.includes(\"defect\") ||\n  q.includes(\"inspection\") ||\n  q.includes(\"audit\") ||\n  q.includes(\"notification\");\n\nconst isSustainabilityQuestion =\n  q.includes(\"carbon\") ||\n  q.includes(\"emission\") ||\n  q.includes(\"emissions\") ||\n  q.includes(\"co2\") ||\n  q.includes(\"energy\") ||\n  q.includes(\"recycling\") ||\n  q.includes(\"recovery\") ||\n  q.includes(\"waste\") ||\n  q.includes(\"sustainability\") ||\n  q.includes(\"environment\");\n\nif (isChargingStationQuestion) {\n  selectedAgents.push(\"logistics_specialist\");\n}\n\nif (isProcurementQuestion) {\n  selectedAgents.push(\"procurement_specialist\");\n}\n\nif (isRiskQuestion) {\n  selectedAgents.push(\"risk_analyst\");\n}\n\nif (isQualityQuestion) {\n  selectedAgents.push(\"quality_analyst\");\n}\n\nif (isSustainabilityQuestion) {\n  selectedAgents.push(\"sustainability_analyst\");\n}\n\nreturn [\n  {\n    json: {\n      ...incoming,\n      question,\n      selectedAgents,\n      runProcurement: selectedAgents.includes(\"procurement_specialist\"),\n      runRisk: selectedAgents.includes(\"risk_analyst\"),\n      runLogistics: selectedAgents.includes(\"logistics_specialist\"),\n      runSustainability: selectedAgents.includes(\"sustainability_analyst\"),\n      runQuality: selectedAgents.includes(\"quality_analyst\"),\n      routingDebug: {\n        inputKeys: Object.keys(incoming),\n        rawInput: incoming,\n        questionSeenByRouter: question,\n        normalizedQuestion: q,\n        selectedAgents,\n        isChargingStationQuestion,\n        isProcurementQuestion,\n        isRiskQuestion,\n        isQualityQuestion,\n        isSustainabilityQuestion,\n      },\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1120,
-        -144
+        1408,
+        0
       ],
-      "id": "923faa7d-ed07-4a01-b17d-2ac93ae0a0b2",
+      "id": "79ae08ef-848b-480b-8e57-7b6703440d23",
       "name": "Route Question"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "9gJZZgqU5nbqAJg4",
+          "value": "YqO2lNIC6VhtBp3M",
           "mode": "list",
-          "cachedResultUrl": "/workflow/9gJZZgqU5nbqAJg4",
+          "cachedResultUrl": "/workflow/YqO2lNIC6VhtBp3M",
           "cachedResultName": "Agent - Risk Analyst"
         },
         "workflowInputs": {
@@ -99,19 +99,19 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1568,
-        -144
+        1856,
+        0
       ],
-      "id": "7c94c798-b318-4153-ab62-0e091111b7f3",
+      "id": "0f112661-00ef-4310-9d34-61fd1ec6dc96",
       "name": "Run Risk Analyst"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "eapmSJqxssrCsoeP",
+          "value": "EhPMWHNQHVF3HBSD",
           "mode": "list",
-          "cachedResultUrl": "/workflow/eapmSJqxssrCsoeP",
+          "cachedResultUrl": "/workflow/EhPMWHNQHVF3HBSD",
           "cachedResultName": "Agent - Logistics Specialist"
         },
         "workflowInputs": {
@@ -160,19 +160,19 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1792,
-        -144
+        2080,
+        0
       ],
-      "id": "d29cd495-56c4-41b2-95bb-331b6f50359b",
+      "id": "62e2464d-0e28-4729-a007-2c969c10d1c1",
       "name": "Run Logistics Specialist"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "s8WHnPo7bImcVJJb",
+          "value": "9hQY7ea2WXMCOlX0",
           "mode": "list",
-          "cachedResultUrl": "/workflow/s8WHnPo7bImcVJJb",
+          "cachedResultUrl": "/workflow/9hQY7ea2WXMCOlX0",
           "cachedResultName": "Agent - Sustainability Analyst"
         },
         "workflowInputs": {
@@ -223,19 +223,19 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2016,
-        -144
+        2304,
+        0
       ],
-      "id": "c06f2955-3282-46dc-9958-f25c87dce1d8",
+      "id": "99141047-1cec-4b0f-835d-86b1b44f2a7c",
       "name": "Run Sustainability Analyst"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "katRgLtpWF3LrCHC",
+          "value": "t4w4uW72UPO4cfVT",
           "mode": "list",
-          "cachedResultUrl": "/workflow/katRgLtpWF3LrCHC",
+          "cachedResultUrl": "/workflow/t4w4uW72UPO4cfVT",
           "cachedResultName": "Agent - Quality Analyst"
         },
         "workflowInputs": {
@@ -284,19 +284,19 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2240,
-        -144
+        2528,
+        0
       ],
-      "id": "84918db1-0ed6-42c4-b17f-f3d77d5d2739",
+      "id": "732f9142-c649-4d35-9aeb-90169b04bd20",
       "name": "Run Quality Analyst"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "knllbSt9bGgQyQIZ",
+          "value": "4hkQcrqyeOKysjuD",
           "mode": "list",
-          "cachedResultUrl": "/workflow/knllbSt9bGgQyQIZ",
+          "cachedResultUrl": "/workflow/4hkQcrqyeOKysjuD",
           "cachedResultName": "Agent - Manager"
         },
         "workflowInputs": {
@@ -312,19 +312,19 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2688,
-        -144
+        2976,
+        0
       ],
-      "id": "b7b5f1a6-5b7f-414e-86a6-2f95f58c1319",
+      "id": "d24f191f-b236-4ae0-8e9e-972e57d8b82c",
       "name": "Run Manager Agent"
     },
     {
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "uXxa1PiN0LtYwNdr",
+          "value": "rWjcQm6cQHLCIl8Q",
           "mode": "list",
-          "cachedResultUrl": "/workflow/uXxa1PiN0LtYwNdr",
+          "cachedResultUrl": "/workflow/rWjcQm6cQHLCIl8Q",
           "cachedResultName": "Agent - Procurement Specialist"
         },
         "workflowInputs": {
@@ -375,23 +375,23 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1344,
-        -144
+        1632,
+        0
       ],
-      "id": "b028b586-f9f3-4bb8-be2d-4234a9513087",
+      "id": "5305d308-83e1-4923-b221-cb1a3e5c6d7c",
       "name": "Run Procurement Specialist"
     },
     {
       "parameters": {
-        "jsCode": "const question = $(\"Normalize Chat Input\").first().json.question || \"\";\nconst sessionId = $(\"Normalize Chat Input\").first().json.sessionId || \"default-session\";\nconst selectedAgents = $(\"Route Question\").first().json.selectedAgents || [];\nconst sourceChunks = $(\"Parse RAG Chunks\").first().json.sourceChunks || [];\n\nfunction getNodeJson(nodeName) {\n  try {\n    return $(nodeName).first().json;\n  } catch (e) {\n    return {\n      agent: nodeName,\n      status: \"error\",\n      answer: `Could not read output from ${nodeName}`,\n      keyFindings: [],\n      recommendations: [],\n      confidence: \"low\",\n      error: e.message,\n    };\n  }\n}\n\nconst procurement = getNodeJson(\"Run Procurement Specialist\");\nconst risk = getNodeJson(\"Run Risk Analyst\");\nconst logistics = getNodeJson(\"Run Logistics Specialist\");\nconst sustainability = getNodeJson(\"Run Sustainability Analyst\");\nconst quality = getNodeJson(\"Run Quality Analyst\");\n\nconst allSpecialistResults = [\n  procurement,\n  risk,\n  logistics,\n  sustainability,\n  quality,\n].filter(Boolean);\n\nconst specialistResults = allSpecialistResults.filter(\n  (result) => result.status !== \"skipped\"\n);\n\nconst toolsUsed = [];\nif (sourceChunks.length > 0) {\n  toolsUsed.push({\n    id: \"vector_search\",\n    name: \"Vector Search (Unstructured RAG)\",\n    status: \"success\",\n    inputSummary: question,\n    outputSummary: `Found ${sourceChunks.length} matching unstructured documents.`\n  });\n}\n\nconst CYPHER_TEMPLATES = {\n  procurement_specialist: `MATCH (a:Actor)\nWHERE coalesce(a.is_canonical_actor, false) = true AND (toLower(coalesce(a.actor_role, \"\")) IN [\"supplier\", \"manufacturer\", \"vendor\"] OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"supplier\" OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"materials\" OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"manufacturing\" OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"vendor\" OR EXISTS { MATCH (a)-[:SUPPLIES]-() })\nOPTIONAL MATCH (a)-[r]-(connected)\nRETURN coalesce(a.canonical_id, a.id, a.actor_id) AS supplier_id, coalesce(a.display_name, a.actor_name, a.name) AS supplier_name, a.region AS region, a.actor_origin AS actor_origin, a.actor_role AS actor_role, labels(connected) AS connected_labels, coalesce(connected.canonical_id, connected.id, connected.display_name, connected.actor_name, connected.name, connected.unit_id, connected.process_id, connected.material_id, connected.location_name) AS connected_entity, type(r) AS relationship, properties(connected) AS connected_properties\nORDER BY supplier_id LIMIT 100`,\n\n  risk_analyst: `MATCH (n)\nWHERE n:Risk OR n:IncidentReport OR n:AuditFinding OR n:MaintenanceEvent OR n:TestReport\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN coalesce(n.canonical_id, n.id, n.risk_id, n.incident_id, n.audit_id, n.test_report_id, n.maintenance_id) AS item_id, labels(n)[0] AS item_type, coalesce(n.name, n.risk_name, n.description, n.finding, n.incident_description, n.event_type, n.status, n.id) AS item_name, properties(n) AS properties, type(r) AS relationship, labels(connected) AS connected_labels, coalesce(connected.canonical_id, connected.id, connected.actor_name, connected.name, connected.unit_id, connected.process_id, connected.material_name, connected.location_name) AS connected_entity\nLIMIT 100`,\n\n  logistics_specialist: `MATCH (n)\nWHERE n:Location OR n:Transport OR (n:Actor AND (toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"logistics\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"freight\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"transport\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"shipping\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"carrier\"))\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN coalesce(n.canonical_id, n.id, n.transport_id, n.location_code, n.actor_id, n.unit_id) AS item_id, labels(n)[0] AS item_type, coalesce(n.location_name, n.actor_name, n.name, n.route_from, n.route_to, n.country, n.id) AS item_name, properties(n) AS properties, type(r) AS relationship, labels(connected) AS connected_labels, coalesce(connected.canonical_id, connected.id, connected.unit_id, connected.serial_number, connected.actor_name, connected.name, connected.process_id, connected.process_name, connected.material_name, connected.location_name) AS connected_entity\nLIMIT 100`,\n\n  sustainability_analyst: `MATCH (n)\nWHERE n:Material OR (n:Actor AND (toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"recycling\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"recovery\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"waste\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"environment\" OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"sustainability\")) OR any(k IN keys(n) WHERE toLower(k) CONTAINS \"carbon\" OR toLower(k) CONTAINS \"co2\" OR toLower(k) CONTAINS \"emission\" OR toLower(k) CONTAINS \"recycling\" OR toLower(k) CONTAINS \"recycled\" OR toLower(k) CONTAINS \"waste\" OR toLower(k) CONTAINS \"environment\" OR toLower(k) CONTAINS \"sustainability\")\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN coalesce(n.canonical_id, n.id, n.material_id, n.actor_id, n.unit_id, n.process_id, n.location_code) AS item_id, labels(n)[0] AS item_type, coalesce(n.material_name, n.actor_name, n.name, n.process_name, n.location_name, n.serial_number, n.id) AS item_name, properties(n) AS properties, type(r) AS relationship, labels(connected) AS connected_labels, coalesce(connected.canonical_id, connected.id, connected.actor_name, connected.name, connected.unit_id, connected.process_id, connected.process_name, connected.material_name, connected.location_name) AS connected_entity\nLIMIT 100`,\n\n  quality_analyst: `MATCH (n)\nWHERE n:TestReport OR n:AuditFinding OR n:IncidentReport OR n:MaintenanceEvent OR any(k IN keys(n) WHERE toLower(k) CONTAINS \"quality\" OR toLower(k) CONTAINS \"test\" OR toLower(k) CONTAINS \"defect\" OR toLower(k) CONTAINS \"failure\" OR toLower(k) CONTAINS \"inspection\" OR toLower(k) CONTAINS \"audit\" OR toLower(k) CONTAINS \"result\")\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN coalesce(n.canonical_id, n.id, n.test_report_id, n.audit_id, n.incident_id, n.maintenance_id) AS item_id, labels(n)[0] AS item_type, coalesce(n.name, n.description, n.finding, n.status, n.result, n.event_type, n.incident_description, n.id) AS item_name, properties(n) AS properties, type(r) AS relationship, labels(connected) AS connected_labels, coalesce(connected.canonical_id, connected.id, connected.actor_name, connected.name, connected.unit_id, connected.process_id, connected.process_name, connected.material_name, connected.location_name) AS connected_entity\nLIMIT 100`\n};\n\nconst cypherQueries = [];\nspecialistResults.forEach((spec) => {\n  if (spec.agent && CYPHER_TEMPLATES[spec.agent]) {\n    cypherQueries.push({ query: CYPHER_TEMPLATES[spec.agent] });\n  }\n});\n\nconst allRecords = [];\nspecialistResults.forEach((spec) => {\n  if (spec.evidence && typeof spec.evidence === \"object\") {\n    Object.values(spec.evidence).forEach((val) => {\n      if (Array.isArray(val)) {\n        allRecords.push(...val);\n      }\n    });\n  }\n});\n\nlet tableColumns = [];\nlet tableRows = [];\nif (allRecords.length > 0) {\n  const cols = new Set();\n  allRecords.forEach((row) => {\n    Object.keys(row).forEach((k) => cols.add(k));\n  });\n  tableColumns = Array.from(cols);\n  tableRows = allRecords;\n}\n\nreturn [\n  {\n    json: {\n      question,\n      sessionId,\n      selectedAgents,\n      specialistResults,\n      allSpecialistResults,\n      sourceChunks,\n      toolsUsed,\n      cypherQueries,\n      tableColumns,\n      tableRows,\n      embeddingMode: $(\"GetEmbeddingAPI\").first().json.embeddingMode || \"fallback\",\n      timestamp: new Date().toISOString(),\n    },\n  },\n];"
+        "jsCode": "const question = $(\"Normalize Chat Input\").first().json.question || \"\";\nconst sessionId = $(\"Normalize Chat Input\").first().json.sessionId || \"default-session\";\nconst selectedAgents = $(\"Route Question\").first().json.selectedAgents || [];\nconst sourceChunks = $(\"Parse RAG Chunks\").first().json.sourceChunks || [];\n\nfunction getNodeJson(nodeName) {\n  try {\n    return $(nodeName).first().json;\n  } catch (e) {\n    return {\n      agent: nodeName,\n      status: \"error\",\n      answer: `Could not read output from ${nodeName}`,\n      keyFindings: [],\n      recommendations: [],\n      confidence: \"low\",\n      error: e.message,\n    };\n  }\n}\n\nconst procurement = getNodeJson(\"Run Procurement Specialist\");\nconst risk = getNodeJson(\"Run Risk Analyst\");\nconst logistics = getNodeJson(\"Run Logistics Specialist\");\nconst sustainability = getNodeJson(\"Run Sustainability Analyst\");\nconst quality = getNodeJson(\"Run Quality Analyst\");\n\nconst allSpecialistResults = [\n  procurement,\n  risk,\n  logistics,\n  sustainability,\n  quality,\n].filter(Boolean);\n\nconst specialistResults = allSpecialistResults.filter(\n  (result) => result.status !== \"skipped\"\n);\n\nconst toolsUsed = [];\nif (sourceChunks.length > 0) {\n  toolsUsed.push({\n    id: \"vector_search\",\n    name: \"Vector Search (Unstructured RAG)\",\n    status: \"success\",\n    inputSummary: question,\n    outputSummary: `Found ${sourceChunks.length} matching unstructured documents.`\n  });\n}\n\nconst cypherQueries = [];\n\nspecialistResults.forEach((spec) => {\n  if (spec.generatedCypher) {\n    cypherQueries.push({\n      agent: spec.agent || \"unknown_agent\",\n      query: spec.generatedCypher,\n    });\n  }\n});\n\nconst allRecords = [];\nspecialistResults.forEach((spec) => {\n  if (spec.evidence && typeof spec.evidence === \"object\") {\n    Object.values(spec.evidence).forEach((val) => {\n      if (Array.isArray(val)) {\n        allRecords.push(...val);\n      }\n    });\n  }\n});\n\nlet tableColumns = [];\nlet tableRows = [];\nif (allRecords.length > 0) {\n  const cols = new Set();\n  allRecords.forEach((row) => {\n    Object.keys(row).forEach((k) => cols.add(k));\n  });\n  tableColumns = Array.from(cols);\n  tableRows = allRecords;\n}\n\nreturn [\n  {\n    json: {\n      question,\n      sessionId,\n      selectedAgents,\n      routingDebug: $(\"Route Question\").first().json.routingDebug || {},\n      specialistResults,\n      allSpecialistResults,\n      sourceChunks,\n      toolsUsed,\n      cypherQueries,\n      tableColumns,\n      tableRows,\n      embeddingMode: $(\"GetEmbeddingAPI\").first().json.embeddingMode || \"fallback\",\n      timestamp: new Date().toISOString(),\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2464,
-        -144
+        2752,
+        0
       ],
-      "id": "bb76658b-be5e-4c5c-9c3a-a23bf01d3a7e",
+      "id": "d7732b49-324b-4f3b-ad55-581373461c26",
       "name": "Combine Specialist Results"
     },
     {
@@ -405,10 +405,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2912,
-        -144
+        3200,
+        0
       ],
-      "id": "d024686f-8b0c-4aae-98af-7364818aca31",
+      "id": "7a44dc55-2cd8-4e9d-868a-1e55e55d81c2",
       "name": "Respond to Frontend"
     },
     {
@@ -423,10 +423,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        360,
-        -144
+        288,
+        0
       ],
-      "id": "get-embedding-api-id",
+      "id": "ad4fb017-546c-499d-8492-3bb0abc19a5d",
       "name": "GetEmbeddingAPI"
     },
     {
@@ -436,10 +436,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        560,
-        -144
+        512,
+        0
       ],
-      "id": "calc-embedding-node-id",
+      "id": "88e28da2-b70d-44dd-81c4-d770650bb8b2",
       "name": "Calculate Embedding & Query"
     },
     {
@@ -454,10 +454,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        672,
-        -144
+        752,
+        0
       ],
-      "id": "vector-search-node-id",
+      "id": "58dc9604-4ec9-438c-b452-cd0ab12bd473",
       "name": "Neo4j Vector Search"
     },
     {
@@ -467,13 +467,32 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        896,
-        -144
+        976,
+        0
       ],
-      "id": "parse-rag-chunks-id",
+      "id": "9a65b7b4-67a3-4a2a-8515-1805a9c290b7",
       "name": "Parse RAG Chunks"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/api/query",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  query: `\nMATCH (n)\nWITH labels(n)[0] AS label, keys(n) AS keys\nUNWIND keys AS property\nRETURN\n  label,\n  collect(DISTINCT property)[0..30] AS properties,\n  count(*) AS sample_count\nORDER BY label\n`,\n  params: {}\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "783a53cb-51dc-4de8-9d6e-23def639e03f",
+      "name": "HTTP Request"
     }
   ],
+  "pinData": {},
   "connections": {
     "Normalize Chat Input": {
       "main": [
@@ -523,7 +542,7 @@
       "main": [
         [
           {
-            "node": "Route Question",
+            "node": "HTTP Request",
             "type": "main",
             "index": 0
           }
@@ -628,17 +647,30 @@
           }
         ]
       ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Route Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": true
+    "availableInMCP": false
   },
-  "versionId": "ee99103f-008d-4dc2-a43b-1597a49b9b08",
-  "meta": null,
-  "id": "JapWg4BT2PAJfNTa",
+  "versionId": "b7418ff8-fb80-470d-8174-8654de51b7cf",
+  "meta": {
+    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
+  },
   "nodeGroups": [],
-  "pinData": {}
+  "id": "p19fIRz7CJkmfoDV",
+  "tags": []
 }
