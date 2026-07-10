@@ -95,3 +95,7 @@ frontend/out/
 frontend/dist/
 frontend/.env.local
 frontend/.env
+
+# 11. Custom Local Scratch / Data Directory Ignores
+data-processors/*.json
+scratch/
