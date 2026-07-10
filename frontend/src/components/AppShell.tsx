@@ -317,10 +317,10 @@ export default function AppShell() {
                       </button>
                     ))}
                   </div>
-                  <div className="text-[10px] text-slate-400 space-y-1 leading-normal">
-                    <p><strong>Auto (Recommended):</strong> Routes to the premier n8n Chat Orchestrator first (featuring 5 specialized sub-agents and Gemini embeddings); falls back to the high-performance Express MCP RAG pipeline only if n8n is offline.</p>
-                    <p><strong>n8n Engine:</strong> Forces the full n8n Chat Orchestrator workflow with dynamic agent selection and similarity-fallback capabilities.</p>
-                    <p><strong>Express MCP:</strong> Direct, high-performance RAG pipeline fallback with dynamic schema discovery and direct Gemini embeddings.</p>
+                  <div className="text-[10px] text-slate-400 space-y-1.5 leading-normal">
+                    <p><strong>Auto (Recommended):</strong> Tries the premier n8n Chat Orchestrator first (utilizing visually orchestrated sub-agent workflows). If n8n is offline, it seamlessly falls back to the Express MCP native multi-agent engine. Both utilize the backend embedding service (supporting Google Gemini Semantic RAG if GEMINI_API_KEY is configured).</p>
+                    <p><strong>n8n Engine:</strong> Forces the chat to route through the n8n workflow orchestrator, utilizing parallel sub-workflow dispatches for the 5 Specialist Agents (Sentinel, Calibrator, Acquirer, Logistics, Eco Guardian) and Manager synthesis.</p>
+                    <p><strong>Express MCP:</strong> Routes through the native Express code-based multi-agent coordinator. Runs sequential Specialist completions (Database, Operations, Finance/Risk, Lead Strategy Consultant) directly on the backend server for high-performance execution without n8n.</p>
                   </div>
                 </div>
 
