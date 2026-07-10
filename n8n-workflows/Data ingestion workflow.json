@@ -3,13 +3,13 @@
   "nodes": [
     {
       "parameters": {},
-      "id": "183b2fe3-9658-4f2b-b956-92c0a8d69338",
+      "id": "8e447482-0558-4b48-83b3-4012abb83839",
       "name": "Start",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -176,
-        240
+        -832,
+        -32
       ]
     },
     {
@@ -17,13 +17,13 @@
         "path": "trigger-extraction",
         "options": {}
       },
-      "id": "webhook-trigger-uuid",
+      "id": "2bcd64b1-4753-49a7-afa2-0b0c4674a37b",
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -176,
-        432
+        -832,
+        160
       ],
       "webhookId": "trigger-extraction-webhook"
     },
@@ -32,79 +32,60 @@
         "resource": "graphDb",
         "cypherQuery": "CALL {\n  MATCH (f:ProcessedFile)\n  RETURN collect({name: f.name, hash: f.hash}) AS files\n}\nCALL {\n  MATCH (n) WHERE n.hash IS NOT NULL\n  RETURN collect(distinct n.hash) AS hashes\n}\nRETURN files AS existing_files, hashes AS existing_hashes"
       },
-      "id": "b2d2abfc-e207-47fc-b3c0-3a182a849e18",
+      "id": "4fff9cd5-acb7-40de-86cc-b8211cd614d4",
       "name": "Fetch Ingested Entities",
       "type": "n8n-nodes-neo4j.neo4j",
       "typeVersion": 1,
       "position": [
-        48,
-        352
+        -608,
+        80
       ],
       "credentials": {
         "neo4jApi": {
-          "id": "Yi9tAMAJmHhdQ9Kw",
+          "id": "F7CrIjI5Zpz1UHeP",
           "name": "Neo4j account"
         }
       }
     },
     {
       "parameters": {
-        "fileSelector": "={{ $('Webhook Trigger').first()?.json?.query?.filename || $('Webhook Trigger').first()?.json?.body?.filename ? '/home/node/.n8n-files/' + ($('Webhook Trigger').first()?.json?.query?.filename || $('Webhook Trigger').first()?.json?.body?.filename) : '/home/node/.n8n-files/*' }}",
+        "fileSelector": "/home/node/.n8n-files/*",
         "options": {}
       },
-      "id": "b2ef3d31-e5d0-4eff-a471-b2a543da6dcb",
+      "id": "0abfd49c-0c8c-49ba-80e0-a83c9b14923c",
       "name": "Read Data File",
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        272,
-        352
+        -384,
+        80
       ]
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst results = [];\nconst BATCH_SIZE = 5;\n\nfunction getHash(str) {\n  let hash = 0;\n  for (let i = 0; i < str.length; i++) {\n    const char = str.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return (hash >>> 0).toString(16);\n}\n\nconst existingFiles = new Map();\nconst existingRowHashes = new Set();\ntry {\n  const fetchNode = $('Fetch Ingested Entities').first()?.json || {};\n  const files = fetchNode.existing_files || [];\n  files.forEach(item => {\n    if (item && item.name) existingFiles.set(item.name, item.hash || '');\n  });\n  const hashes = fetchNode.existing_hashes || [];\n  hashes.forEach(h => {\n    if (h) existingRowHashes.add(h);\n  });\n} catch (e) {\n  console.warn('Could not read existing files or hashes:', e);\n}\n\nfunction parseCSV(text) {\n  const lines = text.split(/\\r?\\n/);\n  if (lines.length === 0) return [];\n  const headers = parseCSVLine(lines[0]);\n  const rows = [];\n  for (let i = 1; i < lines.length; i++) {\n    if (!lines[i].trim()) continue;\n    const values = parseCSVLine(lines[i]);\n    const row = {};\n    headers.forEach((header, idx) => { row[header] = values[idx] || ''; });\n    rows.push(row);\n  }\n  return rows;\n}\n\nfunction parseCSVLine(line) {\n  const result = [];\n  let current = '';\n  let inQuotes = false;\n  for (let i = 0; i < line.length; i++) {\n    const char = line[i];\n    if (char === '\"') { inQuotes = !inQuotes; }\n    else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; }\n    else { current += char; }\n  }\n  result.push(current.trim());\n  return result;\n}\n\nconst entityRules = `IMPORTANT ENTITY RESOLUTION RULES:\n1. ENTITY RESOLUTION: Map raw names to existing IDs by checking the \"Existing DB Entities\" list provided dynamically at runtime. If a name/entity matches an existing database entity semantically (e.g. ignoring minor spelling differences, casing, abbreviations, or company suffixes like \"GmbH\" or \"Corp\"), you MUST map it to that existing canonical ID.\n2. PROCESS IDs: For Process entities, ALWAYS use the compound ID format <unit_id>_<process_id> (e.g., EVC-2024-0001_P01) as their canonical_id. Never use just 'P01' or 'P02' alone.\n3. NEW ENTITY ID RULES: If an entity is not present in the existing database, generate a new canonical ID following these patterns:\n   - For Actors: A<n> (increment from the highest A number in the existing DB, e.g., A18).\n   - For Locations: LOC_<3-LETTER-COUNTRY-CODE> (e.g., LOC_GER, LOC_VIE).\n   - For Products/ChargingStations: EVC-<year>-<n> (or product-specific ID).\n   - For Materials: MAT_<n>.\n   - For other custom types: Use the label type as prefix, e.g., RISK_<n>.\n4. ENTITY MERGING: Variations of same name (e.g. 'Germany' and 'DE') get SAME ID.\n5. PROPERTIES: Extract ALL relevant fields/attributes from the raw record and include them in the 'properties' dictionary of the entity or relationship (e.g. cost_eur, duration_days, start_date, completion_date, status, serial_number, product_variant, manufacture_date, country, distance_km, carbon_kg_co2_eq). Keep key names exactly as they appear in the raw records.\n\nEntity types: Actor, Location, ChargingStation, Process, Material, Risk, MaintenanceEvent, TestReport, IncidentReport, AuditFinding, or other relevant supply chain labels based on the input dataset.\nRelationship types: LOCATED_IN, EXECUTED_BY, UNDERGOES, SUPPLIES, USES_MATERIAL, TESTED_BY, MAINTAINED_BY, RELATED_TO, MITIGATES, CAUSED_BY, DETECTED_IN, or other relevant relationship types.\n\nOUTPUT FORMAT (JSON):\nYou MUST output ONLY a valid JSON object with no markdown:\n{\n  \"entities\": [\n    { \"entity_type\": \"Actor\", \"canonical_id\": \"A1\", \"properties\": { \"name\": \"Steel Supplier Alpha\", \"country\": \"Germany\" } }\n  ],\n  \"relationships\": [\n    { \"from_type\": \"Actor\", \"from_id\": \"A1\", \"relationship_type\": \"LOCATED_IN\", \"to_type\": \"Location\", \"to_id\": \"LOC_GER\", \"properties\": {} }\n  ]\n}`;\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  if (!item.binary) continue;\n  \n  for (const [key, binaryData] of Object.entries(item.binary)) {\n    const fileName = binaryData.fileName || 'unknown';\n    \n    if (!/^.*\\.(csv|txt|md)$/i.test(fileName)) {\n      console.log(`Skipping non-data file: ${fileName}`);\n      continue;\n    }\n\n    const ext = fileName.split('.').pop().toLowerCase();\n    const buffer = await this.helpers.getBinaryDataBuffer(i, key);\n    const text = buffer.toString('utf-8').replace(/\\r\\n/g, '\\n');\n    const fileHash = getHash(text);\n    \n    // File-level cache check\n    if (existingFiles.has(fileName)) {\n      const storedFileHash = existingFiles.get(fileName);\n      if (!storedFileHash || storedFileHash === fileHash) {\n        console.log(`Skipping file ${fileName} (cache hit).`);\n        continue;\n      }\n    }\n\n    const fileResults = [];\n    if (ext === 'csv') {\n      const allRows = parseCSV(text);\n      let newBatchesCount = 0;\n      \n      // BATCH rows into groups of BATCH_SIZE\n      for (let batchStart = 0; batchStart < allRows.length; batchStart += BATCH_SIZE) {\n        const batch = allRows.slice(batchStart, batchStart + BATCH_SIZE);\n        const batchTexts = batch.map((row, idx) => {\n          const rowText = Object.entries(row)\n            .filter(([k, v]) => v !== null && v !== undefined && v !== '')\n            .map(([k, v]) => `${k}: ${v}`)\n            .join('\\n');\n          return `--- Row ${batchStart + idx + 1} ---\\n${rowText}`;\n        });\n        \n        // Use the hash of the batch content to identify it uniquely\n        const batchHash = getHash(batchTexts.join('|||'));\n        \n        // Check if this batch is already ingested\n        if (existingRowHashes.has(batchHash)) {\n          console.log(`Skipping batch ${batchStart+1}-${batchStart+batch.length} of file ${fileName} (cache hit).`);\n          continue;\n        }\n        \n        newBatchesCount++;\n        const prompt = `Analyze these ${batch.length} supply chain records from file ${fileName} (rows ${batchStart+1}-${batchStart+batch.length}):\\n\\n${batchTexts.join('\\n\\n')}\\n\\n${entityRules}`;\n        \n        fileResults.push({\n          json: {\n            fileName: fileName,\n            fileType: ext,\n            batchStart: batchStart + 1,\n            batchEnd: batchStart + batch.length,\n            batchSize: batch.length,\n            prompt: prompt,\n            rowHash: batchHash,\n            fileHash: fileHash,\n            isLastBatch: false\n          }\n        });\n      }\n      console.log(`File ${fileName}: ${allRows.length} total rows -> ${newBatchesCount} new/changed batches to process.`);\n    } else {\n      // Unstructured files: send as single item\n      const docHash = getHash(text);\n      if (existingRowHashes.has(docHash)) {\n        console.log(`Unstructured file ${fileName} already ingested. Skipping.`);\n        continue;\n      }\n      const prompt = `Analyze this supply chain unstructured document from file ${fileName}:\\n${text}\\n\\n${entityRules}`;\n      fileResults.push({\n        json: {\n          fileName: fileName,\n          fileType: ext,\n          prompt: prompt,\n          rowHash: docHash,\n          fileHash: fileHash,\n          isLastBatch: false\n        }\n      });\n    }\n\n    if (fileResults.length > 0) {\n      fileResults[fileResults.length - 1].json.isLastBatch = true;\n      results.push(...fileResults);\n    }\n  }\n}\n\nconsole.log(`Total items to process: ${results.length}`);\nif (results.length === 0) {\n  return [{ json: { skippedAll: true } }];\n}\nreturn results;"
+        "jsCode": "const items = $input.all();\nconst results = [];\nconst BATCH_SIZE = 5;\n\nfunction getHash(str) {\n  let hash = 0;\n  for (let i = 0; i < str.length; i++) {\n    const char = str.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return (hash >>> 0).toString(16);\n}\n\nconst existingFiles = new Map();\nconst existingRowHashes = new Set();\ntry {\n  const fetchNode = $('Fetch Ingested Entities').first()?.json || {};\n  const files = fetchNode.existing_files || [];\n  files.forEach(item => {\n    if (item && item.name) existingFiles.set(item.name, item.hash || '');\n  });\n  const hashes = fetchNode.existing_hashes || [];\n  hashes.forEach(h => {\n    if (h) existingRowHashes.add(h);\n  });\n} catch (e) {\n  console.warn('Could not read existing files or hashes:', e);\n}\n\nfunction parseCSV(text) {\n  const lines = text.split(/\\r?\\n/);\n  if (lines.length === 0) return [];\n  const headers = parseCSVLine(lines[0]);\n  const rows = [];\n  for (let i = 1; i < lines.length; i++) {\n    if (!lines[i].trim()) continue;\n    const values = parseCSVLine(lines[i]);\n    const row = {};\n    headers.forEach((header, idx) => { row[header] = values[idx] || ''; });\n    rows.push(row);\n  }\n  return rows;\n}\n\nfunction parseCSVLine(line) {\n  const result = [];\n  let current = '';\n  let inQuotes = false;\n  for (let i = 0; i < line.length; i++) {\n    const char = line[i];\n    if (char === '\"') { inQuotes = !inQuotes; }\n    else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; }\n    else { current += char; }\n  }\n  result.push(current.trim());\n  return result;\n}\n\nconst entityRules = `IMPORTANT ENTITY RESOLUTION RULES:\n1. ENTITY RESOLUTION: Map raw names to existing IDs by checking the \"Existing DB Entities\" list provided dynamically at runtime. If a name/entity matches an existing database entity semantically (e.g. ignoring minor spelling differences, casing, abbreviations, or company suffixes like \"GmbH\" or \"Corp\"), you MUST map it to that existing canonical ID.\n2. PROCESS IDs: For Process entities, ALWAYS use the compound ID format <unit_id>_<process_id> (e.g., EVC-2024-0001_P01) as their canonical_id. Never use just 'P01' or 'P02' alone.\n3. NEW ENTITY ID RULES: If an entity is not present in the existing database, generate a new canonical ID following these patterns:\n   - For Actors: A<n> (increment from the highest A number in the existing DB, e.g., A18).\n   - For Locations: LOC_<3-LETTER-COUNTRY-CODE> (e.g., LOC_GER, LOC_VIE).\n   - For Products/ChargingStations: EVC-<year>-<n> (or product-specific ID).\n   - For Materials: MAT_<n>.\n   - For other custom types: Use the label type as prefix, e.g., RISK_<n>.\n4. ENTITY MERGING: Variations of same name (e.g. 'Germany' and 'DE') get SAME ID.\n5. PROPERTIES: Extract ALL relevant fields/attributes from the raw record and include them in the 'properties' dictionary of the entity or relationship (e.g. cost_eur, duration_days, start_date, completion_date, status, serial_number, product_variant, manufacture_date, country, distance_km, carbon_kg_co2_eq). Keep key names exactly as they appear in the raw records.\n\nEntity types: Actor, Location, ChargingStation, Process, Material, Risk, MaintenanceEvent, TestReport, IncidentReport, AuditFinding, or other relevant supply chain labels based on the input dataset.\nRelationship types: LOCATED_IN, EXECUTED_BY, UNDERGOES, SUPPLIES, USES_MATERIAL, TESTED_BY, MAINTAINED_BY, RELATED_TO, MITIGATES, CAUSED_BY, DETECTED_IN, or other relevant relationship types.\n\nOUTPUT FORMAT (JSON):\nYou MUST output ONLY a valid JSON object with no markdown:\n{\n  \"entities\": [\n    { \"entity_type\": \"Actor\", \"canonical_id\": \"A1\", \"properties\": { \"name\": \"Steel Supplier Alpha\", \"country\": \"Germany\" } }\n  ],\n  \"relationships\": [\n    { \"from_type\": \"Actor\", \"from_id\": \"A1\", \"relationship_type\": \"LOCATED_IN\", \"to_type\": \"Location\", \"to_id\": \"LOC_GER\", \"properties\": {} }\n  ]\n}`;\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  if (!item.binary) continue;\n  \n  for (const [key, binaryData] of Object.entries(item.binary)) {\n    const fileName = binaryData.fileName || 'unknown';\n    if (fileName.toLowerCase().endsWith(\".csv\")) {\n      console.log(`Skipping CSV ${fileName} in LLM extraction because CSVs are imported deterministically.`);\n      continue;\n    }\n    if (!/^.*\\.(txt|md|html)$/i.test(fileName)) {\n      console.log(`Skipping non-data file: ${fileName}`);\n      continue;\n    }\n\n    const ext = fileName.split('.').pop().toLowerCase();\n\n    if (ext === \"csv\") {\n      console.log(`Skipping CSV ${fileName} in LLM extraction because CSVs are imported deterministically.`);\n      continue;\n    }\n\n    const buffer = await this.helpers.getBinaryDataBuffer(i, key);\n    const text = buffer.toString('utf-8');\n    const fileHash = getHash(text);\n    \n    // File-level cache check\n    if (existingFiles.has(fileName)) {\n      const storedFileHash = existingFiles.get(fileName);\n      if (!storedFileHash || storedFileHash === fileHash) {\n        console.log(`Skipping file ${fileName} (cache hit).`);\n        continue;\n      }\n    }\n\n    const fileResults = [];\n    if (ext === 'csv') {\n      const allRows = parseCSV(text);\n      let newBatchesCount = 0;\n      \n      // BATCH rows into groups of BATCH_SIZE\n      for (let batchStart = 0; batchStart < allRows.length; batchStart += BATCH_SIZE) {\n        const batch = allRows.slice(batchStart, batchStart + BATCH_SIZE);\n        const batchTexts = batch.map((row, idx) => {\n          const rowText = Object.entries(row)\n            .filter(([k, v]) => v !== null && v !== undefined && v !== '')\n            .map(([k, v]) => `${k}: ${v}`)\n            .join('\\n');\n          return `--- Row ${batchStart + idx + 1} ---\\n${rowText}`;\n        });\n        \n        // Use the hash of the batch content to identify it uniquely\n        const batchHash = getHash(batchTexts.join('|||'));\n        \n        // Check if this batch is already ingested\n        if (existingRowHashes.has(batchHash)) {\n          console.log(`Skipping batch ${batchStart+1}-${batchStart+batch.length} of file ${fileName} (cache hit).`);\n          continue;\n        }\n        \n        newBatchesCount++;\n        const prompt = `Analyze these ${batch.length} supply chain records from file ${fileName} (rows ${batchStart+1}-${batchStart+batch.length}):\\n\\n${batchTexts.join('\\n\\n')}\\n\\n${entityRules}`;\n        \n        fileResults.push({\n          json: {\n            fileName: fileName,\n            fileType: ext,\n            batchStart: batchStart + 1,\n            batchEnd: batchStart + batch.length,\n            batchSize: batch.length,\n            prompt: prompt,\n            rowHash: batchHash,\n            fileHash: fileHash,\n            isLastBatch: false\n          }\n        });\n      }\n      console.log(`File ${fileName}: ${allRows.length} total rows -> ${newBatchesCount} new/changed batches to process.`);\n    } else {\n      // Unstructured files: send as single item\n      const docHash = getHash(text);\n      if (existingRowHashes.has(docHash)) {\n        console.log(`Unstructured file ${fileName} already ingested. Skipping.`);\n        continue;\n      }\n      const prompt = `Analyze this supply chain unstructured document from file ${fileName}:\\n${text}\\n\\n${entityRules}`;\n      fileResults.push({\n        json: {\n          fileName: fileName,\n          fileType: ext,\n          prompt: prompt,\n          rowHash: docHash,\n          fileHash: fileHash,\n          isLastBatch: false\n        }\n      });\n    }\n\n    if (fileResults.length > 0) {\n      fileResults[fileResults.length - 1].json.isLastBatch = true;\n      results.push(...fileResults);\n    }\n  }\n}\n\nconsole.log(`Total items to process: ${results.length}`);\nreturn results;"
       },
-      "id": "565aa57d-ecf1-4efa-acd2-f8a8bdfbb462",
+      "id": "5c47e45d-5625-49e1-ab0e-c8ac75c568d1",
       "name": "Extract File Content",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        496,
-        352
-      ]
+        256,
+        80
+      ],
+      "alwaysOutputData": false
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "loop-raw-items-uuid",
+      "id": "0feb2206-346d-4c9c-905c-cb5243b058fc",
       "name": "Loop Raw Items",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        720,
-        352
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "boolean": [
-            {
-              "value1": "={{ $json.skippedAll }}",
-              "value2": true
-            }
-          ]
-        }
-      },
-      "id": "check-if-skipped-all-uuid",
-      "name": "Check If Skipped All",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        860,
-        500
+        480,
+        80
       ]
     },
     {
@@ -112,17 +93,17 @@
         "resource": "graphDb",
         "cypherQuery": "CALL { MATCH (a:Actor) RETURN collect({id: a.actor_id, name: a.actor_name}) AS actors }\nCALL { MATCH (l:Location) RETURN collect({code: l.location_code, name: l.location_name, country: l.country}) AS locations }\nCALL { MATCH (cs:ChargingStation) RETURN collect({id: cs.unit_id, model: cs.model}) AS stations }\nCALL { MATCH (m:Material) RETURN collect({id: m.material_id, name: m.material_name}) AS materials }\nRETURN actors AS db_actors, locations AS db_locations, stations AS db_stations, materials AS db_materials"
       },
-      "id": "fetch-db-state-uuid",
+      "id": "0d5212e5-57cb-461f-983f-6e992e2a3a4a",
       "name": "Fetch DB State",
       "type": "n8n-nodes-neo4j.neo4j",
       "typeVersion": 1,
       "position": [
-        944,
-        352
+        704,
+        80
       ],
       "credentials": {
         "neo4jApi": {
-          "id": "Yi9tAMAJmHhdQ9Kw",
+          "id": "F7CrIjI5Zpz1UHeP",
           "name": "Neo4j account"
         }
       }
@@ -141,13 +122,13 @@
           "timeout": 600000
         }
       },
-      "id": "llm-call-1-uuid",
+      "id": "3c8f6a68-aff9-43b7-9250-ced8b5fe4b55",
       "name": "LLM Call 1: Create Prompt",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1392,
-        352
+        1152,
+        80
       ],
       "settings": {
         "retryOnFail": true,
@@ -170,13 +151,13 @@
           "timeout": 600000
         }
       },
-      "id": "llm-call-2-uuid",
+      "id": "81d17263-dcaa-4a10-9db3-5ea724704cfc",
       "name": "LLM Call 2: Extract Entities",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1840,
-        352
+        1600,
+        80
       ],
       "settings": {
         "retryOnFail": true,
@@ -189,13 +170,13 @@
       "parameters": {
         "jsCode": "const items = $input.all();\nconst queries = [];\n\nfor (const item of items) {\n  let outputStr = item.json.text || '';\n  if (!outputStr && item.json.choices && item.json.choices[0] && item.json.choices[0].message) {\n    outputStr = item.json.choices[0].message.content || '';\n  }\n  \n  // Skip error/empty responses\n  if (!outputStr || outputStr.trim() === '') {\n    console.warn('Empty LLM response, skipping');\n    continue;\n  }\n  \n  // Strip thinking tags if present\n  outputStr = outputStr.replace(/<think>[\\s\\S]*?<\\/think>/gi, '').trim();\n  \n  // Clean markdown backticks\n  outputStr = outputStr.replace(/^\\s*```(json)?/mi, '').replace(/```\\s*$/m, '').trim();\n  \n  let output = {};\n  try {\n    output = JSON.parse(outputStr);\n  } catch(e) {\n    const jsonMatch = outputStr.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      try {\n        output = JSON.parse(jsonMatch[0]);\n      } catch(e2) {\n        console.warn('Failed to parse JSON output from LLM:', e2.message);\n        continue;\n      }\n    } else {\n      console.warn('No JSON found in LLM output');\n      continue;\n    }\n  }\n\n  const entities = output.entities || [];\n  const relationships = output.relationships || [];\n  \n  let fileName = 'unknown';\n  let rowHash = '';\n  let fileHash = '';\n  try {\n    const rawItem = $('Loop Raw Items').item.json;\n    fileName = rawItem.fileName || 'unknown';\n    rowHash = rawItem.rowHash || '';\n    fileHash = rawItem.fileHash || '';\n  } catch(e) {\n    console.warn('Could not read from Loop Raw Items:', e);\n  }\n\n  const clauses = [];\n  let varIdx = 0;\n\n  for (const entity of entities) {\n    const label = entity.entity_type;\n    const id = entity.canonical_id;\n    const props = entity.properties || {};\n    \n    if (!label || !id) continue;\n    \n    const idField = label === 'Actor' ? 'actor_id' :\n                   label === 'Location' ? 'location_code' :\n                   label === 'ChargingStation' ? 'unit_id' :\n                   label === 'Process' ? 'process_id' :\n                   label === 'Material' ? 'material_id' : 'id';\n    \n    const v = `n${varIdx++}`;\n    const setParts = Object.entries(props)\n      .filter(([k, val]) => val !== null && val !== undefined && val !== '' && k !== idField)\n      .map(([k, val]) => {\n        const safeKey = k.replace(/`/g, '\\\\`');\n        if (typeof val === 'number' || typeof val === 'boolean') {\n          return `${v}.\\`${safeKey}\\` = ${val}`;\n        }\n        const safeVal = String(val).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\n        return `${v}.\\`${safeKey}\\` = '${safeVal}'`;\n      });\n    setParts.push(`${v}.ingested_at = datetime('${new Date().toISOString()}')`);\n    setParts.push(`${v}.source_file = '${fileName}'`);\n    setParts.push(`${v}.hash = '${rowHash || fileHash}'`);\n    \n    const safeId = String(id).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\n    clauses.push(`MERGE (${v}:${label} {${idField}: '${safeId}'}) SET ${setParts.join(', ')}`);\n  }\n\n  for (const rel of relationships) {\n    if (!rel.from_type || !rel.from_id || !rel.to_type || !rel.to_id || !rel.relationship_type) continue;\n    \n    const fromField = rel.from_type === 'Actor' ? 'actor_id' :\n                      rel.from_type === 'Location' ? 'location_code' :\n                      rel.from_type === 'ChargingStation' ? 'unit_id' :\n                      rel.from_type === 'Process' ? 'process_id' :\n                      rel.from_type === 'Material' ? 'material_id' : 'id';\n    const toField = rel.to_type === 'Actor' ? 'actor_id' :\n                    rel.to_type === 'Location' ? 'location_code' :\n                    rel.to_type === 'ChargingStation' ? 'unit_id' :\n                    rel.to_type === 'Process' ? 'process_id' :\n                    rel.to_type === 'Material' ? 'material_id' : 'id';\n    \n    const relProps = rel.properties || {};\n    const relSetParts = [];\n    const relVar = `r${varIdx++}`;\n    const fromVar = `a${varIdx++}`;\n    const toVar = `b${varIdx++}`;\n\n    Object.entries(relProps)\n      .filter(([k, val]) => val !== null && val !== undefined)\n      .forEach(([k, val]) => {\n        const safeKey = k.replace(/`/g, '\\\\`');\n        if (typeof val === 'number' || typeof val === 'boolean') {\n          relSetParts.push(`${relVar}.\\`${safeKey}\\` = ${val}`);\n        } else {\n          const safeVal = String(val).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\n          relSetParts.push(`${relVar}.\\`${safeKey}\\` = '${safeVal}'`);\n        }\n      });\n    relSetParts.push(`${relVar}.ingested_at = datetime('${new Date().toISOString()}')`);\n    relSetParts.push(`${relVar}.source_file = '${fileName}'`);\n    \n    const setClause = relSetParts.length > 0 ? ' SET ' + relSetParts.join(', ') : '';\n    const safeFromId = String(rel.from_id).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\n    const safeToId = String(rel.to_id).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\n    \n    clauses.push(`WITH 1 AS dummy MATCH (${fromVar}:${rel.from_type} {${fromField}: '${safeFromId}'}) MATCH (${toVar}:${rel.to_type} {${toField}: '${safeToId}'}) MERGE (${fromVar})-[${relVar}:${rel.relationship_type}]->(${toVar})${setClause}`);\n  }\n\n  if (clauses.length > 0) {\n    const fullQuery = clauses.join('\\n') + '\\nRETURN 1 AS ok';\n    queries.push({ json: { queryType: 'batch', cypher: fullQuery } });\n  }\n}\n\nif (queries.length === 0) {\n  queries.push({ json: { queryType: 'noop', cypher: 'RETURN 1 AS ok' } });\n}\n\nreturn queries;"
       },
-      "id": "aa9a85a4-c81b-4613-81fe-6a2dd39e0904",
+      "id": "ebf4a3c6-38f5-4348-8d31-10fd9bb576a9",
       "name": "Build Cypher Queries",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2064,
-        352
+        1824,
+        80
       ]
     },
     {
@@ -203,18 +184,18 @@
         "resource": "graphDb",
         "cypherQuery": "={{ $json.cypher }}"
       },
-      "id": "45700a87-eca1-456d-9b64-9369f1359e1d",
+      "id": "24275152-f07c-4a0b-a6fc-7d5be4255157",
       "name": "Execute in Neo4j",
       "type": "n8n-nodes-neo4j.neo4j",
       "typeVersion": 1,
       "position": [
-        2288,
-        352
+        2048,
+        80
       ],
       "alwaysOutputData": true,
       "credentials": {
         "neo4jApi": {
-          "id": "Yi9tAMAJmHhdQ9Kw",
+          "id": "F7CrIjI5Zpz1UHeP",
           "name": "Neo4j account"
         }
       }
@@ -223,26 +204,26 @@
       "parameters": {
         "jsCode": "return [{ json: { status: \"success\" } }];"
       },
-      "id": "merge-results-uuid",
+      "id": "2cdcd4e2-fd21-416f-8b21-2d645d032993",
       "name": "Merge Results",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2512,
-        432
+        2272,
+        160
       ]
     },
     {
       "parameters": {
-        "jsCode": "const loopItems = $('Loop Raw Items').isExecuted ? $('Loop Raw Items').all() : [];\nconst llm1Items = $('LLM Call 1: Create Prompt').isExecuted ? $('LLM Call 1: Create Prompt').all() : [];\nconst llm2Items = $('LLM Call 2: Extract Entities').isExecuted ? $('LLM Call 2: Extract Entities').all() : [];\n\nconst failedFiles = new Set();\n\n// Check LLM 1 errors\nfor (let i = 0; i < llm1Items.length; i++) {\n  const item = llm1Items[i];\n  if (item.json.error) {\n    const loopJson = loopItems[i]?.json || {};\n    if (loopJson.fileName) failedFiles.add(loopJson.fileName);\n  }\n}\n\n// Check LLM 2 errors\nfor (let i = 0; i < llm2Items.length; i++) {\n  const item = llm2Items[i];\n  if (item.json.error || !item.json.choices || !item.json.choices[0] || !item.json.choices[0].message || !item.json.choices[0].message.content) {\n    const loopJson = loopItems[i]?.json || {};\n    if (loopJson.fileName) failedFiles.add(loopJson.fileName);\n  }\n}\n\nconst items = $('Extract File Content').isExecuted ? $('Extract File Content').all() : [];\nconst uniqueFiles = [];\nconst seen = new Set();\nfor (const item of items) {\n  const json = item.json;\n  if (json.fileName && json.fileHash && !seen.has(json.fileName) && !failedFiles.has(json.fileName)) {\n    seen.add(json.fileName);\n    uniqueFiles.push({ name: json.fileName, hash: json.fileHash });\n  }\n}\nif (uniqueFiles.length === 0) {\n  return [{ json: { query: \"RETURN 1 AS ok\" } }];\n}\nconst mapStrings = uniqueFiles.map(f => `{name: '${f.name.replace(/'/g, \"\\\\'\")}', hash: '${f.hash}'}`).join(\", \");\nconst query = `UNWIND [${mapStrings}] AS f MERGE (file:ProcessedFile {name: f.name}) SET file.hash = f.hash, file.ingested_at = datetime() RETURN file.name`;\nreturn [{ json: { query } }];"
+        "jsCode": "const loopItems = $('Loop Raw Items').all();\nconst llm1Items = $('LLM Call 1: Create Prompt').all();\nconst llm2Items = $('LLM Call 2: Extract Entities').all();\n\nconst failedFiles = new Set();\n\n// Check LLM 1 errors\nfor (let i = 0; i < llm1Items.length; i++) {\n  const item = llm1Items[i];\n  if (item.json.error) {\n    const loopJson = loopItems[i]?.json || {};\n    if (loopJson.fileName) failedFiles.add(loopJson.fileName);\n  }\n}\n\n// Check LLM 2 errors\nfor (let i = 0; i < llm2Items.length; i++) {\n  const item = llm2Items[i];\n  if (item.json.error || !item.json.choices || !item.json.choices[0] || !item.json.choices[0].message || !item.json.choices[0].message.content) {\n    const loopJson = loopItems[i]?.json || {};\n    if (loopJson.fileName) failedFiles.add(loopJson.fileName);\n  }\n}\n\nconst items = $('Extract File Content').all();\nconst uniqueFiles = [];\nconst seen = new Set();\nfor (const item of items) {\n  const json = item.json;\n  if (json.fileName && json.fileHash && !seen.has(json.fileName) && !failedFiles.has(json.fileName)) {\n    seen.add(json.fileName);\n    uniqueFiles.push({ name: json.fileName, hash: json.fileHash });\n  }\n}\nif (uniqueFiles.length === 0) {\n  return [{ json: { query: \"RETURN 1 AS ok\" } }];\n}\nconst mapStrings = uniqueFiles.map(f => `{name: '${f.name.replace(/'/g, \"\\\\'\")}', hash: '${f.hash}'}`).join(\", \");\nconst query = `UNWIND [${mapStrings}] AS f MERGE (file:ProcessedFile {name: f.name}) SET file.hash = f.hash, file.ingested_at = datetime() RETURN file.name`;\nreturn [{ json: { query } }];"
       },
-      "id": "build-file-cache-queries-uuid",
+      "id": "e302ecbd-34ac-49d5-8a0c-ef0ff174e148",
       "name": "Build File Cache Queries",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        944,
-        160
+        704,
+        -112
       ]
     },
     {
@@ -250,17 +231,17 @@
         "resource": "graphDb",
         "cypherQuery": "={{ $json.query }}"
       },
-      "id": "update-file-cache-status-uuid",
+      "id": "0224ce88-735d-4340-8bf4-0f870f87e228",
       "name": "Update File Cache Status",
       "type": "n8n-nodes-neo4j.neo4j",
       "typeVersion": 1,
       "position": [
-        1168,
-        160
+        928,
+        -112
       ],
       "credentials": {
         "neo4jApi": {
-          "id": "Yi9tAMAJmHhdQ9Kw",
+          "id": "F7CrIjI5Zpz1UHeP",
           "name": "Neo4j account"
         }
       }
@@ -291,89 +272,74 @@
         },
         "options": {}
       },
-      "id": "419fc448-3d8f-4285-9670-a90ec9427065",
+      "id": "4ff6faa9-1a41-4412-958c-809053f02b46",
       "name": "Import Complete",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1392,
-        160
+        1152,
+        -112
       ]
     },
     {
       "parameters": {
         "jsCode": "const prompt = $('Loop Raw Items').item.json.prompt || \"\";\nconst db_actors = $json.db_actors || [];\nconst db_locations = $json.db_locations || [];\nconst db_stations = $json.db_stations || [];\nconst db_materials = $json.db_materials || [];\n\nconst payload = {\n  model: \"google/gemma-4-31B-it\",\n  messages: [\n    {\n      role: \"system\",\n      content: \"You are a database entity resolution assistant for a supply chain knowledge graph. Your task is to analyze raw input records and compare them against the provided \\\"Existing DB Entities\\\" list. Decide which names match existing entities and must map to those existing IDs (accounting for typos, abbreviations, casing, or company suffixes like GmbH/Corp), and which require generating new IDs according to the rules (Actors=A<n>, Locations=LOC_<3-LETTER>, ChargingStations=EVC-<year>-<n>, Materials=MAT_<n>, Processes=<unit_id>_<process_id>). Output ONLY a bulleted list of mapping rules, no markdown code block wrapper, no conversational text.\"\n    },\n    {\n      role: \"user\",\n      content: `Raw Record:\\n${prompt}\\n\\nExisting DB Entities:\\n- Actors: ${JSON.stringify(db_actors)}\\n- Locations: ${JSON.stringify(db_locations)}\\n- Stations: ${JSON.stringify(db_stations)}\\n- Materials: ${JSON.stringify(db_materials)}`\n    }\n  ],\n  temperature: 0.1,\n  max_tokens: 4096\n};\n\nreturn [{ json: payload }];"
       },
-      "id": "prepare-llm-1-payload-uuid",
+      "id": "c769f899-9feb-40ac-9c1f-055acc4e6aab",
       "name": "Prepare LLM 1 Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1168,
-        352
+        928,
+        80
       ]
     },
     {
       "parameters": {
         "jsCode": "const llm1_output = $json.choices && $json.choices[0] && $json.choices[0].message && $json.choices[0].message.content ? $json.choices[0].message.content : \"\";\nconst prompt = $('Loop Raw Items').item.json.prompt || \"\";\n\nconst payload = {\n  model: \"google/gemma-4-31B-it\",\n  messages: [\n    {\n      role: \"system\",\n      content: \"You are a precise supply chain knowledge graph entity extractor. Extract ALL entities and relationships from the input. Use the provided Mapping Instructions to resolve canonical IDs. Extract all attributes (e.g. cost_eur, duration_days, start_date, completion_date, status, serial_number, product_variant, manufacture_date, country, distance_km, carbon_kg_co2_eq) in the properties dictionary using the raw record field names as keys. Output ONLY valid JSON conforming strictly to the schema (no markdown backticks, no thinking tags). Schema: {\\\"entities\\\": [{\\\"entity_type\\\": \\\"Actor\\\"|\\\"Location\\\"|\\\"ChargingStation\\\"|\\\"Process\\\"|\\\"Material\\\"|\\\"Risk\\\"|\\\"MaintenanceEvent\\\"|\\\"TestReport\\\"|\\\"IncidentReport\\\"|\\\"AuditFinding\\\"|or any other relevant supply chain label, \\\"canonical_id\\\": \\\"ID\\\", \\\"properties\\\": {\\\"name\\\": \\\"...\\\", ...}}], \\\"relationships\\\": [{\\\"from_type\\\": \\\"...\\\", \\\"from_id\\\": \\\"...\\\", \\\"relationship_type\\\": \\\"LOCATED_IN\\\"|\\\"EXECUTED_BY\\\"|\\\"UNDERGOES\\\"|\\\"SUPPLIES\\\"|\\\"USES_MATERIAL\\\"|\\\"TESTED_BY\\\"|\\\"MAINTAINED_BY\\\"|\\\"RELATED_TO\\\"|or any other relevant relationship type, \\\"to_type\\\": \\\"...\\\", \\\"to_id\\\": \\\"...\\\", \\\"properties\\\": {}}]}\"\n    },\n    {\n      role: \"user\",\n      content: `Mapping Instructions:\\n${llm1_output}\\n\\nRaw Record to Extract:\\n${prompt}`\n    }\n  ],\n  temperature: 0.1,\n  max_tokens: 8192\n};\n\nreturn [{ json: payload }];"
       },
-      "id": "prepare-llm-2-payload-uuid",
+      "id": "1ff404b4-83cf-4a9e-9d28-a11c11bee5c0",
       "name": "Prepare LLM 2 Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1616,
-        352
+        1376,
+        80
       ]
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=http://host.docker.internal:8000/api/ingestion/complete",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"executionId\": \"{{ $execution.id }}\",\n  \"status\": \"success\",\n  \"filename\": \"{{ $if($('Webhook Trigger').isExecuted, $('Webhook Trigger').first()?.json?.query?.filename || $('Webhook Trigger').first()?.json?.body?.filename || '', '') }}\"\n}",
-        "options": {}
+        "jsCode": "const items = $input.all();\n\nfunction getHash(str) {\n  let hash = 0;\n  for (let i = 0; i < str.length; i++) {\n    const char = str.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return (hash >>> 0).toString(16);\n}\n\nfunction cleanValue(value) {\n  return String(value || \"\")\n    .trim()\n    .replace(/^\"+|\"+$/g, \"\")\n    .replace(/\\\\\"/g, \"\")\n    .replace(/\"\"/g, '\"')\n    .trim();\n}\n\nfunction normalizeHeader(header) {\n  return cleanValue(header)\n    .replace(/\\s+/g, \"_\")\n    .replace(/[^a-zA-Z0-9_]/g, \"\")\n    .toLowerCase();\n}\n\nfunction parseCSV(text) {\n  const lines = text.split(/\\r?\\n/).filter((line) => line.trim());\n  if (lines.length === 0) return [];\n\n  const headers = parseCSVLine(lines[0]).map(normalizeHeader);\n  const rows = [];\n\n  for (let i = 1; i < lines.length; i++) {\n    const values = parseCSVLine(lines[i]);\n    const row = {};\n\n    headers.forEach((header, index) => {\n      row[header] = cleanValue(values[index] || \"\");\n    });\n\n    rows.push(row);\n  }\n\n  return rows;\n}\n\nfunction parseCSVLine(line) {\n  const result = [];\n  let current = \"\";\n  let inQuotes = false;\n\n  for (let i = 0; i < line.length; i++) {\n    const char = line[i];\n\n    if (char === '\"') {\n      inQuotes = !inQuotes;\n    } else if (char === \",\" && !inQuotes) {\n      result.push(current);\n      current = \"\";\n    } else {\n      current += char;\n    }\n  }\n\n  result.push(current);\n  return result;\n}\n\nfunction toPascalCase(value) {\n  return String(value)\n    .replace(/^\\d+_/, \"\")\n    .replace(/\\.[^.]+$/, \"\")\n    .replace(/[^a-zA-Z0-9]+/g, \" \")\n    .trim()\n    .split(/\\s+/)\n    .filter(Boolean)\n    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())\n    .join(\"\");\n}\n\nfunction singularize(label) {\n  if (label.endsWith(\"ies\")) return label.slice(0, -3) + \"y\";\n  if (label.endsWith(\"ses\")) return label.slice(0, -2);\n  if (label.endsWith(\"s\") && !label.endsWith(\"ss\")) return label.slice(0, -1);\n  return label;\n}\n\nfunction inferLabelFromFile(fileName) {\n  const baseName = fileName\n    .replace(/\\.[^.]+$/, \"\")\n    .replace(/^\\d+_/, \"\")\n    .replace(/^erp_/, \"\")\n    .replace(/^sample_/, \"\");\n\n  return singularize(toPascalCase(baseName));\n}\n\nfunction inferPrimaryKey(rows, label) {\n  if (!rows.length) return \"id\";\n\n  const keys = Object.keys(rows[0]);\n  const lowerLabel = label.toLowerCase();\n\n  const preferred = [\n    \"id\",\n    `${lowerLabel}_id`,\n    \"unit_id\",\n    \"actor_id\",\n    \"material_id\",\n    \"location_code\",\n    \"process_id\",\n    \"transport_id\",\n    \"po_number\",\n    \"production_order\",\n    \"document_id\",\n    \"notification_id\",\n    \"maintenance_id\",\n    \"test_report_id\",\n    \"serial_number\",\n    \"name\",\n  ];\n\n  for (const candidate of preferred) {\n    if (keys.includes(candidate)) return candidate;\n  }\n\n  const idLike = keys.find((key) => key.endsWith(\"_id\") || key.includes(\"id\"));\n  if (idLike) return idLike;\n\n  return \"_entity_id\";\n}\n\nfunction safeNeo4jIdentifier(value, fallback = \"UnknownEntity\") {\n  const cleaned = String(value || \"\").replace(/[^a-zA-Z0-9_]/g, \"\");\n\n  if (!cleaned) return fallback;\n  if (/^[0-9]/.test(cleaned)) return `${fallback}${cleaned}`;\n\n  return cleaned;\n}\n\nfunction safeRelType(value) {\n  return String(value || \"RELATED_TO\")\n    .replace(/[^a-zA-Z0-9_]/g, \"_\")\n    .toUpperCase();\n}\n\nfunction normalizeValue(value) {\n  if (value === \"\") return null;\n\n  if (/^-?\\d+$/.test(value)) return Number.parseInt(value, 10);\n  if (/^-?\\d+\\.\\d+$/.test(value)) return Number.parseFloat(value);\n\n  return value;\n}\n\nfunction buildEntityId(row, idFields, fallbackPrefix, index) {\n  if (Array.isArray(idFields) && idFields.length > 0) {\n    const value = idFields\n      .map((field) => row[field])\n      .filter((value) => value !== null && value !== undefined && value !== \"\")\n      .join(\"|\");\n\n    if (value) return value;\n  }\n\n  return `${fallbackPrefix}_${index + 1}`;\n}\n\nfunction normalizeRows(rawRows, config, label, fileName) {\n  const rows = [];\n\n  for (let index = 0; index < rawRows.length; index++) {\n    const rawRow = rawRows[index];\n    const row = {};\n\n    for (const [key, value] of Object.entries(rawRow)) {\n      row[key] = normalizeValue(value);\n    }\n\n    if (Array.isArray(config.idFields) && config.idFields.length > 0) {\n      row._entity_id = buildEntityId(row, config.idFields, label, index);\n    }\n\n    if (!row._entity_id) {\n      row._entity_id = `${fileName}:${index + 1}`;\n    }\n\n    rows.push(row);\n  }\n\n  return rows;\n}\n\n/**\n * Generic entity configuration.\n *\n * isMasterEntity = true means:\n * - This CSV represents the canonical/master list for that entity type.\n * - Example: 01_charging_stations.csv creates canonical ChargingStation nodes.\n *\n * isMasterEntity = false means:\n * - This CSV represents transactions, logs, reports, movements, or events.\n * - Example: erp_production_orders.csv creates ProductionOrder nodes, not ChargingStation nodes.\n */\nconst ENTITY_CONFIG = {\n  \"01_charging_stations.csv\": {\n    label: \"ChargingStation\",\n    primaryKey: \"unit_id\",\n    displayNameKey: \"serial_number\",\n    isMasterEntity: true,\n    relationships: [\n      {\n        fromKey: \"installation_site_id\",\n        toLabel: \"Location\",\n        toKey: \"location_code\",\n        type: \"LOCATED_IN\",\n      },\n    ],\n  },\n\n  \"02_process_execution_log.csv\": {\n    label: \"Process\",\n    primaryKey: \"_entity_id\",\n    idFields: [\"unit_id\", \"process_id\"],\n    displayNameKey: \"process_name\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"unit_id\",\n        toLabel: \"ChargingStation\",\n        toKey: \"unit_id\",\n        type: \"UNDERGOES\",\n      },\n      {\n        fromKey: \"actor_id\",\n        toLabel: \"Actor\",\n        toKey: \"actor_id\",\n        type: \"EXECUTED_BY\",\n      },\n    ],\n  },\n\n  \"02_product_specs.csv\": {\n    label: \"ProductSpec\",\n    primaryKey: \"product_variant\",\n    displayNameKey: \"product_variant\",\n    isMasterEntity: true,\n    relationships: [],\n  },\n\n  \"03_actors_reference.csv\": {\n    label: \"Actor\",\n    primaryKey: \"actor_id\",\n    displayNameKey: \"actor_name\",\n    isMasterEntity: true,\n    relationships: [],\n  },\n\n  \"04_transport_movements.csv\": {\n    label: \"Transport\",\n    primaryKey: \"transport_id\",\n    displayNameKey: \"transport_id\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"unit_id\",\n        toLabel: \"ChargingStation\",\n        toKey: \"unit_id\",\n        type: \"FOR_UNIT\",\n      },\n    ],\n  },\n\n  \"05_vde_test_reports.csv\": {\n    label: \"TestReport\",\n    primaryKey: \"test_report_id\",\n    displayNameKey: \"test_report_id\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"unit_id\",\n        toLabel: \"ChargingStation\",\n        toKey: \"unit_id\",\n        type: \"TESTED_UNIT\",\n      },\n    ],\n  },\n\n  \"06_maintenance_log.csv\": {\n    label: \"MaintenanceEvent\",\n    primaryKey: \"maintenance_id\",\n    displayNameKey: \"maintenance_id\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"unit_id\",\n        toLabel: \"ChargingStation\",\n        toKey: \"unit_id\",\n        type: \"MAINTAINED_UNIT\",\n      },\n    ],\n  },\n\n  \"10_energy_consumption.csv\": {\n    label: \"EnergyConsumption\",\n    primaryKey: \"_entity_id\",\n    idFields: [\"unit_id\", \"process_id\", \"actor_id\"],\n    displayNameKey: \"_entity_id\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"unit_id\",\n        toLabel: \"ChargingStation\",\n        toKey: \"unit_id\",\n        type: \"FOR_UNIT\",\n      },\n      {\n        fromKey: \"actor_id\",\n        toLabel: \"Actor\",\n        toKey: \"actor_id\",\n        type: \"RECORDED_BY\",\n      },\n    ],\n  },\n\n  \"12_eol_decommissioning.csv\": {\n    label: \"DecommissioningRecord\",\n    primaryKey: \"_entity_id\",\n    idFields: [\"unit_id\", \"decommission_date\"],\n    displayNameKey: \"unit_id\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"unit_id\",\n        toLabel: \"ChargingStation\",\n        toKey: \"unit_id\",\n        type: \"DECOMMISSIONED_UNIT\",\n      },\n    ],\n  },\n\n  \"13_eol_material_recovery.csv\": {\n    label: \"MaterialRecoveryRecord\",\n    primaryKey: \"_entity_id\",\n    idFields: [\"unit_id\", \"material_fraction\", \"treatment_facility\"],\n    displayNameKey: \"material_fraction\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"unit_id\",\n        toLabel: \"ChargingStation\",\n        toKey: \"unit_id\",\n        type: \"RECOVERY_FOR_UNIT\",\n      },\n    ],\n  },\n\n  \"15_emissions_log.csv\": {\n    label: \"EmissionsLog\",\n    primaryKey: \"_entity_id\",\n    idFields: [\"source_table\", \"unit_id\", \"process_id\", \"notes\"],\n    displayNameKey: \"source_table\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"unit_id\",\n        toLabel: \"ChargingStation\",\n        toKey: \"unit_id\",\n        type: \"EMISSIONS_FOR_UNIT\",\n      },\n    ],\n  },\n\n  \"erp_goods_movements.csv\": {\n    label: \"GoodsMovement\",\n    primaryKey: \"document_id\",\n    displayNameKey: \"document_id\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"actor_id\",\n        toLabel: \"Actor\",\n        toKey: \"actor_id\",\n        type: \"EXECUTED_BY\",\n      },\n      {\n        fromKey: \"material_id\",\n        toLabel: \"Material\",\n        toKey: \"material_id\",\n        type: \"MOVES_MATERIAL\",\n      },\n      {\n        fromKey: \"production_order\",\n        toLabel: \"ProductionOrder\",\n        toKey: \"production_order\",\n        type: \"REFERENCES_PRODUCTION_ORDER\",\n      },\n    ],\n  },\n\n  \"erp_inventory_snapshot.csv\": {\n    label: \"InventorySnapshot\",\n    primaryKey: \"_entity_id\",\n    idFields: [\"material_id\", \"storage_location\", \"snapshot_date\"],\n    displayNameKey: \"material_description\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"material_id\",\n        toLabel: \"Material\",\n        toKey: \"material_id\",\n        type: \"SNAPSHOT_OF_MATERIAL\",\n      },\n      {\n        fromKey: \"primary_vendor\",\n        toLabel: \"Actor\",\n        toKey: \"actor_id\",\n        type: \"PRIMARY_VENDOR\",\n      },\n    ],\n  },\n\n  \"erp_production_orders.csv\": {\n    label: \"ProductionOrder\",\n    primaryKey: \"production_order\",\n    displayNameKey: \"production_order\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"unit_id\",\n        toLabel: \"ChargingStation\",\n        toKey: \"unit_id\",\n        type: \"FOR_STATION\",\n      },\n      {\n        fromKey: \"material_id\",\n        toLabel: \"Material\",\n        toKey: \"material_id\",\n        type: \"PRODUCES_MATERIAL\",\n      },\n    ],\n  },\n\n  \"erp_purchase_orders.csv\": {\n    label: \"PurchaseOrder\",\n    primaryKey: \"po_number\",\n    displayNameKey: \"po_number\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"vendor_id\",\n        toLabel: \"Actor\",\n        toKey: \"actor_id\",\n        type: \"ORDERED_FROM\",\n      },\n      {\n        fromKey: \"material_id\",\n        toLabel: \"Material\",\n        toKey: \"material_id\",\n        type: \"ORDERS_MATERIAL\",\n      },\n    ],\n  },\n\n  \"erp_quality_notifications.csv\": {\n    label: \"QualityNotification\",\n    primaryKey: \"notification_id\",\n    displayNameKey: \"notification_id\",\n    isMasterEntity: false,\n    relationships: [\n      {\n        fromKey: \"unit_id\",\n        toLabel: \"ChargingStation\",\n        toKey: \"unit_id\",\n        type: \"AFFECTS_UNIT\",\n      },\n      {\n        fromKey: \"actor_id\",\n        toLabel: \"Actor\",\n        toKey: \"actor_id\",\n        type: \"RESPONSIBLE_ACTOR\",\n      },\n      {\n        fromKey: \"material_id\",\n        toLabel: \"Material\",\n        toKey: \"material_id\",\n        type: \"AFFECTS_MATERIAL\",\n      },\n    ],\n  },\n};\n\nconst output = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n\n  if (!item.binary) continue;\n\n  for (const [key, binaryData] of Object.entries(item.binary)) {\n    const fileName = binaryData.fileName || \"unknown.csv\";\n\n    if (!fileName.toLowerCase().endsWith(\".csv\")) {\n      continue;\n    }\n\n    const buffer = await this.helpers.getBinaryDataBuffer(i, key);\n    const text = buffer.toString(\"utf-8\");\n    const fileHash = getHash(text);\n\n    const rawRows = parseCSV(text);\n    if (rawRows.length === 0) continue;\n\n    const config = ENTITY_CONFIG[fileName] || {};\n\n    const label = safeNeo4jIdentifier(\n      config.label || inferLabelFromFile(fileName)\n    );\n\n    const primaryKey = config.primaryKey || inferPrimaryKey(rawRows, label);\n    const displayNameKey = config.displayNameKey || primaryKey;\n    const isMasterEntity = config.isMasterEntity === true;\n\n    const relationships = Array.isArray(config.relationships)\n      ? config.relationships.map((rel) => ({\n          fromKey: rel.fromKey,\n          toLabel: safeNeo4jIdentifier(rel.toLabel, \"TargetEntity\"),\n          toKey: rel.toKey,\n          type: safeRelType(rel.type),\n        }))\n      : [];\n\n    const rows = normalizeRows(rawRows, config, label, fileName).filter(\n      (row) => row[primaryKey] !== null && row[primaryKey] !== undefined\n    );\n\n    if (rows.length === 0) continue;\n\n    const query = `\nUNWIND $rows AS row\nMERGE (n:${label} {\\`${primaryKey}\\`: row[$primaryKey]})\nSET n += row,\n    n.display_name = coalesce(row[$displayNameKey], row[$primaryKey]),\n    n.source_file = $fileName,\n    n.source_table = $fileName,\n    n.entity_label = $label,\n    n.primary_key = $primaryKey,\n    n.is_master_record = $isMasterEntity,\n    n.hash = $fileHash,\n    n.ingested_at = datetime()\n\nWITH n, row\n\nCALL {\n  WITH n, row\n  UNWIND $relationships AS relConfig\n  WITH n, row, relConfig\n  WHERE row[relConfig.fromKey] IS NOT NULL\n\n  WITH n,\n       relConfig.toLabel AS targetLabel,\n       relConfig.toKey AS targetKey,\n       relConfig.type AS relationshipType,\n       row[relConfig.fromKey] AS targetId\n\n  WITH n,\n       targetLabel,\n       targetKey,\n       relationshipType,\n       targetId,\n       apoc.map.fromPairs([[targetKey, targetId]]) AS targetIdentity\n\n  CALL apoc.merge.node(\n    [targetLabel],\n    targetIdentity,\n    {\n      display_name: toString(targetId),\n      source_file: $fileName,\n      is_master_record: false,\n      ingested_at: datetime()\n    },\n    {}\n  ) YIELD node AS targetNode\n\n  CALL apoc.merge.relationship(\n    n,\n    relationshipType,\n    {},\n    {\n      source_file: $fileName,\n      ingested_at: datetime()\n    },\n    targetNode\n  ) YIELD rel\n\n  RETURN count(rel) AS rel_count\n}\n\nWITH count(n) AS imported_count\n\nMERGE (file:ProcessedFile {name: $fileName})\nSET file.hash = $fileHash,\n    file.entity_label = $label,\n    file.primary_key = $primaryKey,\n    file.is_master_entity = $isMasterEntity,\n    file.ingested_at = datetime()\n\nRETURN\n  $fileName AS file_name,\n  $label AS entity_label,\n  $primaryKey AS primary_key,\n  $isMasterEntity AS is_master_entity,\n  $chunkNumber AS chunk_number,\n  $chunkStart AS chunk_start,\n  $chunkEnd AS chunk_end,\n  imported_count\n`;\n\n    const CHUNK_SIZE = 25;\n\n    for (let start = 0; start < rows.length; start += CHUNK_SIZE) {\n      const chunkRows = rows.slice(start, start + CHUNK_SIZE);\n      const chunkNumber = Math.floor(start / CHUNK_SIZE) + 1;\n    \n      output.push({\n        json: {\n          query,\n          params: {\n            rows: chunkRows,\n            fileName,\n            fileHash,\n            label,\n            primaryKey,\n            displayNameKey,\n            isMasterEntity,\n            relationships,\n            chunkNumber,\n            chunkStart: start + 1,\n            chunkEnd: start + chunkRows.length,\n          },\n        },\n      });\n    }\n  }\n}\n\nreturn output;"
       },
-      "id": "notify-backend-success-uuid",
-      "name": "Notify Backend Success",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        1616,
-        160
-      ]
-    },
-    {
-      "parameters": {},
-      "id": "error-trigger-uuid",
-      "name": "Error Trigger",
-      "type": "n8n-nodes-base.errorTrigger",
-      "typeVersion": 1,
-      "position": [
-        1392,
-        -60
-      ]
+        -176,
+        80
+      ],
+      "id": "06e732ff-2264-41f4-81f7-334879a0d025",
+      "name": "Build Generic CSV Import"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=http://host.docker.internal:8000/api/ingestion/complete",
+        "url": "http://host.docker.internal:8000/api/query",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"executionId\": \"{{ $json.execution.id }}\",\n  \"status\": \"failed\",\n  \"filename\": \"{{ $if($('Webhook Trigger').isExecuted, $('Webhook Trigger').first()?.json?.query?.filename || $('Webhook Trigger').first()?.json?.body?.filename || '', '') }}\",\n  \"error\": \"{{ $json.execution?.error?.message || 'Workflow failed' }}\"\n}",
+        "jsonBody": "={{ {\n  query: $json.query,\n  params: $json.params,\n  allow_write: true\n} }}",
         "options": {}
       },
-      "id": "notify-backend-failure-uuid",
-      "name": "Notify Backend Failure",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1616,
-        -60
-      ]
+        32,
+        80
+      ],
+      "id": "11dbcc08-7d1c-4259-8d12-79a6b538afc8",
+      "name": "Execute Generic CSV Import"
     }
   ],
+  "pinData": {},
   "connections": {
     "Start": {
       "main": [
@@ -412,7 +378,7 @@
       "main": [
         [
           {
-            "node": "Extract File Content",
+            "node": "Build Generic CSV Import",
             "type": "main",
             "index": 0
           }
@@ -435,24 +401,6 @@
         [
           {
             "node": "Build File Cache Queries",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Check If Skipped All",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check If Skipped All": {
-      "main": [
-        [
-          {
-            "node": "Merge Results",
             "type": "main",
             "index": 0
           }
@@ -576,22 +524,22 @@
         ]
       ]
     },
-    "Import Complete": {
+    "Build Generic CSV Import": {
       "main": [
         [
           {
-            "node": "Notify Backend Success",
+            "node": "Execute Generic CSV Import",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Error Trigger": {
+    "Execute Generic CSV Import": {
       "main": [
         [
           {
-            "node": "Notify Backend Failure",
+            "node": "Extract File Content",
             "type": "main",
             "index": 0
           }
@@ -602,24 +550,15 @@
   "active": true,
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": true,
     "binaryMode": "separate",
-    "executionTimeout": 7200,
-    "saveExecutionProgress": true,
-    "saveDataOnErrorSelfHosted": true,
-    "saveDataOnSuccessSelfHosted": true
+    "availableInMCP": false
   },
-  "versionId": "ccb9120f-5132-4981-ae24-3f88ece1d766",
+  "versionId": "4de9f4bd-e940-47f7-b7ac-2389ff5ca3ff",
   "meta": {
-    "aiBuilderAssisted": true,
-    "builderVariant": "mcp"
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
   },
-  "id": "FoP9rN4h7jW5gH2H",
   "nodeGroups": [],
-  "pinData": {},
-  "staticData": {
-    "node:Schedule Trigger": {
-      "recurrenceRules": []
-    }
-  }
+  "id": "tASdT2soSIdlJ34j",
+  "tags": []
 }
