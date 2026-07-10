@@ -224,6 +224,7 @@ function renderMarkdown(text: string): ReactNode {
 
 export default function ScalesDashboard() {
   const [input, setInput] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const [loading, setLoading] = useState(false);
   const [activeAgents, setActiveAgents] = useState<string[]>([]);
   const [latestResponse, setLatestResponse] = useState<ChatResponse | null>(null);
@@ -314,6 +315,7 @@ export default function ScalesDashboard() {
     ]);
 
     setInput("");
+    setShowSuggestions(false);
     setLoading(true);
 
     try {
@@ -754,7 +756,7 @@ export default function ScalesDashboard() {
           </div>
 
           {/* Quick Prompts Chips */}
-          {messages.length <= 2 && (
+          {showSuggestions && (
             <div className="px-4 py-2.5 bg-slate-50/80 border-t border-slate-100 flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Suggested:</span>
               {[
@@ -768,7 +770,10 @@ export default function ScalesDashboard() {
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => setInput(promptText)}
+                  onClick={() => {
+                    setInput(promptText);
+                    setShowSuggestions(false);
+                  }}
                   className="text-[11px] px-2.5 py-1 rounded-full border border-slate-200 bg-white text-slate-600 hover:border-[#0065bd]/40 hover:bg-[#0065bd]/5 hover:text-[#0065bd] transition"
                 >
                   {promptText}
@@ -779,6 +784,20 @@ export default function ScalesDashboard() {
 
           {/* Form input */}
           <form onSubmit={handleSubmit} className="border-t border-slate-100 p-4 flex gap-3 bg-slate-50/50 rounded-b-2xl">
+            <button
+              type="button"
+              onClick={() => setShowSuggestions(!showSuggestions)}
+              className={clsx(
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition",
+                showSuggestions 
+                  ? "border-[#0065bd] bg-[#0065bd]/10 text-[#0065bd]" 
+                  : "border-slate-200 bg-white text-slate-500 hover:text-slate-700 hover:border-slate-300"
+              )}
+              title="Show suggested prompts"
+            >
+              <Sparkles size={14} />
+            </button>
+
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
