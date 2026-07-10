@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { 
-  Activity, 
-  Layers, 
-  MapPin, 
-  Users, 
-  Clock, 
-  DollarSign, 
-  CheckCircle2, 
+import {
+  Activity,
+  Layers,
+  MapPin,
+  Users,
+  Clock,
+  DollarSign,
+  CheckCircle2,
   AlertCircle,
   HelpCircle,
-  X
+  X,
 } from "lucide-react";
 
 type Stat = {
@@ -29,10 +29,18 @@ type ProcessStep = {
   duration: number;
   status: string;
   actor: string | null;
+  start_date?: string;
+  end_date?: string;
 };
 
 export default function DashboardView() {
-  const [stats, setStats] = useState<Stat>({ stations: 0, processes: 0, actors: 0, locations: 0 });
+  const [stats, setStats] = useState<Stat>({
+    stations: 0,
+    processes: 0,
+    actors: 0,
+    locations: 0,
+  });
+
   const [loadingStats, setLoadingStats] = useState(true);
   const [units, setUnits] = useState<string[]>([]);
   const [selectedUnit, setSelectedUnit] = useState("");
@@ -40,86 +48,52 @@ export default function DashboardView() {
   const [loadingLifecycle, setLoadingLifecycle] = useState(false);
   const [selectedStep, setSelectedStep] = useState<ProcessStep | null>(null);
 
-  const [assetLabel, setAssetLabel] = useState("ChargingStation");
-  const [assetIdField, setAssetIdField] = useState("unit_id");
-  const [discovered, setDiscovered] = useState(false);
-
-  // Discovery effect
   useEffect(() => {
-    async function discover() {
-      try {
-        const query = `
-          MATCH (start)-[:UNDERGOES]->()
-          RETURN DISTINCT labels(start)[0] AS label
-          LIMIT 1
-        `;
-        const res = await fetch("/api/query", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.results && data.results[0] && data.results[0].label) {
-            const discoveredLabel = data.results[0].label;
-            setAssetLabel(discoveredLabel);
-
-            const keysQuery = `
-              MATCH (n:${discoveredLabel})
-              RETURN keys(n) AS keys
-              LIMIT 1
-            `;
-            const keysRes = await fetch("/api/query", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ query: keysQuery })
-            });
-            if (keysRes.ok) {
-              const keysData = await keysRes.json();
-              if (keysData.results && keysData.results[0]) {
-                const keys = keysData.results[0].keys || [];
-                const idField = keys.find((k: string) => k === "unit_id" || k === "product_id" || k === "canonical_id" || k === "id" || k.endsWith("_id") || k.endsWith("_code")) || "id";
-                setAssetIdField(idField);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("Schema discovery failed:", err);
-      } finally {
-        setDiscovered(true);
-      }
-    }
-    discover();
-  }, []);
-
-  // Fetch db stats dynamically
-  useEffect(() => {
-    if (!discovered) return;
-
     async function fetchStats() {
+      setLoadingStats(true);
+
       try {
         const query = `
-          CALL { MATCH (cs:${assetLabel}) RETURN count(cs) AS cs_count }
-          CALL { MATCH (p:Process) RETURN count(p) AS p_count }
-          CALL { MATCH (a:Actor) RETURN count(a) AS a_count }
-          CALL { MATCH (l:Location) RETURN count(l) AS l_count }
-          RETURN cs_count, p_count, a_count, l_count
+CALL {
+  MATCH (cs:ChargingStation)
+  WHERE coalesce(cs.is_master_record, false) = true
+  RETURN count(cs) AS station_count
+}
+CALL {
+  MATCH (p:Process)
+  WHERE coalesce(p.is_master_record, false) = false
+  RETURN count(p) AS process_count
+}
+CALL {
+  MATCH (a:Actor)
+  WHERE coalesce(a.is_master_record, false) = true
+  RETURN count(a) AS actor_count
+}
+CALL {
+  MATCH (cs:ChargingStation)
+  WHERE coalesce(cs.is_master_record, false) = true
+    AND cs.installation_site_id IS NOT NULL
+  RETURN count(DISTINCT cs.installation_site_id) AS location_count
+}
+RETURN station_count, process_count, actor_count, location_count
         `;
+
         const res = await fetch("/api/query", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query })
+          body: JSON.stringify({ query }),
         });
+
         if (res.ok) {
           const data = await res.json();
-          if (data.results && data.results[0]) {
-            const row = data.results[0];
+          const row = data.results?.[0];
+
+          if (row) {
             setStats({
-              stations: Number(row.cs_count || 0),
-              processes: Number(row.p_count || 0),
-              actors: Number(row.a_count || 0),
-              locations: Number(row.l_count || 0)
+              stations: Number(row.station_count || 0),
+              processes: Number(row.process_count || 0),
+              actors: Number(row.actor_count || 0),
+              locations: Number(row.location_count || 0),
             });
           }
         }
@@ -132,20 +106,29 @@ export default function DashboardView() {
 
     async function fetchUnits() {
       try {
-        const query = `MATCH (cs:${assetLabel}) RETURN cs.${assetIdField} AS unitId ORDER BY unitId`;
+        const query = `
+MATCH (cs:ChargingStation)
+WHERE coalesce(cs.is_master_record, false) = true
+RETURN cs.unit_id AS unitId
+ORDER BY unitId
+        `;
+
         const res = await fetch("/api/query", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query })
+          body: JSON.stringify({ query }),
         });
+
         if (res.ok) {
           const data = await res.json();
-          if (data.results) {
-            const list = data.results.map((r: any) => r.unitId as string).filter(Boolean);
-            setUnits(list);
-            if (list.length > 0) {
-              setSelectedUnit(list[0]);
-            }
+          const list = (data.results || [])
+            .map((r: any) => r.unitId as string)
+            .filter(Boolean);
+
+          setUnits(list);
+
+          if (list.length > 0) {
+            setSelectedUnit(list[0]);
           }
         }
       } catch (err) {
@@ -155,38 +138,62 @@ export default function DashboardView() {
 
     fetchStats();
     fetchUnits();
-  }, [discovered, assetLabel, assetIdField]);
+  }, []);
 
-  // Fetch unit lifecycle processes
   useEffect(() => {
-    if (!selectedUnit || !discovered) return;
+    if (!selectedUnit) return;
 
     async function fetchLifecycle() {
       setLoadingLifecycle(true);
       setSelectedStep(null);
+
       try {
         const query = `
-          MATCH (cs:${assetLabel} {${assetIdField}: $unitId})-[:UNDERGOES]->(p:Process)
-          OPTIONAL MATCH (p)-[:EXECUTED_BY]->(a:Actor)
-          RETURN coalesce(p.process_id, p.id) AS process_id, 
-                 p.process_name AS process_name, 
-                 p.lifecycle_phase AS phase, 
-                 p.cost_eur AS cost, 
-                 p.duration_days AS duration, 
-                 p.status AS status, 
-                 a.actor_name AS actor
-          ORDER BY process_id
+MATCH (cs:ChargingStation {unit_id: $unitId})
+WHERE coalesce(cs.is_master_record, false) = true
+
+CALL {
+  WITH cs
+  MATCH (p:Process)
+  WHERE p.unit_id = cs.unit_id
+  RETURN p
+
+  UNION
+
+  WITH cs
+  MATCH (p:Process)-[:UNDERGOES|FOR_STATION|FOR_UNIT]-(cs)
+  RETURN p
+}
+
+OPTIONAL MATCH (p)-[:EXECUTED_BY]-(a:Actor)
+
+RETURN DISTINCT
+  coalesce(p.process_id, p.id, p._entity_id) AS process_id,
+  coalesce(p.process_name, p.display_name, p.process_id, p._entity_id) AS process_name,
+  coalesce(p.lifecycle_phase, p.phase, "Lifecycle") AS phase,
+  coalesce(p.cost_eur, p.cost, 0) AS cost,
+  coalesce(p.duration_days, p.duration, 0) AS duration,
+  coalesce(p.status, "UNKNOWN") AS status,
+  coalesce(a.actor_name, a.display_name, a.actor_id, p.actor_id) AS actor,
+  p.start_date AS start_date,
+  p.end_date AS end_date
+ORDER BY process_id
         `;
+
         const res = await fetch("/api/query", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, params: { unitId: selectedUnit } })
+          body: JSON.stringify({
+            query,
+            params: {
+              unitId: selectedUnit,
+            },
+          }),
         });
+
         if (res.ok) {
           const data = await res.json();
-          if (data.results) {
-            setLifecycle(data.results as ProcessStep[]);
-          }
+          setLifecycle((data.results || []) as ProcessStep[]);
         }
       } catch (err) {
         console.error("Failed to load unit lifecycle:", err);
@@ -196,30 +203,33 @@ export default function DashboardView() {
     }
 
     fetchLifecycle();
-  }, [selectedUnit, discovered, assetLabel, assetIdField]);
+  }, [selectedUnit]);
 
   return (
     <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs uppercase tracking-wider text-[#0065bd] font-bold">Operational Overview</div>
-          <h1 className="text-2xl font-extrabold text-slate-900 mt-1">LIFECYCLE DASHBOARD</h1>
+          <div className="text-xs uppercase tracking-wider text-[#0065bd] font-bold">
+            Operational Overview
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-900 mt-1">
+            LIFECYCLE DASHBOARD
+          </h1>
         </div>
+
         <div className="group relative flex items-center gap-1.5 text-slate-400 hover:text-slate-600 cursor-pointer">
           <HelpCircle size={16} />
           <span className="text-xs">Dashboard Help</span>
           <div className="pointer-events-none absolute right-0 top-6 z-50 w-72 rounded-lg border border-slate-200 bg-white p-3 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-slate-600 leading-normal">
-            This dashboard outlines high-level metrics of the active supply chain network. Use the dropdown to choose a Charging Station and inspect its sequential processes. Click on any step to open the inspector panel.
+            This dashboard uses canonical master ChargingStation nodes and structured Process rows from the Neo4j knowledge graph.
           </div>
         </div>
       </div>
 
-      {/* Stats grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           icon={<Activity className="text-[#0065bd]" size={18} />}
-          label={assetLabel === "ChargingStation" ? "Charging Stations" : `${assetLabel}s`}
+          label="Charging Stations"
           value={loadingStats ? "..." : stats.stations.toString()}
         />
         <StatCard
@@ -234,29 +244,28 @@ export default function DashboardView() {
         />
         <StatCard
           icon={<MapPin className="text-amber-600" size={18} />}
-          label="Global Locations"
+          label="Installation Sites"
           value={loadingStats ? "..." : stats.locations.toString()}
         />
       </div>
 
-      {/* Tracer & Timeline Section */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-        
-        {/* Left Side: Timeline */}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5 mb-5">
             <div>
               <h2 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
                 <Activity className="text-[#0065bd]" size={18} />
-                End-to-End {assetLabel === "ChargingStation" ? "Unit" : assetLabel} Lifecycle Tracer
+                End-to-End Unit Lifecycle Tracer
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Select a physical {assetLabel === "ChargingStation" ? "EV charging unit" : assetLabel.toLowerCase()} to retrieve its structured processes path. Click any card to inspect.
+                Select a physical EV charging unit to retrieve its structured process path.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Select {assetLabel === "ChargingStation" ? "Unit" : assetLabel}:</span>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Select Unit:
+              </span>
               <select
                 value={selectedUnit}
                 onChange={(e) => setSelectedUnit(e.target.value)}
@@ -271,50 +280,61 @@ export default function DashboardView() {
             </div>
           </div>
 
-          {/* Timeline Body */}
           {loadingLifecycle ? (
             <div className="h-64 flex items-center justify-center text-slate-400 font-mono text-xs">
-              Querying Graph Databases...
+              Querying Graph Database...
             </div>
           ) : lifecycle.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-slate-400 font-mono text-xs">
-              No processes logged for this {assetLabel === "ChargingStation" ? "unit" : assetLabel.toLowerCase()}.
+              No processes logged for this unit.
             </div>
           ) : (
             <div className="relative pl-6 border-l border-slate-200 space-y-4 ml-4 py-1">
               {lifecycle.map((step) => {
-                const isCompleted = step.status?.toLowerCase() === "completed";
+                const normalizedStatus = String(step.status || "").toLowerCase();
+                const isCompleted = ["completed", "closed", "done"].includes(normalizedStatus);
                 const isSelected = selectedStep?.process_id === step.process_id;
 
                 return (
                   <div key={step.process_id} className="relative">
-                    {/* Circle Indicator */}
-                    <span className={`absolute -left-[31px] top-3 flex h-4 w-4 items-center justify-center rounded-full border bg-white shadow-sm transition-all duration-200 ${
-                      isCompleted ? "border-emerald-500" : "border-amber-500"
-                    }`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${
-                        isCompleted ? "bg-emerald-500" : "bg-amber-500"
-                      }`} />
+                    <span
+                      className={`absolute -left-[31px] top-3 flex h-4 w-4 items-center justify-center rounded-full border bg-white shadow-sm transition-all duration-200 ${
+                        isCompleted ? "border-emerald-500" : "border-amber-500"
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          isCompleted ? "bg-emerald-500" : "bg-amber-500"
+                        }`}
+                      />
                     </span>
 
-                    {/* Step Card */}
-                    <div 
+                    <div
                       onClick={() => setSelectedStep(step)}
                       className={`cursor-pointer rounded-xl border p-4 transition duration-200 text-left ${
-                        isSelected 
-                          ? "border-[#0065bd] bg-[#0065bd]/5 shadow-sm" 
+                        isSelected
+                          ? "border-[#0065bd] bg-[#0065bd]/5 shadow-sm"
                           : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                       }`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2 mb-2">
                         <div>
-                          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">{step.process_id}</span>
-                          <h4 className="text-sm font-bold text-slate-800 tracking-tight mt-0.5">{step.process_name}</h4>
+                          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                            {step.process_id}
+                          </span>
+                          <h4 className="text-sm font-bold text-slate-800 tracking-tight mt-0.5">
+                            {step.process_name}
+                          </h4>
                         </div>
+
                         <div className="flex items-center gap-1.5">
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                            isCompleted ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-amber-50 text-amber-700 border border-amber-100"
-                          }`}>
+                          <span
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                              isCompleted
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                                : "bg-amber-50 text-amber-700 border border-amber-100"
+                            }`}
+                          >
                             {step.status || "UNKNOWN"}
                           </span>
                           <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wider">
@@ -325,16 +345,30 @@ export default function DashboardView() {
 
                       <div className="grid grid-cols-3 gap-4 text-xs font-mono text-slate-600">
                         <div>
-                          <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Duration</span>
-                          <span className="font-semibold text-slate-700">{step.duration} days</span>
+                          <span className="text-[9px] text-slate-400 uppercase tracking-wider block">
+                            Duration
+                          </span>
+                          <span className="font-semibold text-slate-700">
+                            {Number(step.duration || 0)} days
+                          </span>
                         </div>
+
                         <div>
-                          <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Cost</span>
-                          <span className="font-semibold text-slate-700">{step.cost?.toLocaleString() || 0} EUR</span>
+                          <span className="text-[9px] text-slate-400 uppercase tracking-wider block">
+                            Cost
+                          </span>
+                          <span className="font-semibold text-slate-700">
+                            {Number(step.cost || 0).toLocaleString()} EUR
+                          </span>
                         </div>
+
                         <div>
-                          <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Actor</span>
-                          <span className="font-semibold text-slate-700 truncate block">{step.actor || "Unassigned"}</span>
+                          <span className="text-[9px] text-slate-400 uppercase tracking-wider block">
+                            Actor
+                          </span>
+                          <span className="font-semibold text-slate-700 truncate block">
+                            {step.actor || "Unassigned"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -345,14 +379,13 @@ export default function DashboardView() {
           )}
         </div>
 
-        {/* Right Side: Step Details Inspector */}
         <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col h-fit">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
               Process Detail Inspector
             </h3>
             {selectedStep && (
-              <button 
+              <button
                 onClick={() => setSelectedStep(null)}
                 className="text-slate-400 hover:text-slate-600 p-0.5 rounded-lg hover:bg-slate-100 transition"
               >
@@ -367,43 +400,34 @@ export default function DashboardView() {
                 <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 uppercase tracking-wider">
                   {selectedStep.phase || "Phase Unassigned"}
                 </span>
-                <h4 className="text-md font-bold text-slate-900 mt-2">{selectedStep.process_name}</h4>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">ID: {selectedStep.process_id}</p>
+                <h4 className="text-md font-bold text-slate-900 mt-2">
+                  {selectedStep.process_name}
+                </h4>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  ID: {selectedStep.process_id}
+                </p>
               </div>
 
               <div className="space-y-2 border-t border-slate-100 pt-3 text-xs">
-                <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono">
-                  <span className="text-slate-400">Status</span>
-                  <span className={`font-semibold ${selectedStep.status?.toLowerCase() === "completed" ? "text-emerald-600" : "text-amber-600"}`}>
-                    {selectedStep.status || "Unknown"}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono">
-                  <span className="text-slate-400">Duration</span>
-                  <span className="font-semibold text-slate-800">{selectedStep.duration} days</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono">
-                  <span className="text-slate-400">Operational Cost</span>
-                  <span className="font-semibold text-slate-800">{selectedStep.cost?.toLocaleString() || 0} EUR</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono">
-                  <span className="text-slate-400">Assigned Actor</span>
-                  <span className="font-semibold text-slate-800">{selectedStep.actor || "Internal Resources"}</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono">
-                  <span className="text-slate-400">Target Unit</span>
-                  <span className="font-semibold text-slate-800">{selectedUnit}</span>
-                </div>
+                <DetailRow label="Status" value={selectedStep.status || "Unknown"} />
+                <DetailRow label="Duration" value={`${Number(selectedStep.duration || 0)} days`} />
+                <DetailRow label="Operational Cost" value={`${Number(selectedStep.cost || 0).toLocaleString()} EUR`} />
+                <DetailRow label="Assigned Actor" value={selectedStep.actor || "Internal Resources"} />
+                <DetailRow label="Target Unit" value={selectedUnit} />
+                <DetailRow label="Start Date" value={selectedStep.start_date || "—"} />
+                <DetailRow label="End Date" value={selectedStep.end_date || "—"} />
               </div>
 
               <div className="mt-2 rounded-xl bg-slate-50 border border-slate-100 p-3 text-xs text-slate-500 leading-normal">
-                <div className="font-bold text-slate-700 text-[10px] uppercase tracking-wider mb-1">Knowledge Notes</div>
-                This step was parsed from standard audit logs. S.C.A.L.E.S. automatically estimates bottlenecks and risk factors based on these duration and cost benchmarks.
+                <div className="font-bold text-slate-700 text-[10px] uppercase tracking-wider mb-1">
+                  Knowledge Notes
+                </div>
+                This step is loaded from structured lifecycle process records connected to the selected charging station.
               </div>
             </div>
           ) : (
             <div className="text-center py-10 px-4 text-slate-400 text-xs font-mono">
-              Click any process node or card on the left to inspect its detailed parameters and logs.
+              Click any process card on the left to inspect its detailed parameters and logs.
             </div>
           )}
         </aside>
@@ -412,10 +436,25 @@ export default function DashboardView() {
   );
 }
 
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex justify-between py-1.5 border-b border-slate-50 font-mono gap-4">
+      <span className="text-slate-400">{label}</span>
+      <span className="font-semibold text-slate-800 text-right">{value}</span>
+    </div>
+  );
+}
+
 function StatCard({
   icon,
   label,
-  value
+  value,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -424,7 +463,9 @@ function StatCard({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{label}</span>
+        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          {label}
+        </span>
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 border border-slate-100">
           {icon}
         </div>
