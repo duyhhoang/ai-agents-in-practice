@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getNeo4jDriver } from "../neo4j-client.js";
+import { getNeo4jDriver, getDatabaseSchema } from "../neo4j-client.js";
 import { convertNeo4jTypes, isForbiddenCypherQuery } from "../utils.js";
 import { getEmbedding, isMockEmbedding } from "../services/embedding.js";
 
@@ -31,7 +31,8 @@ router.post("/query", async (req, res) => {
     }
     const records = result.records.map(r => r.toObject());
     const cleaned = convertNeo4jTypes(records);
-    res.json({ results: cleaned });
+    const schema = await getDatabaseSchema(driver);
+    res.json({ results: cleaned, schema });
   } catch (err: any) {
     console.error("API Query error:", err.message);
     res.status(500).json({ error: err.message });
@@ -134,6 +135,18 @@ router.post("/embedding", async (req, res) => {
     res.json({ embedding, embeddingMode: mode });
   } catch (err: any) {
     console.error("API Embedding error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint to fetch current database schema dynamically
+router.get("/schema", async (req, res) => {
+  const driver = getNeo4jDriver();
+  try {
+    const schema = await getDatabaseSchema(driver);
+    res.json({ schema });
+  } catch (err: any) {
+    console.error("API Schema error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });

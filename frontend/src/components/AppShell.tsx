@@ -318,9 +318,9 @@ export default function AppShell() {
                     ))}
                   </div>
                   <div className="text-[10px] text-slate-400 space-y-1 leading-normal">
-                    <p><strong>Auto:</strong> Routes to n8n first (multi-agent workflow with 5 specialized sub-agents); falls back to Express MCP if n8n is offline.</p>
-                    <p><strong>n8n:</strong> Forces the n8n Chat Orchestrator with its full agent workflow.</p>
-                    <p><strong>Express:</strong> Uses the built-in Express multi-agent pipeline with dynamic schema discovery and direct Gemini embeddings.</p>
+                    <p><strong>Auto (Recommended):</strong> Routes to the premier n8n Chat Orchestrator first (featuring 5 specialized sub-agents and Gemini embeddings); falls back to the high-performance Express MCP RAG pipeline only if n8n is offline.</p>
+                    <p><strong>n8n Engine:</strong> Forces the full n8n Chat Orchestrator workflow with dynamic agent selection and similarity-fallback capabilities.</p>
+                    <p><strong>Express MCP:</strong> Direct, high-performance RAG pipeline fallback with dynamic schema discovery and direct Gemini embeddings.</p>
                   </div>
                 </div>
 
