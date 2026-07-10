@@ -21,23 +21,23 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        -672,
-        112
+        576,
+        -48
       ],
-      "id": "859c7dfe-1c51-41bd-89d1-11cea5cce966",
+      "id": "a7d5e20c-6602-4d81-82c0-0a3be8a7d8b9",
       "name": "When Executed by Another Workflow"
     },
     {
       "parameters": {
-        "jsCode": "const question = $json.question || \"\";\n\nconst query = `\nMATCH (a:Actor)\nWHERE \n  coalesce(a.is_canonical_actor, false) = true\n  AND (\n    toLower(coalesce(a.actor_role, \"\")) IN [\"supplier\", \"manufacturer\", \"vendor\"]\n    OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"supplier\"\n    OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"materials\"\n    OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"manufacturing\"\n    OR toLower(coalesce(a.display_name, a.actor_name, a.name, \"\")) CONTAINS \"vendor\"\n    OR EXISTS {\n      MATCH (a)-[:SUPPLIES]-()\n    }\n  )\nOPTIONAL MATCH (a)-[r]-(connected)\nRETURN \n  coalesce(a.canonical_id, a.id, a.actor_id) AS supplier_id,\n  coalesce(a.display_name, a.actor_name, a.name) AS supplier_name,\n  a.region AS region,\n  a.actor_origin AS actor_origin,\n  a.actor_role AS actor_role,\n  labels(connected) AS connected_labels,\n  coalesce(\n    connected.canonical_id,\n    connected.id,\n    connected.display_name,\n    connected.actor_name,\n    connected.name,\n    connected.unit_id,\n    connected.process_id,\n    connected.material_id,\n    connected.location_name\n  ) AS connected_entity,\n  type(r) AS relationship,\n  properties(connected) AS connected_properties\nORDER BY supplier_id\nLIMIT 100\n`;\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      domain: \"Procurement Specialist\",\n      question,\n      query,\n      params: {},\n    },\n  },\n];"
+        "jsCode": "const question = $json.question || \"\";\nconst q = question.toLowerCase();\n\nconst isPurchaseOrderQuestion =\n  q.includes(\"purchase\") ||\n  q.includes(\"purchasing\") ||\n  q.includes(\"po\") ||\n  q.includes(\"order\") ||\n  q.includes(\"closed\") ||\n  q.includes(\"open\") ||\n  q.includes(\"status\");\n\nconst isInventoryQuestion =\n  q.includes(\"inventory\") ||\n  q.includes(\"stock\") ||\n  q.includes(\"storage\");\n\nlet query;\nlet params = {};\n\nif (isPurchaseOrderQuestion) {\n  let status = null;\n  if (q.includes(\"closed\")) status = \"CLOSED\";\n  if (q.includes(\"open\")) status = \"OPEN\";\n\n  params = { status };\n\n  query = `\nMATCH (po:PurchaseOrder)\nWHERE $status IS NULL OR toUpper(toString(po.status)) = $status\nOPTIONAL MATCH (po)-[:ORDERED_FROM]->(vendor:Actor)\nOPTIONAL MATCH (po)-[:ORDERS_MATERIAL]->(material:Material)\nRETURN\n  po.po_number AS po_number,\n  coalesce(vendor.actor_id, po.vendor_id) AS vendor_id,\n  coalesce(vendor.actor_name, vendor.display_name, vendor.name, po.vendor_id) AS vendor_name,\n  po.material_id AS material_id,\n  coalesce(material.material_name, material.display_name, po.material_description) AS material_description,\n  po.quantity AS quantity,\n  po.uom AS uom,\n  po.unit_price_eur AS unit_price_eur,\n  po.currency AS currency,\n  po.total_value_eur AS total_value_eur,\n  po.status AS status,\n  po.po_date AS po_date,\n  po.requested_delivery_date AS requested_delivery_date,\n  po.goods_receipt_date AS goods_receipt_date,\n  po.is_master_record AS is_master_record\nORDER BY po.po_number\nLIMIT 200\n`;\n} else if (isInventoryQuestion) {\n  query = `\nMATCH (inv:InventorySnapshot)\nOPTIONAL MATCH (inv)-[:SNAPSHOT_OF_MATERIAL]->(material:Material)\nOPTIONAL MATCH (inv)-[:PRIMARY_VENDOR]->(vendor:Actor)\nRETURN\n  inv.material_id AS material_id,\n  coalesce(material.material_name, inv.material_description) AS material_description,\n  inv.storage_location AS storage_location,\n  inv.stock_qty AS stock_qty,\n  inv.uom AS uom,\n  inv.total_stock_value_eur AS total_stock_value_eur,\n  inv.stock_status AS stock_status,\n  inv.snapshot_date AS snapshot_date,\n  coalesce(vendor.actor_id, inv.primary_vendor) AS primary_vendor\nORDER BY inv.material_id, inv.storage_location\nLIMIT 200\n`;\n} else {\n  query = `\nMATCH (a:Actor)\nWHERE\n  coalesce(a.is_master_record, false) = true\n  OR toLower(coalesce(a.actor_role, \"\")) IN [\"supplier\", \"manufacturer\", \"vendor\"]\n  OR EXISTS { MATCH (a)-[:SUPPLIES]-() }\nOPTIONAL MATCH (a)-[r]-(connected)\nRETURN\n  coalesce(a.actor_id, a.id) AS supplier_id,\n  coalesce(a.actor_name, a.display_name, a.name) AS supplier_name,\n  a.region AS region,\n  a.actor_role AS actor_role,\n  labels(connected) AS connected_labels,\n  coalesce(\n    connected.display_name,\n    connected.actor_name,\n    connected.material_name,\n    connected.material_id,\n    connected.unit_id,\n    connected.id\n  ) AS connected_entity,\n  type(r) AS relationship,\n  properties(connected) AS connected_properties\nORDER BY supplier_id\nLIMIT 100\n`;\n}\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      domain: \"Procurement Specialist\",\n      question,\n      query,\n      params,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        0,
-        0
+        1248,
+        -160
       ],
-      "id": "ca316a56-3970-4315-ad8f-b9f77aee344a",
+      "id": "cceed84c-6654-4534-9b5e-f4f07af3b70b",
       "name": "Build Procurement Query"
     },
     {
@@ -52,36 +52,36 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        192,
-        0
+        1440,
+        -160
       ],
-      "id": "fb9cc25e-08b5-41b0-9d26-5a4ecedeeef7",
+      "id": "0f30aef2-e93e-41e1-9178-4d410b82d27a",
       "name": "Call MCP graph-query"
     },
     {
       "parameters": {
-        "jsCode": "const rows = $json.results || [];\n\nlet question = \"\";\ntry {\n  question =\n    $(\"When Executed by Another Workflow\").first().json.question ||\n    $(\"Build Procurement Query\").first().json.question ||\n    \"\";\n} catch (e) {\n  question = \"\";\n}\n\nconst suppliers = rows.map((row) => ({\n  supplier_id: row.supplier_id || null,\n  supplier_name: row.supplier_name || null,\n  connected_labels: row.connected_labels || [],\n  connected_entity: row.connected_entity || null,\n  relationship: row.relationship || null,\n}));\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      status: \"data_retrieved\",\n      question,\n      summary: \"Procurement specialist retrieved supplier-related entities and relationships.\",\n      suppliers,\n      rawResult: $json,\n    },\n  },\n];"
+        "jsCode": "const rows = $json.results || [];\n\nlet context = {};\ntry {\n  context = $(\"Build Procurement Query\").first().json;\n} catch (e) {\n  context = {};\n}\n\nconst procurementItems = rows.map((row) => ({ ...row }));\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      domain: \"Procurement Specialist\",\n      status: \"data_retrieved\",\n      question: context.question || \"\",\n      evidenceLabel: \"procurementItems\",\n      evidenceData: procurementItems,\n      generatedCypher: context.query || \"\",\n      rawResult: $json,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        384,
-        0
+        1632,
+        -160
       ],
-      "id": "447574ce-2090-4e62-844f-f54483a2eea0",
+      "id": "18948526-2209-4d1a-a6d2-f58728fc6055",
       "name": "Format Procurement Result"
     },
     {
       "parameters": {
-        "jsCode": "const question = $json.question || \"\";\nconst suppliers = $json.suppliers || [];\nconst rawResult = $json.rawResult || {};\nconst dbSchema = rawResult.schema || \"\";\n\nconst systemPrompt = `\nYou are a Procurement Specialist Agent for a supply chain knowledge graph.\n\nActive Database Schema:\n${dbSchema || \"No active schema available.\"}\n\nYour job:\n- Analyze supplier-related graph data.\n- Explain procurement relevance clearly.\n- Identify key supplier connections.\n- Highlight risks or gaps if visible.\n- Give practical next actions.\n\nDo not invent data. Only use the provided supplier data.\nIf the data is limited, clearly say that.\nReturn ONLY valid JSON.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nSupplier data:\n${JSON.stringify(suppliers, null, 2)}\n\nRaw query result:\n${JSON.stringify(rawResult, null, 2)}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"keyFindings\": [\"string\"],\n  \"supplierInsights\": [\n    {\n      \"supplier_id\": \"string\",\n      \"supplier_name\": \"string\",\n      \"insight\": \"string\"\n    }\n  ],\n  \"recommendations\": [\"string\"],\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      question,\n      suppliers,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.2,\n        max_tokens: 2048,\n      },\n    },\n  },\n];"
+        "jsCode": "const agent = $json.agent || \"procurement_specialist\";\nconst domain = $json.domain || \"Procurement Specialist\";\nconst question = $json.question || \"\";\nconst evidenceLabel = $json.evidenceLabel || \"procurementItems\";\nconst evidenceData = $json.evidenceData || [];\nconst rawResult = $json.rawResult || {};\nconst generatedCypher = $json.generatedCypher || \"\";\nconst dbSchema = rawResult.schema || \"\";\n\nconst systemPrompt = `\nYou are a Procurement Specialist Agent for a supply chain knowledge graph.\n\nActive Database Schema:\n${dbSchema || \"No active schema available.\"}\n\nYour job:\n- Answer procurement, purchasing, purchase order, inventory, supplier, vendor, and material questions.\n- Use only the provided graph query results.\n- Do not invent missing records.\n- For direct list/count questions, answer directly and include a clear table.\n- Do not add risk analysis unless the user explicitly asks about risk.\n- Return ONLY valid JSON.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nGenerated Cypher:\n${generatedCypher}\n\nProcurement evidence:\n${JSON.stringify(evidenceData, null, 2)}\n\nRaw graph result:\n${JSON.stringify(rawResult, null, 2)}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"keyFindings\": [\"string\"],\n  \"procurementInsights\": [\n    {\n      \"id\": \"string\",\n      \"type\": \"string\",\n      \"name\": \"string\",\n      \"insight\": \"string\"\n    }\n  ],\n  \"recommendations\": [\"string\"],\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      agent,\n      domain,\n      question,\n      evidenceLabel,\n      evidenceData,\n      generatedCypher,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.1,\n        max_tokens: 2048,\n      },\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        592,
-        0
+        1840,
+        -160
       ],
-      "id": "254bed5b-1341-4e4e-bf0e-67cb2b0ea190",
+      "id": "00d9b24f-04f7-4103-99e2-8f7338927340",
       "name": "Build LLM Summary Payload"
     },
     {
@@ -95,7 +95,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ $env.LLM_AUTHORIZATION }}"
+              "value": "Bearer REDACTED_API_KEY"
             },
             {
               "name": "Content-Type",
@@ -113,29 +113,29 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        784,
-        0
+        2032,
+        -160
       ],
-      "id": "1ca6739d-bdbc-4f4b-a05d-c602a705fdee",
+      "id": "c3407a70-72aa-42ed-a616-07606b4c5ad9",
       "name": "HTTP Request",
       "credentials": {
         "openAiApi": {
-          "id": "7I27ErC2eQH25gHI",
+          "id": "YPxI5FcVO2XRCV4r",
           "name": "OpenAI account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "let outputStr = \"\";\n\nif ($json.choices?.[0]?.message?.content) {\n  outputStr = $json.choices[0].message.content;\n} else if ($json.text) {\n  outputStr = $json.text;\n} else if ($json.response) {\n  outputStr = $json.response;\n} else {\n  outputStr = JSON.stringify($json);\n}\n\n// Remove thinking tags and markdown fences if model adds them\noutputStr = outputStr\n  .replace(/<think>[\\s\\S]*?<\\/think>/gi, \"\")\n  .replace(/^\\s*```json/i, \"\")\n  .replace(/^\\s*```/i, \"\")\n  .replace(/```\\s*$/i, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(outputStr);\n} catch (e) {\n  parsed = {\n    answer: outputStr || \"The procurement specialist could not generate a summary.\",\n    keyFindings: [],\n    supplierInsights: [],\n    recommendations: [],\n    confidence: \"low\",\n  };\n}\n\nlet question = \"\";\nlet suppliers = [];\n\ntry {\n  question = $(\"Build LLM Summary Payload\").first().json.question || \"\";\n  suppliers = $(\"Build LLM Summary Payload\").first().json.suppliers || [];\n} catch (e) {}\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      status: \"completed\",\n      question,\n      answer: parsed.answer || \"\",\n      keyFindings: parsed.keyFindings || [],\n      supplierInsights: parsed.supplierInsights || [],\n      recommendations: parsed.recommendations || [],\n      confidence: parsed.confidence || \"medium\",\n      evidence: {\n        suppliers,\n      },\n      rawLlmOutput: parsed,\n    },\n  },\n];"
+        "jsCode": "let outputStr = \"\";\n\nif ($json.choices?.[0]?.message?.content) {\n  outputStr = $json.choices[0].message.content;\n} else if ($json.text) {\n  outputStr = $json.text;\n} else if ($json.response) {\n  outputStr = $json.response;\n} else {\n  outputStr = JSON.stringify($json);\n}\n\noutputStr = outputStr\n  .replace(/<think>[\\s\\S]*?<\\/think>/gi, \"\")\n  .replace(/^\\s*```json/i, \"\")\n  .replace(/^\\s*```/i, \"\")\n  .replace(/```\\s*$/i, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(outputStr);\n} catch (e) {\n  parsed = {\n    answer: outputStr || \"The procurement specialist could not generate a summary.\",\n    keyFindings: [],\n    procurementInsights: [],\n    recommendations: [],\n    confidence: \"low\",\n  };\n}\n\nlet context = {};\ntry {\n  context = $(\"Build LLM Summary Payload\").first().json;\n} catch (e) {\n  context = {};\n}\n\nreturn [\n  {\n    json: {\n      agent: \"procurement_specialist\",\n      domain: \"Procurement Specialist\",\n      status: \"completed\",\n      question: context.question || \"\",\n      answer: parsed.answer || \"\",\n      keyFindings: parsed.keyFindings || [],\n      procurementInsights: parsed.procurementInsights || [],\n      recommendations: parsed.recommendations || [],\n      confidence: parsed.confidence || \"medium\",\n      evidence: {\n        procurementItems: context.evidenceData || [],\n      },\n      generatedCypher: context.generatedCypher || \"\",\n      rawLlmOutput: parsed,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1008,
-        0
+        2256,
+        -160
       ],
-      "id": "bca844c0-f681-4609-a58b-48d42088243f",
+      "id": "078bbbf5-6ba7-4b87-bbf9-808d9d6ceb47",
       "name": "Parse LLM Summary"
     },
     {
@@ -145,10 +145,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -464,
-        112
+        784,
+        -48
       ],
-      "id": "a98548d2-fb46-40a7-bf01-9a0885309bc6",
+      "id": "e3f6b5e1-6766-4f11-a48d-a4b85f61ac5b",
       "name": "Should Run Procurement Specialist"
     },
     {
@@ -179,10 +179,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -256,
-        112
+        992,
+        -48
       ],
-      "id": "973117f7-bf73-4fea-a94c-9336f4cd09d9",
+      "id": "96bce833-4256-43d4-b88f-79e008a6f034",
       "name": "If"
     },
     {
@@ -192,13 +192,29 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        0,
-        256
+        1248,
+        96
       ],
-      "id": "b997a2ca-405e-4f6d-a1ad-498036343b80",
+      "id": "3e611e42-8363-4706-b501-f5a7b1926214",
       "name": "Return Skipped Procurement Specialist"
     }
   ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "question": "What are the top suppliers?",
+          "sessionId": "test-debug",
+          "selectedAgents": [
+            "procurement_specialist"
+          ]
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
@@ -300,26 +316,13 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": true
+    "availableInMCP": false
   },
-  "versionId": "0d82c95d-8bcd-40c9-bf21-343cf3c818d0",
-  "meta": null,
-  "id": "uXxa1PiN0LtYwNdr",
+  "versionId": "b0524fc2-e394-4784-970e-d272e519beeb",
+  "meta": {
+    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
+  },
   "nodeGroups": [],
-  "pinData": {
-    "When Executed by Another Workflow": [
-      {
-        "json": {
-          "question": "What are the top suppliers?",
-          "sessionId": "test-debug",
-          "selectedAgents": [
-            "procurement_specialist"
-          ]
-        },
-        "pairedItem": {
-          "item": 0
-        }
-      }
-    ]
-  }
+  "id": "rWjcQm6cQHLCIl8Q",
+  "tags": []
 }
