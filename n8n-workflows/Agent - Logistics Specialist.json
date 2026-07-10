@@ -21,23 +21,23 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        -672,
-        112
+        272,
+        304
       ],
-      "id": "202c886a-fc4e-4415-a281-f334d8b6a7c8",
+      "id": "018c59da-5b20-45e8-a364-d7baf13bdd0c",
       "name": "When Executed by Another Workflow"
     },
     {
       "parameters": {
-        "jsCode": "const question = $json.question || \"\";\n\nconst query = `\nMATCH (n)\nWHERE \n  n:Location\n  OR n:Transport\n  OR (\n    n:Actor AND (\n      toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"logistics\"\n      OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"freight\"\n      OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"transport\"\n      OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"shipping\"\n      OR toLower(coalesce(n.actor_name, n.name, \"\")) CONTAINS \"carrier\"\n    )\n  )\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN\n  coalesce(\n    n.canonical_id,\n    n.id,\n    n.transport_id,\n    n.location_code,\n    n.actor_id,\n    n.unit_id\n  ) AS item_id,\n  labels(n)[0] AS item_type,\n  coalesce(\n    n.location_name,\n    n.actor_name,\n    n.name,\n    n.route_from,\n    n.route_to,\n    n.country,\n    n.id\n  ) AS item_name,\n  properties(n) AS properties,\n  type(r) AS relationship,\n  labels(connected) AS connected_labels,\n  coalesce(\n    connected.canonical_id,\n    connected.id,\n    connected.unit_id,\n    connected.serial_number,\n    connected.actor_name,\n    connected.name,\n    connected.process_id,\n    connected.process_name,\n    connected.material_name,\n    connected.location_name\n  ) AS connected_entity\nLIMIT 100\n`;\n\nreturn [\n  {\n    json: {\n      agent: \"logistics_specialist\",\n      domain: \"Logistics Specialist\",\n      question,\n      query,\n      params: {},\n    },\n  },\n];"
+        "jsCode": "const question = $json.question || \"\";\nconst q = question.toLowerCase();\n\nconst asksChargingStation =\n  q.includes(\"charging station\") ||\n  q.includes(\"charging stations\") ||\n  q.includes(\"station\") ||\n  q.includes(\"stations\") ||\n  q.includes(\"charger\") ||\n  q.includes(\"chargers\") ||\n  q.includes(\"infrastructure\");\n\nconst asksCountry =\n  q.includes(\"country\") ||\n  q.includes(\"countries\") ||\n  q.includes(\"nation\") ||\n  q.includes(\"region\");\n\nconst asksSite =\n  q.includes(\"site\") ||\n  q.includes(\"sites\") ||\n  q.includes(\"installation site\") ||\n  q.includes(\"installation_site_id\") ||\n  q.includes(\"located\") ||\n  q.includes(\"location\") ||\n  q.includes(\"locations\") ||\n  q.includes(\"where\");\n\nconst asksHighest =\n  q.includes(\"highest\") ||\n  q.includes(\"most\") ||\n  q.includes(\"maximum\") ||\n  q.includes(\"max\") ||\n  q.includes(\"top\") ||\n  q.includes(\"largest\");\n\nconst asksTransport =\n  q.includes(\"transport\") ||\n  q.includes(\"transportation\") ||\n  q.includes(\"route\") ||\n  q.includes(\"routes\") ||\n  q.includes(\"shipment\") ||\n  q.includes(\"shipping\") ||\n  q.includes(\"freight\") ||\n  q.includes(\"delivery\");\n\nlet query;\nlet params = {\n  highestOnly: asksHighest,\n};\n\nif (asksChargingStation && asksCountry) {\n  query = `\nMATCH (cs:ChargingStation)\nWHERE coalesce(cs.is_master_record, false) = true\n  AND cs.country IS NOT NULL\n  AND cs.unit_id IS NOT NULL\nWITH\n  cs.country AS country_code,\n  count(DISTINCT cs.unit_id) AS station_count,\n  count(DISTINCT cs.installation_site_id) AS site_count,\n  collect(DISTINCT cs.unit_id) AS station_ids\nORDER BY station_count DESC, country_code\nWITH collect({\n  country_code: country_code,\n  station_count: station_count,\n  site_count: site_count,\n  station_ids: station_ids\n}) AS rows\nWITH rows,\n     CASE\n       WHEN $highestOnly = true AND size(rows) > 0 THEN rows[0].station_count\n       ELSE null\n     END AS max_count\nUNWIND rows AS row\nWITH row, max_count\nWHERE $highestOnly = false OR row.station_count = max_count\nRETURN\n  row.country_code AS country_code,\n  row.station_count AS station_count,\n  row.site_count AS site_count,\n  row.station_ids AS station_ids\nORDER BY station_count DESC, country_code\nLIMIT 100\n`;\n} else if (asksChargingStation && asksSite) {\n  query = `\nMATCH (cs:ChargingStation)\nWHERE coalesce(cs.is_master_record, false) = true\n  AND cs.installation_site_id IS NOT NULL\n  AND cs.unit_id IS NOT NULL\nWITH\n  cs.installation_site_id AS site,\n  cs.country AS country_code,\n  count(DISTINCT cs.unit_id) AS station_count,\n  collect(DISTINCT cs.unit_id) AS station_ids\nORDER BY station_count DESC, site\nWITH collect({\n  site: site,\n  country_code: country_code,\n  station_count: station_count,\n  station_ids: station_ids\n}) AS rows\nWITH rows,\n     CASE\n       WHEN $highestOnly = true AND size(rows) > 0 THEN rows[0].station_count\n       ELSE null\n     END AS max_count\nUNWIND rows AS row\nWITH row, max_count\nWHERE $highestOnly = false OR row.station_count = max_count\nRETURN\n  row.site AS site,\n  row.country_code AS country_code,\n  row.station_count AS station_count,\n  row.station_ids AS station_ids\nORDER BY station_count DESC, site\nLIMIT 100\n`;\n} else if (asksChargingStation) {\n  query = `\nMATCH (cs:ChargingStation)\nWHERE coalesce(cs.is_master_record, false) = true\n  AND cs.unit_id IS NOT NULL\nRETURN\n  cs.unit_id AS unit_id,\n  cs.serial_number AS serial_number,\n  cs.product_variant AS product_variant,\n  cs.country AS country_code,\n  cs.installation_site_id AS site,\n  cs.manufacture_date AS manufacture_date\nORDER BY unit_id\nLIMIT 200\n`;\n} else if (asksTransport) {\n  query = `\nMATCH (t:Transport)\nOPTIONAL MATCH (t)-[:FOR_UNIT]->(cs:ChargingStation)\nRETURN\n  t.transport_id AS transport_id,\n  t.unit_id AS unit_id,\n  cs.installation_site_id AS site,\n  cs.country AS country_code,\n  t.route_from AS route_from,\n  t.route_to AS route_to,\n  t.mode AS mode,\n  t.distance_km AS distance_km,\n  t.cost_eur AS cost_eur,\n  t.status AS status\nORDER BY t.transport_id\nLIMIT 200\n`;\n} else {\n  query = `\nMATCH (n)\nWHERE n:Location\n   OR n:Transport\n   OR n:ChargingStation\nOPTIONAL MATCH (n)-[r]-(connected)\nRETURN\n  coalesce(n.location_code, n.transport_id, n.unit_id, n.id) AS item_id,\n  labels(n)[0] AS item_type,\n  coalesce(n.display_name, n.location_name, n.route_from, n.unit_id, n.id) AS item_name,\n  properties(n) AS properties,\n  type(r) AS relationship,\n  labels(connected) AS connected_labels,\n  coalesce(\n    connected.display_name,\n    connected.unit_id,\n    connected.actor_name,\n    connected.material_name,\n    connected.id\n  ) AS connected_entity\nLIMIT 100\n`;\n}\n\nreturn [\n  {\n    json: {\n      agent: \"logistics_specialist\",\n      domain: \"Logistics Specialist\",\n      question,\n      query,\n      params,\n      queryDebug: {\n        asksChargingStation,\n        asksCountry,\n        asksSite,\n        asksHighest,\n        asksTransport,\n      },\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        0,
-        0
+        944,
+        192
       ],
-      "id": "47189248-4722-4b18-946b-f4ed8cf44b3d",
+      "id": "235f83e1-4a5f-426c-aac8-bfa305350791",
       "name": "Build Logistics Query"
     },
     {
@@ -52,36 +52,36 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        176,
-        0
+        1120,
+        192
       ],
-      "id": "96dd089b-22a4-4c80-a7cf-a5f07f997bd4",
+      "id": "04c65599-1850-43d9-81b7-d969285e8f55",
       "name": "Call Graph API Query"
     },
     {
       "parameters": {
-        "jsCode": "const rows = $json.results || [];\n\nlet question = \"\";\ntry {\n  question = $(\"Build Logistics Query\").first().json.question || \"\";\n} catch (e) {\n  question = \"\";\n}\n\nconst logisticsItems = rows.map((row) => ({\n  item_id: row.item_id || null,\n  item_type: row.item_type || null,\n  item_name: row.item_name || null,\n  properties: row.properties || {},\n  relationship: row.relationship || null,\n  connected_labels: row.connected_labels || [],\n  connected_entity: row.connected_entity || null,\n}));\n\nreturn [\n  {\n    json: {\n      agent: \"logistics_specialist\",\n      domain: \"Logistics Specialist\",\n      status: \"data_retrieved\",\n      question,\n      evidenceLabel: \"logisticsItems\",\n      evidenceData: logisticsItems,\n      rawResult: $json,\n    },\n  },\n];"
+        "jsCode": "const rows = $json.results || $json.data || [];\n\nlet context = {};\ntry {\n  context = $(\"Build Logistics Query\").first().json;\n} catch (e) {\n  context = {};\n}\n\nconst logisticsItems = rows.map((row) => ({ ...row }));\n\nreturn [\n  {\n    json: {\n      agent: \"logistics_specialist\",\n      domain: \"Logistics Specialist\",\n      status: \"data_retrieved\",\n      question: context.question || \"\",\n      evidenceLabel: \"logisticsItems\",\n      evidenceData: logisticsItems,\n      generatedCypher: context.query || \"\",\n      params: context.params || {},\n      queryDebug: context.queryDebug || {},\n      rawResult: $json,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        384,
-        0
+        1328,
+        192
       ],
-      "id": "ef95b19c-a262-4d1e-a2a3-72b4e4d45e48",
+      "id": "603bdee9-8aed-4363-a1e5-6d6af1cbb01c",
       "name": "Format Logistics Result"
     },
     {
       "parameters": {
-        "jsCode": "const agent = $json.agent || \"logistics_specialist\";\nconst domain = $json.domain || \"Logistics Specialist\";\nconst question = $json.question || \"\";\nconst evidenceLabel = $json.evidenceLabel || \"logisticsItems\";\nconst evidenceData = $json.evidenceData || [];\nconst rawResult = $json.rawResult || {};\n\nconst systemPrompt = `\nYou are a Logistics Specialist Agent for a supply chain knowledge graph.\n\nYour job:\n- Analyze location, transport, freight, route, and delivery-related graph data.\n- Identify logistics dependencies, route exposure, connected entities, and delivery bottlenecks.\n- Explain the operational impact clearly.\n- Give practical logistics recommendations.\n- Do not invent facts.\n- If the graph data is limited, clearly say that.\n\nReturn ONLY valid JSON.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nLogistics evidence:\n${JSON.stringify(evidenceData, null, 2)}\n\nRaw graph result:\n${JSON.stringify(rawResult, null, 2)}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"keyFindings\": [\"string\"],\n  \"logisticsInsights\": [\n    {\n      \"id\": \"string\",\n      \"type\": \"string\",\n      \"name\": \"string\",\n      \"insight\": \"string\"\n    }\n  ],\n  \"routeInsights\": [\n    {\n      \"route\": \"string\",\n      \"impact\": \"string\"\n    }\n  ],\n  \"recommendations\": [\"string\"],\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      agent,\n      domain,\n      question,\n      evidenceLabel,\n      evidenceData,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.2,\n        max_tokens: 2048,\n      },\n    },\n  },\n];"
+        "jsCode": "const agent = $json.agent || \"logistics_specialist\";\nconst domain = $json.domain || \"Logistics Specialist\";\nconst question = $json.question || \"\";\nconst evidenceData = $json.evidenceData || [];\nconst rawResult = $json.rawResult || {};\nconst generatedCypher = $json.generatedCypher || \"\";\nconst queryDebug = $json.queryDebug || {};\n\nconst systemPrompt = `\nYou are a Logistics Specialist Agent for a supply chain knowledge graph.\n\nRules:\n- Use only the provided graph query result.\n- Do not invent countries, sites, station counts, or station IDs.\n- Charging station counts must be based on unique physical units.\n- The Cypher already uses count(DISTINCT cs.unit_id), so use station_count exactly as provided.\n- If multiple rows have the same highest station_count, report it as a tie.\n- If country values are ISO country codes like DE, AT, ES, FR, IT, mention the code. You may optionally include the common country name if obvious.\n- Do not add risk analysis unless the user asks about risk.\n- Return ONLY valid JSON.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nQuery debug:\n${JSON.stringify(queryDebug, null, 2)}\n\nGenerated Cypher:\n${generatedCypher}\n\nLogistics evidence:\n${JSON.stringify(evidenceData, null, 2)}\n\nRaw graph result:\n${JSON.stringify(rawResult, null, 2)}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"keyFindings\": [\"string\"],\n  \"logisticsInsights\": [\n    {\n      \"id\": \"string\",\n      \"type\": \"string\",\n      \"name\": \"string\",\n      \"insight\": \"string\"\n    }\n  ],\n  \"routeInsights\": [\n    {\n      \"route\": \"string\",\n      \"impact\": \"string\"\n    }\n  ],\n  \"recommendations\": [\"string\"],\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      agent,\n      domain,\n      question,\n      evidenceData,\n      generatedCypher,\n      queryDebug,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.1,\n        max_tokens: 2048,\n      },\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        576,
-        0
+        1520,
+        192
       ],
-      "id": "cc759ef9-d4cf-4d1a-8b53-10a45ad5e6c9",
+      "id": "c2aab8f6-27bb-4ba2-b8c5-a4efafa5df15",
       "name": "Build LLM Summary Payload"
     },
     {
@@ -95,7 +95,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ $env.LLM_AUTHORIZATION }}"
+              "value": "Bearer sk-tum-air-1bb1752c938ed2c3248d5c15fa6070496bc4a82da0406f4923d7268dd645b77a"
             },
             {
               "name": "Content-Type",
@@ -113,42 +113,42 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        784,
-        0
+        1728,
+        192
       ],
-      "id": "af87afdc-9292-4ce1-85d9-a602538ab741",
+      "id": "8fdde62a-3b08-4d65-a797-d6a0c2b33063",
       "name": "LLM Logistics Summary",
       "credentials": {
         "openAiApi": {
-          "id": "7I27ErC2eQH25gHI",
+          "id": "YPxI5FcVO2XRCV4r",
           "name": "OpenAI account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "let outputStr = \"\";\n\nif ($json.choices?.[0]?.message?.content) {\n  outputStr = $json.choices[0].message.content;\n} else if ($json.text) {\n  outputStr = $json.text;\n} else if ($json.response) {\n  outputStr = $json.response;\n} else {\n  outputStr = JSON.stringify($json);\n}\n\noutputStr = outputStr\n  .replace(/<think>[\\s\\S]*?<\\/think>/gi, \"\")\n  .replace(/^\\s*```json/i, \"\")\n  .replace(/^\\s*```/i, \"\")\n  .replace(/```\\s*$/i, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(outputStr);\n} catch (e) {\n  parsed = {\n    answer: outputStr || \"The logistics specialist could not generate a summary.\",\n    keyFindings: [],\n    logisticsInsights: [],\n    routeInsights: [],\n    recommendations: [],\n    confidence: \"low\",\n  };\n}\n\nlet context = {};\ntry {\n  context = $(\"Build LLM Summary Payload\").first().json;\n} catch (e) {\n  context = {};\n}\n\nreturn [\n  {\n    json: {\n      agent: \"logistics_specialist\",\n      domain: \"Logistics Specialist\",\n      status: \"completed\",\n      question: context.question || \"\",\n      answer: parsed.answer || \"\",\n      keyFindings: parsed.keyFindings || [],\n      logisticsInsights: parsed.logisticsInsights || [],\n      routeInsights: parsed.routeInsights || [],\n      recommendations: parsed.recommendations || [],\n      confidence: parsed.confidence || \"medium\",\n      evidence: {\n        logisticsItems: context.evidenceData || [],\n      },\n      rawLlmOutput: parsed,\n    },\n  },\n];"
+        "jsCode": "let outputStr = \"\";\n\nif ($json.choices?.[0]?.message?.content) {\n  outputStr = $json.choices[0].message.content;\n} else if ($json.text) {\n  outputStr = $json.text;\n} else if ($json.response) {\n  outputStr = $json.response;\n} else {\n  outputStr = JSON.stringify($json);\n}\n\noutputStr = outputStr\n  .replace(/<think>[\\s\\S]*?<\\/think>/gi, \"\")\n  .replace(/^\\s*```json/i, \"\")\n  .replace(/^\\s*```/i, \"\")\n  .replace(/```\\s*$/i, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(outputStr);\n} catch (e) {\n  parsed = {\n    answer: outputStr || \"The logistics specialist could not generate a summary.\",\n    keyFindings: [],\n    logisticsInsights: [],\n    routeInsights: [],\n    recommendations: [],\n    confidence: \"low\",\n  };\n}\n\nlet context = {};\ntry {\n  context = $(\"Build LLM Summary Payload\").first().json;\n} catch (e) {\n  context = {};\n}\n\nreturn [\n  {\n    json: {\n      agent: \"logistics_specialist\",\n      domain: \"Logistics Specialist\",\n      status: \"completed\",\n      question: context.question || \"\",\n      answer: parsed.answer || \"\",\n      keyFindings: parsed.keyFindings || [],\n      logisticsInsights: parsed.logisticsInsights || [],\n      routeInsights: parsed.routeInsights || [],\n      recommendations: parsed.recommendations || [],\n      confidence: parsed.confidence || \"medium\",\n      evidence: {\n        logisticsItems: context.evidenceData || [],\n      },\n      generatedCypher: context.generatedCypher || \"\",\n      queryDebug: context.queryDebug || {},\n      rawLlmOutput: parsed,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        976,
-        0
+        1920,
+        192
       ],
-      "id": "8d1e8e74-fc1c-4e93-ac0c-af6abc182048",
+      "id": "d0aa5812-9809-47a9-adc2-5b3ee1da811a",
       "name": "Parse Logistics Summary"
     },
     {
       "parameters": {
-        "jsCode": "const selectedAgents = $json.selectedAgents || [];\n\nconst shouldRun =\n  selectedAgents.includes(\"logistics_specialist\") ||\n  selectedAgents.includes(\"all\");\n\nreturn [\n  {\n    json: {\n      ...$json,\n      shouldRun,\n    },\n  },\n];"
+        "jsCode": "let selectedAgents = $json.selectedAgents || [];\n\nif (typeof selectedAgents === \"string\") {\n  try {\n    selectedAgents = JSON.parse(selectedAgents);\n  } catch (e) {\n    selectedAgents = selectedAgents\n      .split(\",\")\n      .map((agent) => agent.trim())\n      .filter(Boolean);\n  }\n}\n\nif (!Array.isArray(selectedAgents)) {\n  selectedAgents = [];\n}\n\nconst shouldRun =\n  selectedAgents.includes(\"logistics_specialist\") ||\n  selectedAgents.includes(\"all\");\n\nreturn [\n  {\n    json: {\n      ...$json,\n      selectedAgents,\n      shouldRun,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -464,
-        112
+        480,
+        304
       ],
-      "id": "19da5486-3ccf-495f-9425-5a5700f95360",
+      "id": "fc58ce4f-2435-43cc-baf6-c46d2301fade",
       "name": "Should Run Logistics Specialist"
     },
     {
@@ -179,10 +179,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -256,
-        112
+        688,
+        304
       ],
-      "id": "ef6a5f15-cf71-4041-b71e-ca5961f4de87",
+      "id": "ff778135-1819-4248-bfa1-96f4ec02eb4f",
       "name": "If"
     },
     {
@@ -192,13 +192,14 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        0,
-        256
+        944,
+        448
       ],
-      "id": "0ff57e18-f053-4ab3-bc97-9936c4df7f2a",
+      "id": "d401b883-c5bc-4902-992a-099660d4e0e2",
       "name": "Return Skipped Logistics Specialist"
     }
   ],
+  "pinData": {},
   "connections": {
     "When Executed by Another Workflow": {
       "main": [
@@ -300,11 +301,13 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": true
+    "availableInMCP": false
   },
-  "versionId": "88ea5612-63d5-4054-a2c4-dc846b46db4b",
-  "meta": null,
-  "id": "eapmSJqxssrCsoeP",
+  "versionId": "e87ec94b-3072-44e4-8ef5-f897dbaca466",
+  "meta": {
+    "instanceId": "8bc677fd1231ff1358a755b4c10f0b8279ca0aa59207483c07bca20ef67517a9"
+  },
   "nodeGroups": [],
-  "pinData": {}
+  "id": "EhPMWHNQHVF3HBSD",
+  "tags": []
 }
