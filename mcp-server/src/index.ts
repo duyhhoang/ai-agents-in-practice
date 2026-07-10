@@ -7,7 +7,6 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { closeNeo4jDriver } from "./neo4j-client.js";
 import { initializeEmbeddings } from "./services/embedding.js";
-import { cleanupStuckRunningExecutions } from "./services/execution-logger.js";
 import { registerMcpTools } from "./services/mcp-tools.js";
 import healthRouter from "./routes/health.js";
 import queryRouter from "./routes/query.js";
@@ -52,7 +51,8 @@ if (useStdio) {
   // Start Express HTTP SSE Server
   const app = express();
   app.use(cors({ exposedHeaders: ["mcp-session-id"] }));
-  app.use(express.json());
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
   // Rate Limiting Middleware for MCP Transports (Enhancement #4)
   const mcpRateLimiter = createRateLimiter({
@@ -115,8 +115,8 @@ if (useStdio) {
     console.log(`- REST Ingestion Status endpoint: http://localhost:${PORT}/api/ingestion/status`);
     console.log(`- Multi-Agent Chat endpoint: http://localhost:${PORT}/chat`);
     
-    // Clean up stuck executions and initialize vector embeddings at startup
-    cleanupStuckRunningExecutions().then(() => initializeEmbeddings());
+    // Initialize vector embeddings at startup
+    initializeEmbeddings();
   });
 
   // Graceful shutdown
