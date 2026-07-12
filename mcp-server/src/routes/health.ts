@@ -20,7 +20,7 @@ router.get("/health", async (req, res) => {
   const driver = getNeo4jDriver();
   const session = driver.session();
   try {
-    await session.run("RETURN 1 AS ok");
+    await session.executeRead((tx) => tx.run("RETURN 1 AS ok"));
     health.services.neo4j = { status: "ok", message: "Connected" };
   } catch (err: any) {
     health.services.neo4j = { status: "error", message: err.message };

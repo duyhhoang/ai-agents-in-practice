@@ -46,7 +46,9 @@ export async function getFileStates(): Promise<Map<string, { hash: string; proce
   const session = driver.session();
   const fileStates = new Map<string, { hash: string; processed: boolean }>();
   try {
-    const dbRes = await session.run("MATCH (f:ProcessedFile) RETURN f.name AS name, f.hash AS hash");
+    const dbRes = await session.executeRead((tx) =>
+      tx.run("MATCH (f:ProcessedFile) RETURN f.name AS name, f.hash AS hash")
+    );
     const processedMap = new Map<string, string>();
     dbRes.records.forEach((r) => {
       const name = r.get("name");

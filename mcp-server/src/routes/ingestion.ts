@@ -83,7 +83,9 @@ router.get("/ingestion/status", async (req, res) => {
   const driver = getNeo4jDriver();
   const session = driver.session();
   try {
-    const dbRes = await session.run("MATCH (f:ProcessedFile) RETURN f.name AS name, f.hash AS hash");
+    const dbRes = await session.executeRead((tx) =>
+      tx.run("MATCH (f:ProcessedFile) RETURN f.name AS name, f.hash AS hash")
+    );
     const processedMap = new Map<string, string>();
     const processedHashes = new Set<string>();
     dbRes.records.forEach(r => {

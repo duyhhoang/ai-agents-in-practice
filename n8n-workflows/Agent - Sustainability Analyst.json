@@ -14,6 +14,10 @@
             {
               "name": "selectedAgents",
               "type": "array"
+            },
+            {
+              "name": "sourceChunks",
+              "type": "array"
             }
           ]
         }
@@ -73,7 +77,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const agent = $json.agent || \"sustainability_analyst\";\nconst domain = $json.domain || \"Sustainability Analyst\";\nconst question = $json.question || \"\";\nconst evidenceLabel = $json.evidenceLabel || \"sustainabilityItems\";\nconst evidenceData = $json.evidenceData || [];\nconst rawResult = $json.rawResult || {};\nconst dbSchema = rawResult.schema || \"\";\n\nconst systemPrompt = `\nYou are a Sustainability Analyst Agent for a supply chain knowledge graph.\n\nActive Database Schema:\n${dbSchema || \"No active schema available.\"}\n\nYour job:\n- Analyze sustainability, material, carbon, emissions, recycling, and waste-related graph data.\n- Identify environmental impact patterns, high-carbon areas, recycling opportunities, and material dependencies.\n- Explain the business and ESG impact clearly.\n- Give practical sustainability recommendations.\n- Do not invent facts.\n- If graph data is limited or missing sustainability fields, clearly say that.\n\nReturn ONLY valid JSON.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nSustainability evidence:\n${JSON.stringify(evidenceData, null, 2)}\n\nRaw graph result:\n${JSON.stringify(rawResult, null, 2)}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"keyFindings\": [\"string\"],\n  \"sustainabilityInsights\": [\n    {\n      \"id\": \"string\",\n      \"type\": \"string\",\n      \"name\": \"string\",\n      \"impactArea\": \"carbon | emissions | recycling | waste | material_dependency | unknown\",\n      \"insight\": \"string\"\n    }\n  ],\n  \"environmentalConcerns\": [\n    {\n      \"concern\": \"string\",\n      \"evidence\": \"string\",\n      \"severity\": \"low | medium | high | unknown\"\n    }\n  ],\n  \"recommendations\": [\"string\"],\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      agent,\n      domain,\n      question,\n      evidenceLabel,\n      evidenceData,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.2,\n        max_tokens: 2048,\n      },\n    },\n  },\n];"
+        "jsCode": "const agent = $json.agent || \"sustainability_analyst\";\nconst domain = $json.domain || \"Sustainability Analyst\";\nconst question = $json.question || \"\";\nconst evidenceLabel = $json.evidenceLabel || \"sustainabilityItems\";\nconst evidenceData = $json.evidenceData || [];\nconst rawResult = $json.rawResult || {};\nconst dbSchema = rawResult.schema || \"\";\n\nlet sourceChunks = [];\ntry {\n  sourceChunks = $(\"When Executed by Another Workflow\").first().json.sourceChunks || [];\n} catch (e) {}\n\nconst contextStr = sourceChunks.length > 0\n  ? \"\\n\\nRetrieved Unstructured Document Context:\\n\" + sourceChunks.map(c => \"--- File: \" + (c.documentName || c.filename) + \" ---\\n\" + c.text).join(\"\\n\\n\")\n  : \"\";\n\nconst systemPrompt = `\nYou are a Sustainability Analyst Agent for a supply chain knowledge graph.\n\nActive Database Schema:\n${dbSchema || \"No active schema available.\"}\n\nYour job:\n- Answer sustainability, material, carbon, emissions, recycling, and waste-related questions.\n- Use the provided graph query results and any retrieved unstructured document context.\n- Do not invent missing records or facts.\n- Identify environmental impact patterns, high-carbon areas, recycling opportunities, and material dependencies.\n- Explain the business and ESG impact clearly.\n- Give practical sustainability recommendations.\n- If graph data/RAG is limited or missing sustainability fields, clearly say that.\n\nReturn ONLY valid JSON.\n`;\n\nconst userPrompt = `\nUser question:\n${question}\n\nSustainability evidence:\n${JSON.stringify(evidenceData, null, 2)}\n\nRaw graph result:\n${JSON.stringify(rawResult, null, 2)}${contextStr}\n\nReturn JSON with this exact schema:\n{\n  \"answer\": \"string\",\n  \"keyFindings\": [\"string\"],\n  \"sustainabilityInsights\": [\n    {\n      \"id\": \"string\",\n      \"type\": \"string\",\n      \"name\": \"string\",\n      \"impactArea\": \"carbon | emissions | recycling | waste | material_dependency | unknown\",\n      \"insight\": \"string\"\n    }\n  ],\n  \"environmentalConcerns\": [\n    {\n      \"concern\": \"string\",\n      \"evidence\": \"string\",\n      \"severity\": \"low | medium | high | unknown\"\n    }\n  ],\n  \"recommendations\": [\"string\"],\n  \"confidence\": \"low | medium | high\"\n}\n`;\n\nreturn [\n  {\n    json: {\n      agent,\n      domain,\n      question,\n      evidenceLabel,\n      evidenceData,\n      llmPayload: {\n        model: \"google/gemma-4-31B-it\",\n        messages: [\n          {\n            role: \"system\",\n            content: systemPrompt,\n          },\n          {\n            role: \"user\",\n            content: userPrompt,\n          },\n        ],\n        temperature: 0.2,\n        max_tokens: 2048,\n      },\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -95,7 +99,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ $env.LLM_AUTHORIZATION }}"
+              "value": "=Bearer {{ $env.LLM_AUTHORIZATION }}"
             },
             {
               "name": "Content-type",
