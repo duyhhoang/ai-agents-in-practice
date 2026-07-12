@@ -83,7 +83,7 @@ export default function IngestionView() {
     let interval: NodeJS.Timeout;
     async function fetchProgress() {
       try {
-        const res = await fetch("/api/ingestion/progress");
+        const res = await fetch("/api/ingestion/progress", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           setProgress(data);
@@ -108,7 +108,7 @@ export default function IngestionView() {
   // Load execution history
   async function loadExecutions() {
     try {
-      const res = await fetch("/api/ingestion/executions");
+      const res = await fetch("/api/ingestion/executions", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setExecutions(data);
@@ -123,7 +123,7 @@ export default function IngestionView() {
   // Load file status list
   async function loadFiles() {
     try {
-      const res = await fetch("/api/ingestion/status");
+      const res = await fetch("/api/ingestion/status", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setFiles(data as IngestionFile[]);
