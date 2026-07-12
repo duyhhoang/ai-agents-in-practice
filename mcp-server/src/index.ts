@@ -12,6 +12,8 @@ import healthRouter from "./routes/health.js";
 import queryRouter from "./routes/query.js";
 import ingestionRouter from "./routes/ingestion.js";
 import chatRouter from "./routes/chat.js";
+import { cleanupStuckRunningExecutions } from "./services/execution-logger.js";
+
 
 import { createRateLimiter } from "./services/rate-limiter.js";
 
@@ -117,6 +119,9 @@ if (useStdio) {
     
     // Initialize vector embeddings at startup
     initializeEmbeddings();
+
+    // Clean up stuck running executions
+    cleanupStuckRunningExecutions();
   });
 
   // Graceful shutdown

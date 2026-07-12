@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "jsCode": "const body = $json.body || $json;\n\nconst question =\n  body.message ||\n  body.question ||\n  body.chatInput ||\n  body.prompt ||\n  \"\";\n\nconst sessionId = body.sessionId || \"default-session\";\n\nif (!question || !question.trim()) {\n  return [\n    {\n      json: {\n        error: true,\n        question: \"\",\n        sessionId,\n        answer: \"Please provide a question.\",\n        specialistResults: [],\n        evidenceGraph: {\n          nodes: [],\n          edges: [],\n        },\n      },\n    },\n  ];\n}\n\nreturn [\n  {\n    json: {\n      error: false,\n      question: question.trim(),\n      sessionId,\n      timestamp: new Date().toISOString(),\n    },\n  },\n];"
+        "jsCode": "const body = $json.body || $json;\n\nconst question =\n  body.message ||\n  body.question ||\n  body.chatInput ||\n  body.prompt ||\n  \"\";\n\nconst sessionId = body.sessionId || \"default-session\";\n\nif (!question || !question.trim()) {\n  return [\n    {\n      json: {\n        error: true,\n        question: \"\",\n        sessionId,\n        answer: \"Please provide a question.\",\n        specialistResults: [],\n        evidenceGraph: {\n          nodes: [],\n          edges: [],\n        },\n      },\n    },\n  ];\n}\n\nconst ragLimit = body.ragLimit !== undefined ? Number(body.ragLimit) : 3;\nconst reasoning = body.reasoning || \"low\";\n\nreturn [\n  {\n    json: {\n      error: false,\n      question: question.trim(),\n      sessionId,\n      ragLimit,\n      reasoning,\n      timestamp: new Date().toISOString(),\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -48,9 +48,9 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "YqO2lNIC6VhtBp3M",
+          "value": "9gJZZgqU5nbqAJg4",
           "mode": "list",
-          "cachedResultUrl": "/workflow/YqO2lNIC6VhtBp3M",
+          "cachedResultUrl": "/workflow/9gJZZgqU5nbqAJg4",
           "cachedResultName": "Agent - Risk Analyst"
         },
         "workflowInputs": {
@@ -58,7 +58,8 @@
           "value": {
             "question": "={{ $(\"Normalize Chat Input\").first().json.question }}",
             "sessionId": "={{ $(\"Normalize Chat Input\").first().json.sessionId }}",
-            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}"
+            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}",
+            "sourceChunks": "={{ $(\"Parse RAG Chunks\").first().json.sourceChunks }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -89,6 +90,15 @@
               "canBeUsedToMatch": true,
               "type": "array",
               "removed": false
+            },
+            {
+              "id": "sourceChunks",
+              "displayName": "sourceChunks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
             }
           ],
           "attemptToConvertTypes": false,
@@ -119,7 +129,8 @@
           "value": {
             "question": "={{ $(\"Normalize Chat Input\").first().json.question }}",
             "sessionId": "={{ $(\"Normalize Chat Input\").first().json.sessionId }}",
-            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}"
+            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}",
+            "sourceChunks": "={{ $(\"Parse RAG Chunks\").first().json.sourceChunks }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -150,6 +161,15 @@
               "canBeUsedToMatch": true,
               "type": "array",
               "removed": false
+            },
+            {
+              "id": "sourceChunks",
+              "displayName": "sourceChunks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
             }
           ],
           "attemptToConvertTypes": false,
@@ -170,9 +190,9 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "9hQY7ea2WXMCOlX0",
+          "value": "s8WHnPo7bImcVJJb",
           "mode": "list",
-          "cachedResultUrl": "/workflow/9hQY7ea2WXMCOlX0",
+          "cachedResultUrl": "/workflow/s8WHnPo7bImcVJJb",
           "cachedResultName": "Agent - Sustainability Analyst"
         },
         "workflowInputs": {
@@ -180,7 +200,8 @@
           "value": {
             "sessionId": "={{ $(\"Normalize Chat Input\").first().json.sessionId }}",
             "question": "={{ $(\"Normalize Chat Input\").first().json.question }}",
-            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}"
+            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}",
+            "sourceChunks": "={{ $(\"Parse RAG Chunks\").first().json.sourceChunks }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -213,6 +234,15 @@
               "canBeUsedToMatch": true,
               "type": "array",
               "removed": false
+            },
+            {
+              "id": "sourceChunks",
+              "displayName": "sourceChunks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
             }
           ],
           "attemptToConvertTypes": false,
@@ -233,9 +263,9 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "t4w4uW72UPO4cfVT",
+          "value": "katRgLtpWF3LrCHC",
           "mode": "list",
-          "cachedResultUrl": "/workflow/t4w4uW72UPO4cfVT",
+          "cachedResultUrl": "/workflow/katRgLtpWF3LrCHC",
           "cachedResultName": "Agent - Quality Analyst"
         },
         "workflowInputs": {
@@ -243,7 +273,8 @@
           "value": {
             "question": "={{ $(\"Normalize Chat Input\").first().json.question }}",
             "sessionId": "={{ $(\"Normalize Chat Input\").first().json.sessionId }}",
-            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}"
+            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}",
+            "sourceChunks": "={{ $(\"Parse RAG Chunks\").first().json.sourceChunks }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -274,6 +305,15 @@
               "canBeUsedToMatch": true,
               "type": "array",
               "removed": false
+            },
+            {
+              "id": "sourceChunks",
+              "displayName": "sourceChunks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
             }
           ],
           "attemptToConvertTypes": false,
@@ -294,9 +334,9 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "4hkQcrqyeOKysjuD",
+          "value": "knllbSt9bGgQyQIZ",
           "mode": "list",
-          "cachedResultUrl": "/workflow/4hkQcrqyeOKysjuD",
+          "cachedResultUrl": "/workflow/knllbSt9bGgQyQIZ",
           "cachedResultName": "Agent - Manager"
         },
         "workflowInputs": {
@@ -332,7 +372,8 @@
           "value": {
             "question": "={{ $(\"Normalize Chat Input\").first().json.question }}",
             "sessionId": "={{ $(\"Normalize Chat Input\").first().json.sessionId }}",
-            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}"
+            "selectedAgents": "={{ $(\"Route Question\").first().json.selectedAgents }}",
+            "sourceChunks": "={{ $(\"Parse RAG Chunks\").first().json.sourceChunks }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -365,6 +406,15 @@
               "canBeUsedToMatch": true,
               "type": "array",
               "removed": false
+            },
+            {
+              "id": "sourceChunks",
+              "displayName": "sourceChunks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
             }
           ],
           "attemptToConvertTypes": false,
@@ -431,7 +481,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const embedding = $json.embedding;\nconst embeddingMode = $json.embeddingMode || \"fallback\";\n\nconst chunkQuery = `\n  CALL db.index.vector.queryNodes('chunk_embeddings', 3, $embedding)\n  YIELD node, score\n  RETURN node.file_name AS filename, node.index AS chunk_index, node.text AS content, score\n`;\n\nreturn [{\n  json: {\n    body: {\n      query: chunkQuery,\n      params: {\n        embedding,\n        limit: 3\n      }\n    },\n    embeddingMode\n  }\n}];"
+        "jsCode": "const embedding = $json.embedding;\nconst embeddingMode = $json.embeddingMode || \"fallback\";\n\nlet ragLimit = 3;\ntry {\n  ragLimit = $(\"Normalize Chat Input\").first().json.ragLimit || 3;\n} catch (e) {\n  // ignore\n}\n\nconst chunkQuery = `\n  CALL db.index.vector.queryNodes('chunk_embeddings', $limit, $embedding)\n  YIELD node, score\n  RETURN node.file_name AS filename, node.index AS chunk_index, node.text AS content, score\n`;\n\nreturn [{\n  json: {\n    body: {\n      query: chunkQuery,\n      params: {\n        embedding,\n        limit: ragLimit\n      }\n    },\n    embeddingMode\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

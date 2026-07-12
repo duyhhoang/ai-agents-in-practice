@@ -95,7 +95,7 @@ export async function initializeEmbeddings(targetFiles?: string[]): Promise<void
         \`vector.similarity_function\`: 'cosine'
       }};
     `;
-    await session.run(createFileIndexQuery);
+    await session.executeWrite(tx => tx.run(createFileIndexQuery));
 
     // 2. Create chunk_embeddings index for fine-grained chunk retrieval
     const createChunkIndexQuery = `
@@ -106,14 +106,14 @@ export async function initializeEmbeddings(targetFiles?: string[]): Promise<void
         \`vector.similarity_function\`: 'cosine'
       }};
     `;
-    await session.run(createChunkIndexQuery);
+    await session.executeWrite(tx => tx.run(createChunkIndexQuery));
     console.log("[Embedding Init] Vector indices 'file_embeddings' and 'chunk_embeddings' verified.");
 
     let dbFiles: string[] = [];
     if (targetFiles && targetFiles.length > 0) {
       dbFiles = targetFiles;
     } else {
-      const result = await session.run("MATCH (f:ProcessedFile) WHERE f.embedding IS NULL RETURN f.name AS name");
+      const result = await session.executeRead(tx => tx.run("MATCH (f:ProcessedFile) WHERE f.embedding IS NULL RETURN f.name AS name"));
       dbFiles = result.records.map(r => r.get("name") as string);
       console.log(`[Embedding Init] Found ${dbFiles.length} ProcessedFile nodes missing embeddings in Neo4j.`);
     }
@@ -134,13 +134,13 @@ export async function initializeEmbeddings(targetFiles?: string[]): Promise<void
         const fileEmbedding = await getEmbedding(text);
         
         // Update ProcessedFile node
-        await session.run(
+        await session.executeWrite(tx => tx.run(
           `
           MATCH (f:ProcessedFile {name: $name})
           SET f.embedding = $embedding, f.text = $text
           `,
           { name: fileName, embedding: fileEmbedding, text }
-        );
+        ));
 
         // Generate fine-grained paragraph/section chunks
         const chunks = chunkText(text, 500, 150);
@@ -148,7 +148,7 @@ export async function initializeEmbeddings(targetFiles?: string[]): Promise<void
           const chunkEmbedding = await getEmbedding(chunk.text);
           const chunkId = `${fileName}_chunk_${chunk.index}`;
 
-          await session.run(
+          await session.executeWrite(tx => tx.run(
             `
             MATCH (f:ProcessedFile {name: $fileName})
             MERGE (c:ProcessedChunk {chunk_id: $chunkId})
@@ -165,7 +165,7 @@ export async function initializeEmbeddings(targetFiles?: string[]): Promise<void
               text: chunk.text,
               embedding: chunkEmbedding
             }
-          );
+          ));
           totalChunksCreated++;
         }
 
