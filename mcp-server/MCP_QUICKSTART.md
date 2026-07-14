@@ -86,7 +86,7 @@ To connect this MCP server to Claude Desktop, edit your `claude_desktop_config.j
     "supply-chain-mcp": {
       "command": "node",
       "args": [
-        "c:/Users/hoang/OneDrive - TUM/Uni/26 SS/AI Agents in Practice/mcp-server/dist/index.js",
+        "<absolute_path_to_project_root>/mcp-server/dist/index.js",
         "--stdio"
       ],
       "env": {
@@ -107,7 +107,7 @@ To add the server in Cursor IDE:
 2. Click **+ Add New MCP Server**.
 3. Name: `Supply Chain MCP`
 4. Type: `command`
-5. Command: `node "c:/Users/hoang/OneDrive - TUM/Uni/26 SS/AI Agents in Practice/mcp-server/dist/index.js" --stdio`
+5. Command: `node "<absolute_path_to_project_root>/mcp-server/dist/index.js" --stdio`
 6. Click **Save**.
 
 ### n8n Integration

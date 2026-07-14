@@ -108,13 +108,13 @@ graph TD
 We have refined the generalization features of the platform, transitioning from dynamic schema guessing to a robust hybrid ingestion model and specialized query routing to ensure maximum reliability and speed while supporting domain-agnostic extensions.
 
 ### 🌐 1. Dynamic Neo4j Schema Discovery
-- **Changes**: Added `getDatabaseSchema` in [neo4j-client.ts](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/mcp-server/src/neo4j-client.ts). It queries active node labels, relationship types, and properties at runtime.
-- **Planner Integration**: Integrated dynamic schema discovery into the `Database Specialist` agent prompt in [chat.ts](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/mcp-server/src/routes/chat.ts). The planner generates Cypher queries aligned to the actual database state.
+- **Changes**: Added `getDatabaseSchema` in [neo4j-client.ts](./mcp-server/src/neo4j-client.ts). It queries active node labels, relationship types, and properties at runtime.
+- **Planner Integration**: Integrated dynamic schema discovery into the `Database Specialist` agent prompt in [chat.ts](./mcp-server/src/routes/chat.ts). The planner generates Cypher queries aligned to the actual database state.
 
 ### ⚙️ 2. Schema-Agnostic MCP Tools & Analytics
 - **Changes**:
   - **`subgraph-extract`**: Generalized the ID lookup to handle custom labels by defaulting to `id` or `canonical_id` alongside specific legacy keys.
-  - **`analytics`**: The bottleneck and critical path analyses in [mcp-tools.ts](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/mcp-server/src/services/mcp-tools.ts) discover the start asset label dynamically (by matching the source label of `UNDERGOES` relationships) and process label.
+  - **`analytics`**: The bottleneck and critical path analyses in [mcp-tools.ts](./mcp-server/src/services/mcp-tools.ts) discover the start asset label dynamically (by matching the source label of `UNDERGOES` relationships) and process label.
   - Bottleneck analysis calculates incoming degree centrality dynamically (all incoming relationships on non-file nodes).
 
 ### 📥 3. Optimized Hybrid Ingestion Pipeline (n8n Workflows)
@@ -131,7 +131,7 @@ We have refined the generalization features of the platform, transitioning from 
 
 ### 📊 5. Stable Canonical Frontend Dashboard
 - **Changes**: 
-  - Restructured [DashboardView.tsx](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/frontend/src/components/dashboard/DashboardView.tsx) to run robust, canonical queries targeting master `ChargingStation` nodes and structured `Process` rows from the Neo4j graph.
+  - Restructured [DashboardView.tsx](./frontend/src/components/dashboard/DashboardView.tsx) to run robust, canonical queries targeting master `ChargingStation` nodes and structured `Process` rows from the Neo4j graph.
   - Updated the unit lifecycle tracer to execute a union query that retrieves processes associated with a unit via properties or direct graph relationships (`UNDERGOES`, `FOR_STATION`, `FOR_UNIT`).
   - Generalized property search in the Explorer to execute schema-agnostic node matching (`any(key in keys(n) WHERE toString(n[key]) =~ $searchTerm)`).
-  - Enhanced the chat portal sidebar in [ScalesDashboard.tsx](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/frontend/src/components/scales/ScalesDashboard.tsx) so active specialist cards glow dynamically based on n8n execution response fields. Log history is limited to 80 items with fixed panel heights and auto-scrolling to prevent layout breaking.
+  - Enhanced the chat portal sidebar in [ScalesDashboard.tsx](./frontend/src/components/scales/ScalesDashboard.tsx) so active specialist cards glow dynamically based on n8n execution response fields. Log history is limited to 80 items with fixed panel heights and auto-scrolling to prevent layout breaking.

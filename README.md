@@ -82,5 +82,5 @@ node node_modules/next/dist/bin/next dev
 ## 📚 Essential Reading
 
 To understand the codebase in detail, prepare for university evaluations, and see system execution records, read these files in order:
-1. **[PROJECT_DOCUMENTATION.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/PROJECT_DOCUMENTATION.md)**: Explains the GraphRAG pipeline, data structure, double-LLM resolution logic, local fallback unit vector math, and lists **high-yield exam prep Q&As**.
-2. **[walkthrough.md](file:///c:/Users/hoang/OneDrive%20-%20TUM/Uni/26%20SS/AI%20Agents%20in%20Practice/walkthrough.md)**: Displays browser screens and video recordings verifying that chat queries retrieve GraphRAG data and render interactive Cytoscape network diagrams.
+1. **[PROJECT_DOCUMENTATION.md](./PROJECT_DOCUMENTATION.md)**: Explains the GraphRAG pipeline, data structure, double-LLM resolution logic, local fallback unit vector math, and lists **high-yield exam prep Q&As**.
+2. **[walkthrough.md](./walkthrough.md)**: Displays browser screens and video recordings verifying that chat queries retrieve GraphRAG data and render interactive Cytoscape network diagrams.
