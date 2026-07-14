@@ -289,10 +289,28 @@ export function registerMcpTools(mcpServer: Server): void {
             console.warn("Dynamic label discovery failed, defaulting to ChargingStation/Process:", e);
           }
 
+          // Retrieve target labels dynamically, excluding file/chunk system labels
+          let targetLabels: string[] = [];
+          try {
+            const labelsRes = await session.executeRead(tx => tx.run("CALL db.labels() YIELD label RETURN label"));
+            targetLabels = labelsRes.records
+              .map(r => r.get("label") as string)
+              .filter(l => l !== "ProcessedFile" && l !== "ProcessedChunk" && l !== "IngestionExecution");
+          } catch (e) {
+            console.warn("Failed to retrieve labels for analytics:", e);
+          }
+
+          let subquery = "MATCH (n) WHERE NOT n:ProcessedFile AND NOT n:ProcessedChunk AND NOT n:IngestionExecution RETURN n";
+          if (targetLabels.length > 0) {
+            subquery = targetLabels.map(lbl => `MATCH (n:${lbl}) RETURN n`).join("\nUNION\n");
+          }
+
           if (type === "bottleneck_analysis") {
             const query = `
-              MATCH (n)
-              WHERE NOT n:ProcessedFile AND NOT n:ProcessedChunk
+              CALL {
+                ${subquery}
+              }
+              WITH n
               OPTIONAL MATCH (cs:${startLabel})-[:UNDERGOES]->(n)
               WITH n, cs, COUNT { (n)<-[]-() } AS dependency_count
               WHERE dependency_count > 0
@@ -348,8 +366,10 @@ export function registerMcpTools(mcpServer: Server): void {
           
           else {
             const query = `
-              MATCH (n)
-              WHERE NOT n:ProcessedFile AND NOT n:ProcessedChunk
+              CALL {
+                ${subquery}
+              }
+              WITH n
               OPTIONAL MATCH (cs:${startLabel})-[:UNDERGOES]->(n)
               WITH n, cs, COUNT { (n)-[]-() } AS degree
               RETURN 
@@ -421,13 +441,22 @@ export function registerMcpTools(mcpServer: Server): void {
       else if (name === "schema-inspect") {
         const session = driver.session();
         try {
-          const labelsRes = await session.executeRead(tx => tx.run("CALL db.labels() YIELD label RETURN label"));
-          const relsRes = await session.executeRead(tx => tx.run("CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType"));
-          const propsRes = await session.executeRead(tx => tx.run("CALL db.propertyKeys() YIELD propertyKey RETURN propertyKey"));
-          
-          const labels = labelsRes.records.map(r => r.get("label"));
-          const relationshipTypes = relsRes.records.map(r => r.get("relationshipType"));
-          const propertyKeys = propsRes.records.map(r => r.get("propertyKey"));
+          const res = await session.executeRead(tx => tx.run(`
+            CALL db.labels() YIELD label WITH collect(label) AS labels
+            CALL db.relationshipTypes() YIELD relationshipType WITH labels, collect(relationshipType) AS relationshipTypes
+            CALL db.propertyKeys() YIELD propertyKey RETURN labels, relationshipTypes, collect(propertyKey) AS propertyKeys
+          `));
+
+          let labels: string[] = [];
+          let relationshipTypes: string[] = [];
+          let propertyKeys: string[] = [];
+
+          if (res.records.length > 0) {
+            const rec = res.records[0];
+            labels = rec.get("labels") || [];
+            relationshipTypes = rec.get("relationshipTypes") || [];
+            propertyKeys = rec.get("propertyKeys") || [];
+          }
 
           return {
             content: [{

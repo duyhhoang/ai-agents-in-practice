@@ -144,10 +144,22 @@ export async function initializeEmbeddings(targetFiles?: string[]): Promise<void
 
         // Generate fine-grained paragraph/section chunks
         const chunks = chunkText(text, 500, 150);
-        for (const chunk of chunks) {
-          const chunkEmbedding = await getEmbedding(chunk.text);
-          const chunkId = `${fileName}_chunk_${chunk.index}`;
+        
+        // Calculate all chunk embeddings in parallel batches of 5 (reduces HTTP wait times by 80%)
+        const chunksWithEmbeddings: Array<{ chunk: any, embedding: number[] }> = [];
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+          const batch = chunks.slice(i, i + BATCH_SIZE);
+          const batchResults = await Promise.all(batch.map(async (chunk) => {
+            const embedding = await getEmbedding(chunk.text);
+            return { chunk, embedding };
+          }));
+          chunksWithEmbeddings.push(...batchResults);
+        }
 
+        // Write chunk data to Neo4j sequentially using the single session
+        for (const item of chunksWithEmbeddings) {
+          const chunkId = `${fileName}_chunk_${item.chunk.index}`;
           await session.executeWrite(tx => tx.run(
             `
             MATCH (f:ProcessedFile {name: $fileName})
@@ -161,9 +173,9 @@ export async function initializeEmbeddings(targetFiles?: string[]): Promise<void
             {
               fileName,
               chunkId,
-              index: chunk.index,
-              text: chunk.text,
-              embedding: chunkEmbedding
+              index: item.chunk.index,
+              text: item.chunk.text,
+              embedding: item.embedding
             }
           ));
           totalChunksCreated++;
