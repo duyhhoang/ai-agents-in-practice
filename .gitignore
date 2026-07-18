@@ -98,4 +98,13 @@ frontend/.env
 
 # 11. Custom Local Scratch / Data Directory Ignores
 data-processors/*.json
+data-processors/workflows/
 scratch/
+
+
+ARCHITECTURE_DIAGRAM.md
+ARCHITECTURE_DIAGRAM_SIMPLE.md
+PRESENTATION_DIAGRAMS.md
+PRESENTATION_PACK.md
+PROJECT_DOCUMENTATION.md
+ROADMAP.md
