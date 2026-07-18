@@ -135,3 +135,22 @@ We have refined the generalization features of the platform, transitioning from 
   - Updated the unit lifecycle tracer to execute a union query that retrieves processes associated with a unit via properties or direct graph relationships (`UNDERGOES`, `FOR_STATION`, `FOR_UNIT`).
   - Generalized property search in the Explorer to execute schema-agnostic node matching (`any(key in keys(n) WHERE toString(n[key]) =~ $searchTerm)`).
   - Enhanced the chat portal sidebar in [ScalesDashboard.tsx](./frontend/src/components/scales/ScalesDashboard.tsx) so active specialist cards glow dynamically based on n8n execution response fields. Log history is limited to 80 items with fixed panel heights and auto-scrolling to prevent layout breaking.
+
+---
+
+## 5. Phase 7: Evaluation of Parallel Specialist Agent Execution in n8n
+
+We evaluated and implemented parallel sub-workflow execution in the n8n Chat Orchestrator to see if it reduces response latency, and analyzed its effects.
+
+### 🌐 1. Architectural & Dependency Audit
+- **Analysis**: Verified that all 5 specialist agent sub-workflows in n8n are completely decoupled and independent. They only require inputs from the initial chat normalization/triage and vector search stages. None of the agents consume output from other agents.
+- **n8n Connection Mapping**: Connecting the 5 sub-workflow execution nodes in parallel branches (from `Route Question`) and joining them at a `Merge` node (mode: `append`, 5 inputs) before `Combine Specialist Results` is structurally clean and mathematically valid.
+
+### 📊 2. Concurrency Performance Discovery
+- **Behavior**: Testing the parallelized workflow showed that **n8n serializes parallel execution branches**.
+- **Explanation**: In n8n's execution model (single-threaded Node.js event loop), when a node has multiple outgoing connections, n8n queues the execution of each downstream branch one-by-one. Since the sub-workflow nodes (`executeWorkflow`) run synchronously and block until the sub-workflow completes, the branches are processed sequentially in a blocking manner (e.g. Logistics Analyst completes in 9s -> Sustainability Analyst starts and runs for 37s -> Quality Analyst starts and runs for 39s).
+- **Latency Outcome**: There is no parallel processing or speedup achieved by laying out the branches in parallel on the canvas. The total latency remains the sum of the active agent durations.
+
+### 🔄 3. Preservation of Clean Layout (Reversion to Sequential)
+- **Decision**: Because parallel routing on the canvas provides no latency benefits but introduces canvas complexity (an additional Merge node and a complex "spiderweb" of connections), we successfully **reverted the workflow to its original, clean, sequential daisy-chained layout**.
+- **Verification**: Verified that the reverted sequential workflow functions perfectly and matches the production state, preserving the simple, maintainable structure without breaking any features.

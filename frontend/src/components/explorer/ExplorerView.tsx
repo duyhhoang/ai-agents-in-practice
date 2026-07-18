@@ -15,12 +15,60 @@ import {
   BoxSelect,
   ChevronLeft,
   ChevronRight,
-  Sliders
+  Sliders,
+  Table
 } from "lucide-react";
 import CytoscapeGraph from "../graph/CytoscapeGraph";
 import clsx from "clsx";
 
 import type { EvidenceNode, EvidenceEdge, EvidenceGraph } from "@/types/evidence";
+
+function renderCellContent(val: any) {
+  if (val === null || val === undefined) {
+    return <span className="text-slate-300 font-sans select-none">—</span>;
+  }
+  if (Array.isArray(val)) {
+    return (
+      <div className="flex flex-wrap gap-1 max-w-[280px]">
+        {val.map((item, i) => (
+          <span
+            key={i}
+            className="inline-block bg-slate-100 border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-sans font-medium whitespace-nowrap"
+          >
+            {String(item)}
+          </span>
+        ))}
+      </div>
+    );
+  }
+  if (typeof val === "object") {
+    return (
+      <div className="flex flex-col gap-1 max-w-xs overflow-y-auto max-h-24 pr-1 font-sans text-[10px]">
+        {Object.entries(val).map(([k, v]) => {
+          let strVal = "";
+          if (v === null || v === undefined) strVal = "—";
+          else if (typeof v === "object") strVal = JSON.stringify(v);
+          else strVal = String(v);
+          return (
+            <div key={k} className="flex items-start gap-1 leading-normal border-b border-slate-50 pb-0.5 last:border-0 last:pb-0">
+              <span className="text-[#0065bd] font-bold uppercase text-[9px] select-none shrink-0 tracking-wider mt-0.5">{k}:</span>
+              <span className="text-slate-700 break-all font-mono font-medium">{strVal}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+  const str = String(val);
+  if (str.length > 80) {
+    return (
+      <span className="block break-words max-w-xs font-mono font-medium" title={str}>
+        {str}
+      </span>
+    );
+  }
+  return <span className="text-slate-800 break-words font-mono font-medium">{str}</span>;
+}
 
 type ExplorerViewProps = {
   isActive?: boolean;
@@ -39,6 +87,69 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
     "MATCH (n) WHERE NOT n:ProcessedFile OPTIONAL MATCH (n)-[r]-(m) WHERE NOT m:ProcessedFile RETURN n, r, m LIMIT 80"
   );
   const [cypherError, setCypherError] = useState("");
+  
+  // Tabular query results and view mode states
+  const [rawQueryResults, setRawQueryResults] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<"graph" | "table">("graph");
+
+  // Dynamically extract unique column headers from raw query results
+  const tableColumns = useMemo(() => {
+    if (!rawQueryResults || rawQueryResults.length === 0) return [];
+    const cols = new Set<string>();
+    rawQueryResults.forEach((row) => {
+      if (row && typeof row === "object") {
+        Object.keys(row).forEach((k) => cols.add(k));
+      }
+    });
+    return Array.from(cols);
+  }, [rawQueryResults]);
+
+  // Heuristically calculate the CSS classes for each column's width
+  const columnWidthStyles = useMemo(() => {
+    const styles: Record<string, string> = {};
+    if (!rawQueryResults || rawQueryResults.length === 0) return styles;
+
+    tableColumns.forEach((col) => {
+      let hasObject = false;
+      let hasArray = false;
+      let maxStrLength = col.length;
+
+      // Sample first 10 rows
+      const sampleSize = Math.min(rawQueryResults.length, 10);
+      for (let i = 0; i < sampleSize; i++) {
+        const val = rawQueryResults[i][col];
+        if (val !== null && val !== undefined) {
+          if (Array.isArray(val)) {
+            hasArray = true;
+            maxStrLength = Math.max(maxStrLength, val.join(", ").length);
+          } else if (typeof val === "object") {
+            hasObject = true;
+          } else {
+            maxStrLength = Math.max(maxStrLength, String(val).length);
+          }
+        }
+      }
+
+      if (hasObject) {
+        // Nested properties/objects need significant width
+        styles[col] = "w-[300px] min-w-[280px]";
+      } else if (hasArray) {
+        // Arrays of tags need medium-to-wide spacing
+        styles[col] = "w-[240px] min-w-[200px]";
+      } else if (maxStrLength < 12) {
+        // Very short columns (like IDs, types, roles, numbers) should be narrow and not stretch
+        styles[col] = "w-[120px] min-w-[100px] max-w-[150px]";
+      } else if (maxStrLength < 30) {
+        // Medium text (like names, routes, status)
+        styles[col] = "w-[180px] min-w-[160px]";
+      } else {
+        // Long description text
+        styles[col] = "w-[260px] min-w-[220px]";
+      }
+    });
+
+    return styles;
+  }, [rawQueryResults, tableColumns]);
   
   // Guided search parameters (Data-Agnostic)
   const [dbLabels, setDbLabels] = useState<string[]>([]);
@@ -119,6 +230,372 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
       }
     }
 
+    function tryExtractTabular(val: any): boolean {
+      if (!val || typeof val !== "object" || Array.isArray(val)) return false;
+      
+      // Pattern 1: Sustainability / Risk / Quality analyst query output
+      // item_id, item_type, item_name, properties, relationship, connected_labels, connected_entity
+      if (val.item_id && val.item_type) {
+        const mainId = String(val.item_id);
+        const mainType = String(val.item_type);
+        const mainName = String(val.item_name || val.item_id);
+        const mainProps = val.properties && typeof val.properties === "object" ? val.properties : {};
+        
+        nodesMap.set(mainId, {
+          id: mainId,
+          label: mainType,
+          name: mainName,
+          type: mainType,
+          properties: mainProps
+        });
+        
+        if (val.connected_entity) {
+          const connId = String(val.connected_entity);
+          const connType = (Array.isArray(val.connected_labels) ? val.connected_labels[0] : val.connected_labels) || "Entity";
+          const connName = connId;
+          
+          if (!nodesMap.has(connId)) {
+            nodesMap.set(connId, {
+              id: connId,
+              label: String(connType),
+              name: connName,
+              type: String(connType),
+              properties: {}
+            });
+          }
+          
+          if (val.relationship) {
+            const edgeType = String(val.relationship);
+            const edgeId = `${mainId}-${edgeType}-${connId}`;
+            edgesMap.set(edgeId, {
+              id: edgeId,
+              source: mainId,
+              target: connId,
+              type: edgeType,
+              properties: {}
+            });
+          }
+        }
+        return true;
+      }
+      
+      // Pattern 2: Purchase Order (Procurement)
+      if (val.po_number) {
+        const poId = String(val.po_number);
+        const poType = "PurchaseOrder";
+        const poName = `PO ${poId}`;
+        
+        const poProps: Record<string, any> = {};
+        Object.entries(val).forEach(([k, v]) => {
+          if (!["vendor_id", "vendor_name", "material_id", "material_description"].includes(k)) {
+            poProps[k] = v;
+          }
+        });
+        
+        nodesMap.set(poId, {
+          id: poId,
+          label: poType,
+          name: poName,
+          type: poType,
+          properties: poProps
+        });
+        
+        if (val.vendor_id) {
+          const vId = String(val.vendor_id);
+          const vName = String(val.vendor_name || val.vendor_id);
+          if (!nodesMap.has(vId)) {
+            nodesMap.set(vId, {
+              id: vId,
+              label: "Actor",
+              name: vName,
+              type: "Actor",
+              properties: {}
+            });
+          }
+          const edgeId = `${poId}-ORDERED_FROM-${vId}`;
+          edgesMap.set(edgeId, {
+            id: edgeId,
+            source: poId,
+            target: vId,
+            type: "ORDERED_FROM",
+            properties: {}
+          });
+        }
+        
+        if (val.material_id) {
+          const mId = String(val.material_id);
+          const mName = String(val.material_description || val.material_id);
+          if (!nodesMap.has(mId)) {
+            nodesMap.set(mId, {
+              id: mId,
+              label: "Material",
+              name: mName,
+              type: "Material",
+              properties: {}
+            });
+          }
+          const edgeId = `${poId}-ORDERS_MATERIAL-${mId}`;
+          edgesMap.set(edgeId, {
+            id: edgeId,
+            source: poId,
+            target: mId,
+            type: "ORDERS_MATERIAL",
+            properties: {}
+          });
+        }
+        return true;
+      }
+
+      // Pattern 3: Inventory Snapshot (Procurement)
+      if (val.material_id && val.storage_location) {
+        const mId = String(val.material_id);
+        const mName = String(val.material_description || val.material_id);
+        
+        if (!nodesMap.has(mId)) {
+          nodesMap.set(mId, {
+            id: mId,
+            label: "Material",
+            name: mName,
+            type: "Material",
+            properties: {
+              storage_location: val.storage_location,
+              stock_qty: val.stock_qty,
+              uom: val.uom,
+              total_stock_value_eur: val.total_stock_value_eur,
+              stock_status: val.stock_status,
+              snapshot_date: val.snapshot_date
+            }
+          });
+        }
+        
+        if (val.primary_vendor) {
+          const vId = String(val.primary_vendor);
+          if (!nodesMap.has(vId)) {
+            nodesMap.set(vId, {
+              id: vId,
+              label: "Actor",
+              name: vId,
+              type: "Actor",
+              properties: {}
+            });
+          }
+          const edgeId = `${mId}-PRIMARY_VENDOR-${vId}`;
+          edgesMap.set(edgeId, {
+            id: edgeId,
+            source: mId,
+            target: vId,
+            type: "PRIMARY_VENDOR",
+            properties: {}
+          });
+        }
+        return true;
+      }
+
+      // Pattern 4: Supplier / Actor (Procurement)
+      if (val.supplier_id) {
+        const sId = String(val.supplier_id);
+        const sName = String(val.supplier_name || val.supplier_id);
+        
+        nodesMap.set(sId, {
+          id: sId,
+          label: "Actor",
+          name: sName,
+          type: "Actor",
+          properties: {
+            region: val.region,
+            actor_role: val.actor_role
+          }
+        });
+        
+        if (val.connected_entity) {
+          const connId = String(val.connected_entity);
+          const connType = (Array.isArray(val.connected_labels) ? val.connected_labels[0] : val.connected_labels) || "Entity";
+          const connName = connId;
+          
+          if (!nodesMap.has(connId)) {
+            nodesMap.set(connId, {
+              id: connId,
+              label: String(connType),
+              name: connName,
+              type: String(connType),
+              properties: val.connected_properties || {}
+            });
+          }
+          
+          if (val.relationship) {
+            const edgeType = String(val.relationship);
+            const edgeId = `${sId}-${edgeType}-${connId}`;
+            edgesMap.set(edgeId, {
+              id: edgeId,
+              source: sId,
+              target: connId,
+              type: edgeType,
+              properties: {}
+            });
+          }
+        }
+        return true;
+      }
+
+      // Pattern 5: Transport (Logistics)
+      if (val.transport_id) {
+        const tId = String(val.transport_id);
+        const tType = "Transport";
+        const tName = `Transport ${tId}`;
+        
+        nodesMap.set(tId, {
+          id: tId,
+          label: tType,
+          name: tName,
+          type: tType,
+          properties: val
+        });
+        
+        if (val.unit_id) {
+          const uId = String(val.unit_id);
+          if (!nodesMap.has(uId)) {
+            nodesMap.set(uId, {
+              id: uId,
+              label: "ChargingStation",
+              name: `Station ${uId}`,
+              type: "ChargingStation",
+              properties: {
+                country: val.country_code,
+                site: val.site
+              }
+            });
+          }
+          const edgeId = `${tId}-FOR_UNIT-${uId}`;
+          edgesMap.set(edgeId, {
+            id: edgeId,
+            source: tId,
+            target: uId,
+            type: "FOR_UNIT",
+            properties: {}
+          });
+        }
+        return true;
+      }
+
+      // Pattern 6: Charging Station (Logistics)
+      if (val.unit_id) {
+        const uId = String(val.unit_id);
+        const uName = String(val.serial_number || `Station ${uId}`);
+        
+        nodesMap.set(uId, {
+          id: uId,
+          label: "ChargingStation",
+          name: uName,
+          type: "ChargingStation",
+          properties: val
+        });
+        
+        if (val.site) {
+          const sId = String(val.site);
+          if (!nodesMap.has(sId)) {
+            nodesMap.set(sId, {
+              id: sId,
+              label: "Location",
+              name: `Site ${sId}`,
+              type: "Location",
+              properties: {
+                country: val.country_code
+              }
+            });
+          }
+          const edgeId = `${uId}-LOCATED_IN-${sId}`;
+          edgesMap.set(edgeId, {
+            id: edgeId,
+            source: uId,
+            target: sId,
+            type: "LOCATED_IN",
+            properties: {}
+          });
+        }
+        return true;
+      }
+
+      // Pattern 7: Location / Aggregation by country_code (Logistics)
+      if (val.country_code && (val.station_count !== undefined || val.site_count !== undefined)) {
+        const locId = String(val.country_code);
+        nodesMap.set(locId, {
+          id: locId,
+          label: "Location",
+          name: `Country ${locId}`,
+          type: "Location",
+          properties: {
+            station_count: val.station_count,
+            site_count: val.site_count
+          }
+        });
+        
+        if (Array.isArray(val.station_ids)) {
+          val.station_ids.forEach((stId: any) => {
+            const stIdStr = String(stId);
+            if (!nodesMap.has(stIdStr)) {
+              nodesMap.set(stIdStr, {
+                id: stIdStr,
+                label: "ChargingStation",
+                name: `Station ${stIdStr}`,
+                type: "ChargingStation",
+                properties: {}
+              });
+            }
+            const edgeId = `${stIdStr}-LOCATED_IN-${locId}`;
+            edgesMap.set(edgeId, {
+              id: edgeId,
+              source: stIdStr,
+              target: locId,
+              type: "LOCATED_IN",
+              properties: {}
+            });
+          });
+        }
+        return true;
+      }
+
+      // Pattern 8: Generic location aggregation/site (Logistics)
+      if (val.site && (val.station_count !== undefined || val.station_ids)) {
+        const sId = String(val.site);
+        nodesMap.set(sId, {
+          id: sId,
+          label: "Location",
+          name: `Site ${sId}`,
+          type: "Location",
+          properties: {
+            country_code: val.country_code,
+            station_count: val.station_count
+          }
+        });
+        
+        if (Array.isArray(val.station_ids)) {
+          val.station_ids.forEach((stId: any) => {
+            const stIdStr = String(stId);
+            if (!nodesMap.has(stIdStr)) {
+              nodesMap.set(stIdStr, {
+                id: stIdStr,
+                label: "ChargingStation",
+                name: `Station ${stIdStr}`,
+                type: "ChargingStation",
+                properties: {}
+              });
+            }
+            const edgeId = `${stIdStr}-LOCATED_IN-${sId}`;
+            edgesMap.set(edgeId, {
+              id: edgeId,
+              source: stIdStr,
+              target: sId,
+              type: "LOCATED_IN",
+              properties: {}
+            });
+          });
+        }
+        return true;
+      }
+      
+      return false;
+    }
+
     function traverse(val: any) {
       if (!val) return;
       if (isNode(val)) {
@@ -128,7 +605,11 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
       } else if (Array.isArray(val)) {
         val.forEach(traverse);
       } else if (typeof val === "object") {
-        Object.values(val).forEach(traverse);
+        if (tryExtractTabular(val)) {
+          Object.values(val).forEach(traverse);
+        } else {
+          Object.values(val).forEach(traverse);
+        }
       }
     }
 
@@ -192,16 +673,29 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
         if (data.results) {
           const parsed = parseNeo4jRecords(data.results);
           setGraph(parsed);
+          setRawQueryResults(data.results);
+          
+          // Smart view auto-switching:
+          // If the parsed graph has no nodes but raw query results were returned,
+          // automatically switch to Table view. Otherwise, default to Graph canvas.
+          if (parsed.nodes.length === 0 && data.results.length > 0) {
+            setViewMode("table");
+          } else {
+            setViewMode("graph");
+          }
         } else if (data.error) {
           setCypherError(data.error);
+          setRawQueryResults([]);
         }
       } else {
         const data = await res.json().catch(() => null);
         setCypherError(data?.error || data?.details || `HTTP error ${res.status}`);
+        setRawQueryResults([]);
       }
     } catch (err: any) {
       console.error("Failed to run Cypher:", err);
       setCypherError(err.message || "Connection error.");
+      setRawQueryResults([]);
     } finally {
       setLoading(false);
     }
@@ -585,92 +1079,189 @@ export default function ExplorerView({ isActive = true }: ExplorerViewProps) {
         {/* Center: Graph Canvas */}
         <div className="flex-1 relative h-full bg-slate-100 flex flex-col min-w-0">
           {/* Top Canvas Toolbar (Layout & Mouse Selection Controls) */}
-          <div className="shrink-0 flex items-center justify-between bg-white border-b border-slate-200 p-2.5 px-4 z-20">
-            {/* Interactive Layout Selection */}
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Layout:</span>
-              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
+          <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 bg-white border-b border-slate-200 p-2.5 px-4 z-20">
+            {/* View Mode selection */}
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 p-0.5 rounded-lg">
+              <span className="hidden md:inline text-[9px] font-bold uppercase tracking-wider text-slate-400 pl-2 pr-1">View:</span>
+              <div className="flex text-[11px] font-bold">
                 <button
-                  onClick={() => setLayoutName("organic")}
-                  className={`px-3 py-1 rounded-md transition ${
-                    layoutName === "organic" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                  type="button"
+                  onClick={() => setViewMode("graph")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                    viewMode === "graph" ? "bg-white text-[#0065bd] shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-800"
                   }`}
-                  title="Force-directed organic cose layout"
+                  title="Visualize results as a graph node-link canvas"
                 >
-                  Organic
+                  <Network size={11} className="shrink-0" />
+                  <span>Graph</span>
                 </button>
                 <button
-                  onClick={() => setLayoutName("directed")}
-                  className={`px-3 py-1 rounded-md transition ${
-                    layoutName === "directed" ? "bg-white text-[#0065bd] shadow-sm" : "text-slate-500 hover:text-[#0065bd]"
+                  type="button"
+                  onClick={() => setViewMode("table")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                    viewMode === "table" ? "bg-white text-[#0065bd] shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-800"
                   }`}
-                  title="Directed hierarchical layout (top-down)"
+                  title="Visualize results in a tabular format"
                 >
-                  Top-Down
-                </button>
-                <button
-                  onClick={() => setLayoutName("circle")}
-                  className={`px-3 py-1 rounded-md transition ${
-                    layoutName === "circle" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"
-                  }`}
-                  title="Circular nodes layout"
-                >
-                  Circular
+                  <Table size={11} className="shrink-0" />
+                  <span>Table ({rawQueryResults.length})</span>
                 </button>
               </div>
             </div>
 
-            {/* Mouse Selection Tools */}
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Interaction Tool:</span>
-              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
-                <button
-                  onClick={() => setMouseMode("pan")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition ${
-                    mouseMode === "pan" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"
-                  }`}
-                  title="Drag on canvas to pan, drag on node to move"
-                >
-                  <Pointer size={11} />
-                  <span>Pan & Move</span>
-                </button>
-                <button
-                  onClick={() => setMouseMode("select")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition ${
-                    mouseMode === "select" ? "bg-white text-[#0065bd] shadow-sm" : "text-slate-500 hover:text-[#0065bd]"
-                  }`}
-                  title="Drag on background to draw selection marquee"
-                >
-                  <BoxSelect size={11} />
-                  <span>Box Select</span>
-                </button>
+            {viewMode === "graph" ? (
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Interactive Layout Selection */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 p-0.5 rounded-lg">
+                  <span className="hidden md:inline text-[9px] font-bold uppercase tracking-wider text-slate-400 pl-2 pr-1">Layout:</span>
+                  <div className="flex text-[11px] font-bold">
+                    <button
+                      onClick={() => setLayoutName("organic")}
+                      className={`px-2.5 py-1 rounded-md transition ${
+                        layoutName === "organic" ? "bg-white text-slate-800 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                      title="Force-directed organic cose layout"
+                    >
+                      Organic
+                    </button>
+                    <button
+                      onClick={() => setLayoutName("directed")}
+                      className={`px-2.5 py-1 rounded-md transition ${
+                        layoutName === "directed" ? "bg-white text-[#0065bd] shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-[#0065bd]"
+                      }`}
+                      title="Directed hierarchical layout (top-down)"
+                    >
+                      Top-Down
+                    </button>
+                    <button
+                      onClick={() => setLayoutName("circle")}
+                      className={`px-2.5 py-1 rounded-md transition ${
+                        layoutName === "circle" ? "bg-white text-slate-800 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                      title="Circular nodes layout"
+                    >
+                      Circular
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mouse Selection Tools */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 p-0.5 rounded-lg">
+                  <span className="hidden md:inline text-[9px] font-bold uppercase tracking-wider text-slate-400 pl-2 pr-1">Tool:</span>
+                  <div className="flex text-[11px] font-bold">
+                    <button
+                      onClick={() => setMouseMode("pan")}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                        mouseMode === "pan" ? "bg-white text-slate-800 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                      title="Drag on canvas to pan, drag on node to move"
+                    >
+                      <Pointer size={11} className="shrink-0" />
+                      <span>Pan & Move</span>
+                    </button>
+                    <button
+                      onClick={() => setMouseMode("select")}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                        mouseMode === "select" ? "bg-white text-[#0065bd] shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-[#0065bd]"
+                      }`}
+                      title="Drag on background to draw selection marquee"
+                    >
+                      <BoxSelect size={11} className="shrink-0" />
+                      <span>Box Select</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <span className="bg-[#0065bd]/10 text-[#0065bd] border border-[#0065bd]/20 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                Tabular Results
+              </span>
+            )}
           </div>
 
           {/* Legend and stats panel overlay */}
-          <div className="absolute left-4 top-14 z-20 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-md pointer-events-auto flex flex-col gap-2 max-w-[240px]">
-            <div className="border-b border-slate-100 pb-1.5">
-              <h3 className="text-[9px] uppercase tracking-wider font-bold text-[#0065bd]">Graph Summary</h3>
-              <p className="text-xs text-slate-700 font-mono mt-0.5 font-bold">
-                {loading ? "Refreshing..." : `${filteredGraph.nodes.length} nodes · ${filteredGraph.edges.length} relationships`}
-              </p>
+          {viewMode === "graph" && (
+            <div className="absolute left-4 top-14 z-20 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-md pointer-events-auto flex flex-col gap-2 max-w-[240px]">
+              <div className="border-b border-slate-100 pb-1.5">
+                <h3 className="text-[9px] uppercase tracking-wider font-bold text-[#0065bd]">Graph Summary</h3>
+                <p className="text-xs text-slate-700 font-mono mt-0.5 font-bold">
+                  {loading ? "Refreshing..." : `${filteredGraph.nodes.length} nodes · ${filteredGraph.edges.length} relationships`}
+                </p>
+              </div>
+              <div className="text-[10px] text-slate-500 font-sans leading-normal">
+                {mouseMode === "pan" 
+                  ? "Drag canvas to pan. Drag nodes to move. Click to inspect."
+                  : "Drag cursor to draw a box and select multiple nodes simultaneously."}
+              </div>
             </div>
-            <div className="text-[10px] text-slate-500 font-sans leading-normal">
-              {mouseMode === "pan" 
-                ? "Drag canvas to pan. Drag nodes to move. Click to inspect."
-                : "Drag cursor to draw a box and select multiple nodes simultaneously."}
-            </div>
-          </div>
+          )}
 
-          {/* Cytoscape view canvas */}
+          {/* Cytoscape view canvas / Table View */}
           <div className="flex-1 min-h-0 w-full relative">
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center font-mono text-xs text-slate-400 bg-slate-50/70 z-10">
                 <div className="flex items-center gap-2 bg-white px-4 py-3 rounded-lg border border-slate-200 shadow-sm">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0065bd] border-t-transparent" />
-                  <span>Querying database: rendering graph...</span>
+                  <span>Querying database: fetching results...</span>
                 </div>
+              </div>
+            ) : viewMode === "table" ? (
+              <div 
+                className="h-full w-full overflow-auto bg-slate-50 p-6"
+                style={{ scrollbarWidth: "auto", scrollbarColor: "#cbd5e1 transparent" }}
+              >
+                {rawQueryResults.length === 0 ? (
+                  <div className="h-full w-full flex items-center justify-center px-6 text-center">
+                    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <p className="text-sm font-bold text-slate-800">No records found.</p>
+                      <p className="mt-1 text-xs text-slate-500 leading-normal max-w-xs font-sans">
+                        Run a guided search or Cypher query to retrieve and view data in this table.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="min-w-full inline-block align-middle">
+                    <div className="overflow-hidden border border-slate-200 rounded-xl bg-white shadow-sm max-h-[calc(100vh-220px)] overflow-y-auto overflow-x-auto relative">
+                      <table className="min-w-full border-separate border-spacing-0 text-left text-xs text-slate-700">
+                        <thead>
+                          <tr>
+                            {tableColumns.map((col) => (
+                              <th 
+                                key={col} 
+                                className={clsx(
+                                  "sticky top-0 bg-slate-50 text-slate-800 font-bold uppercase tracking-wider text-[10px] px-4 py-3 font-semibold border-b border-slate-200 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]",
+                                  columnWidthStyles[col]
+                                )}
+                              >
+                                {col}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                          {rawQueryResults.map((row, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
+                              {tableColumns.map((col) => {
+                                const val = row[col];
+                                return (
+                                  <td 
+                                    key={col} 
+                                    className={clsx(
+                                      "px-4 py-3 align-top border-b border-slate-100 text-slate-800",
+                                      columnWidthStyles[col]
+                                    )}
+                                  >
+                                    {renderCellContent(val)}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : filteredGraph.nodes.length === 0 ? (
               <div className="h-full w-full flex items-center justify-center px-6 text-center bg-slate-50">
