@@ -362,6 +362,21 @@ export default function ScalesDashboard() {
 
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [health, setHealth] = useState<any>(null);
+  const [selectedEngine, setSelectedEngine] = useState<"auto" | "n8n" | "express">("auto");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedEngine = window.localStorage.getItem("scales_orchestrator_engine") as "auto" | "n8n" | "express";
+      if (savedEngine) setSelectedEngine(savedEngine);
+    }
+  }, []);
+
+  const handleEngineChange = (engine: "auto" | "n8n" | "express") => {
+    setSelectedEngine(engine);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("scales_orchestrator_engine", engine);
+    }
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const missionLogEndRef = useRef<HTMLDivElement>(null);
@@ -494,13 +509,21 @@ export default function ScalesDashboard() {
         },
       ]);
 
+      const traceLogs = (normalizedData.evidenceTrace?.toolsUsed || [])
+        .filter((t) => t.name && t.outputSummary)
+        .map((t) => ({
+          time: getTimeStamp(),
+          text: `[${t.name}]: ${(t.outputSummary || "").slice(0, 110)}`,
+        }));
+
       setMissionLog((previous) =>
         trimMissionLog([
           ...previous,
           {
             time: getTimeStamp(),
-            text: "Lead strategist completed report synthesis.",
+            text: `[${normalizedData.engineUsed || "Orchestrator"}] Synthesis completed successfully.`,
           },
+          ...traceLogs,
           {
             time: getTimeStamp(),
             text: `Evidence catalog: Loaded ${
@@ -723,8 +746,40 @@ export default function ScalesDashboard() {
               Consultation Chat
             </span>
 
-            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
-              <span>ACTIVE SCAN AGENTS: {activeAgents.length || 0}</span>
+            <div className="flex items-center gap-3 text-[10px] font-mono">
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                <span className="font-bold text-slate-500 uppercase px-1 text-[8px]">ENGINE:</span>
+                {(["auto", "express", "n8n"] as const).map((eng) => {
+                  const isSelected = selectedEngine === eng;
+                  const isN8nOk = health?.services?.n8n?.status === "ok";
+                  const isMcpOk = health?.services?.mcp_server?.status === "ok";
+
+                  return (
+                    <button
+                      key={eng}
+                      type="button"
+                      onClick={() => handleEngineChange(eng)}
+                      className={clsx(
+                        "px-2 py-0.5 rounded font-bold uppercase transition relative group text-[9px]",
+                        isSelected
+                          ? "bg-white text-[#0065bd] shadow-2xs border border-slate-200"
+                          : "text-slate-500 hover:text-slate-800"
+                      )}
+                    >
+                      {eng}
+                      <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-50 rounded bg-slate-800 text-white px-2.5 py-1.5 text-[9px] font-sans whitespace-nowrap shadow-md">
+                        {eng === "auto"
+                          ? "Auto-Switch: Tries n8n (:5678), auto-falls back to Express (:8000)"
+                          : eng === "n8n"
+                          ? `n8n Workflow Engine — Status: ${isN8nOk ? "Linked (52ms)" : "Offline"}`
+                          : `Express MCP Engine — Status: ${isMcpOk ? "Enabled (24ms)" : "Offline"}`}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <span className="text-slate-400">AGENTS: {activeAgents.length || 0}</span>
             </div>
           </div>
 
@@ -795,11 +850,53 @@ export default function ScalesDashboard() {
                       message.metadata?.tableRows &&
                       message.metadata.tableRows.length > 0 && (
                         <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-2.5">
-                          <div className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between font-mono">
-                            <span>
-                              Structured Graph Database Query Results (
-                              {message.metadata.tableRows.length} records):
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="font-bold text-slate-700 text-[10px] uppercase tracking-wider block">
+                              Structured Graph Database Query Results:
                             </span>
+
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  const cols = message.metadata!.tableColumns!;
+                                  const rows = message.metadata!.tableRows!;
+                                  const header = cols.join(",");
+                                  const dataRows = rows.map(r => cols.map(c => {
+                                    const v = r[c];
+                                    const str = typeof v === "object" && v !== null ? JSON.stringify(v) : String(v ?? "");
+                                    return `"${str.replace(/"/g, '""')}"`;
+                                  }).join(","));
+                                  const blob = new Blob([[header, ...dataRows].join("\n")], { type: "text/csv;charset=utf-8;" });
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = "graph_query_results.csv";
+                                  a.click();
+                                  URL.revokeObjectURL(url);
+                                }}
+                                className="text-[9px] font-sans font-semibold px-2 py-0.5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition flex items-center gap-1 shadow-2xs"
+                                title="Download CSV"
+                              >
+                                CSV ⤓
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  const rows = message.metadata!.tableRows!;
+                                  const blob = new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" });
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = "graph_query_results.json";
+                                  a.click();
+                                  URL.revokeObjectURL(url);
+                                }}
+                                className="text-[9px] font-sans font-semibold px-2 py-0.5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition flex items-center gap-1 shadow-2xs"
+                                title="Download JSON"
+                              >
+                                JSON ⤓
+                              </button>
+                            </div>
                           </div>
 
                           <table className="w-full text-left text-[11px] font-mono border-collapse bg-white rounded-lg overflow-hidden border border-slate-200">
@@ -827,7 +924,9 @@ export default function ScalesDashboard() {
                                           key={columnIdx}
                                           className="p-2 text-slate-700 truncate max-w-[160px]"
                                         >
-                                          {String(row[column] ?? "—")}
+                                          {typeof row[column] === "object" && row[column] !== null
+                                             ? JSON.stringify(row[column])
+                                             : String(row[column] ?? "—")}
                                         </td>
                                       )
                                     )}

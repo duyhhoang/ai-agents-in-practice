@@ -36,7 +36,16 @@ Relationships:
 - (:ChargingStation)-[:LOCATED_IN]->(:Location)
 - (:Transport)-[:FOR_UNIT]->(:ChargingStation)`;
 
+let cachedSchemaStr: string | null = null;
+let cachedSchemaAt = 0;
+const SCHEMA_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 export async function getDatabaseSchema(driver: Driver): Promise<string> {
+  const now = Date.now();
+  if (cachedSchemaStr && (now - cachedSchemaAt) < SCHEMA_CACHE_TTL_MS) {
+    return cachedSchemaStr;
+  }
+
   const session = driver.session();
   try {
     const nodeRes = await session.executeRead(tx => tx.run(`
@@ -55,6 +64,8 @@ export async function getDatabaseSchema(driver: Driver): Promise<string> {
     `));
 
     if (nodeRes.records.length === 0) {
+      cachedSchemaStr = DEFAULT_SCHEMA;
+      cachedSchemaAt = Date.now();
       return DEFAULT_SCHEMA;
     }
 
@@ -75,7 +86,9 @@ export async function getDatabaseSchema(driver: Driver): Promise<string> {
       });
     }
 
-    return schemaStr.trim();
+    cachedSchemaStr = schemaStr.trim();
+    cachedSchemaAt = Date.now();
+    return cachedSchemaStr;
   } catch (err) {
     console.warn("Failed to retrieve dynamic database schema, using default fallback:", err);
     return DEFAULT_SCHEMA;
