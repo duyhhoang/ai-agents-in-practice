@@ -100,6 +100,7 @@ frontend/.env
 data-processors/*.json
 data-processors/workflows/
 scratch/
+defense-prep/
 
 
 ARCHITECTURE_DIAGRAM.md

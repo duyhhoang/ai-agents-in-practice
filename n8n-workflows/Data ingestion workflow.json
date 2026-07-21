@@ -319,7 +319,13 @@
       "position": [
         -608,
         384
-      ]
+      ],
+      "credentials": {
+        "neo4jApi": {
+          "id": "Yi9tAMAJmHhdQ9Kw",
+          "name": "Neo4j account"
+        }
+      }
     },
     {
       "parameters": {
@@ -374,7 +380,13 @@
       "position": [
         512,
         496
-      ]
+      ],
+      "credentials": {
+        "neo4jApi": {
+          "id": "Yi9tAMAJmHhdQ9Kw",
+          "name": "Neo4j account"
+        }
+      }
     },
     {
       "parameters": {
@@ -460,7 +472,13 @@
         1856,
         496
       ],
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "credentials": {
+        "neo4jApi": {
+          "id": "Yi9tAMAJmHhdQ9Kw",
+          "name": "Neo4j account"
+        }
+      }
     },
     {
       "parameters": {
@@ -500,7 +518,13 @@
       "position": [
         512,
         304
-      ]
+      ],
+      "credentials": {
+        "neo4jApi": {
+          "id": "Yi9tAMAJmHhdQ9Kw",
+          "name": "Neo4j account"
+        }
+      }
     },
     {
       "parameters": {
