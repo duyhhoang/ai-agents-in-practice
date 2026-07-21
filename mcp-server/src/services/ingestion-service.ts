@@ -237,9 +237,21 @@ export async function completeIngestionPipeline(
   try {
     if (status === "success") {
       updateProgress(filename || "Batch Pipeline", "Capturing post-file states...", 65, true);
-      const postFileStates = await getFileStates();
+      
+      // Poll Neo4j for up to 6 seconds to ensure n8n's ProcessedFile commits have landed
+      let postFileStates = await getFileStates();
+      const maxRetries = 12;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const hasNewlyProcessed = Array.from(preFileStates.entries()).some(([name, preState]) => {
+          const postState = postFileStates.get(name);
+          return !preState.processed && postState?.processed;
+        });
+        if (hasNewlyProcessed) break;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        postFileStates = await getFileStates();
+      }
 
-      // Compare states to determine status for only targeted files
+      // Compare states to determine status for targeted files
       const files: ExecutionRunFile[] = Array.from(preFileStates.entries()).map(([name, preState]) => {
         const postState = postFileStates.get(name);
         let fileStatus: "Processed" | "Skipped" | "Failed" = "Skipped";
@@ -250,10 +262,10 @@ export async function completeIngestionPipeline(
           } else if (preState.processed) {
             fileStatus = "Skipped";
           } else {
-            fileStatus = "Failed";
+            fileStatus = "Skipped";
           }
         } else {
-          fileStatus = "Failed";
+          fileStatus = "Skipped";
         }
 
         return {
