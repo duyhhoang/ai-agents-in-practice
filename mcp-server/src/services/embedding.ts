@@ -7,6 +7,10 @@ import { chunkText } from "./chunker.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/** Must match the `vector.dimensions` of the file_embeddings / chunk_embeddings indexes. */
+export const EMBEDDING_DIMENSIONS = 1536;
+const GEMINI_EMBEDDING_MODEL = "gemini-embedding-001";
+
 /**
  * Generates a deterministic unit vector of 1536 dimensions seeded by a string hash.
  * This is used as a local fallback for embedding generation.
@@ -21,7 +25,7 @@ export function getDeterministicMockEmbedding(text: string): number[] {
 
   let state = seed;
   let sumOfSquares = 0;
-  for (let i = 0; i < 1536; i++) {
+  for (let i = 0; i < EMBEDDING_DIMENSIONS; i++) {
     state = (Math.imul(state, 1664525) + 1013904223) | 0;
     const val = state / 2147483648; // [-1, 1] range
     embedding.push(val);
@@ -30,7 +34,7 @@ export function getDeterministicMockEmbedding(text: string): number[] {
 
   const magnitude = Math.sqrt(sumOfSquares);
   if (magnitude > 0) {
-    for (let i = 0; i < 1536; i++) {
+    for (let i = 0; i < EMBEDDING_DIMENSIONS; i++) {
       embedding[i] /= magnitude;
     }
   } else {
@@ -53,22 +57,29 @@ export function isMockEmbedding(): boolean {
 export async function getEmbedding(text: string): Promise<number[]> {
   if (process.env.GEMINI_API_KEY) {
     try {
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent", {
+      // gemini-embedding-001 supports Matryoshka truncation, so we request exactly the
+      // dimensionality the Neo4j vector indexes were created with.
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_EMBEDDING_MODEL}:embedContent`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": process.env.GEMINI_API_KEY
         },
         body: JSON.stringify({
-          model: "models/text-embedding-004",
-          content: { parts: [{ text }] }
+          model: `models/${GEMINI_EMBEDDING_MODEL}`,
+          content: { parts: [{ text }] },
+          outputDimensionality: EMBEDDING_DIMENSIONS
         })
       });
       if (response.ok) {
         const data = await response.json();
-        if (data.embedding && Array.isArray(data.embedding.values)) {
-          return data.embedding.values;
+        const values = data?.embedding?.values;
+        if (Array.isArray(values) && values.length === EMBEDDING_DIMENSIONS) {
+          return values;
         }
+        console.warn(`Gemini returned ${Array.isArray(values) ? values.length : "no"} embedding values (expected ${EMBEDDING_DIMENSIONS}), using deterministic fallback.`);
+      } else {
+        console.warn(`Gemini embedding API responded with HTTP ${response.status}, using deterministic fallback.`);
       }
     } catch (err: any) {
       console.warn("Gemini embedding API call failed, using deterministic fallback:", err.message);
@@ -91,7 +102,7 @@ export async function initializeEmbeddings(targetFiles?: string[]): Promise<void
       CREATE VECTOR INDEX file_embeddings IF NOT EXISTS
       FOR (f:ProcessedFile) ON (f.embedding)
       OPTIONS {indexConfig: {
-        \`vector.dimensions\`: 1536,
+        \`vector.dimensions\`: ${EMBEDDING_DIMENSIONS},
         \`vector.similarity_function\`: 'cosine'
       }};
     `;
@@ -102,7 +113,7 @@ export async function initializeEmbeddings(targetFiles?: string[]): Promise<void
       CREATE VECTOR INDEX chunk_embeddings IF NOT EXISTS
       FOR (c:ProcessedChunk) ON (c.embedding)
       OPTIONS {indexConfig: {
-        \`vector.dimensions\`: 1536,
+        \`vector.dimensions\`: ${EMBEDDING_DIMENSIONS},
         \`vector.similarity_function\`: 'cosine'
       }};
     `;

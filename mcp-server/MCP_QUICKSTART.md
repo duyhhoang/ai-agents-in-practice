@@ -20,18 +20,18 @@ An MCP server exposes custom tools that LLM agents (e.g. Claude Desktop, Cursor,
 
 ## 2. Implemented MCP Tools
 
-The server hosts a high-performance, custom MCP implementation written in TypeScript that exposes the following **8 custom tools** for graph analysis and pipeline control:
+The server exposes the following **8 tools** for graph analysis and pipeline control:
 
 | Tool | Parameters | Description |
 | :--- | :--- | :--- |
-| `graph-query` | `query` (string), `params` (object), `allow_write` (boolean) | Execute read-only Cypher queries (or mutations if `allow_write` is enabled). |
-| `schema-inspect` | None | Retrieve the active Neo4j database schema dynamically (node labels, property keys, relationship types). |
-| `subgraph-extract` | `entity_id` (string), `entity_type` (string), `depth` (number) | Extracts a localized subgraph around a starting node using APOC. |
-| `diagram-generate` | `entity_id` (string), `entity_type` (string), `depth` (number) | Generates a PlantUML diagram representing a node's local subgraph. |
-| `analytics` | `type` ("bottleneck_analysis" \| "critical_path" \| "centrality") | Computes graph algorithms: in-degree dependencies, path length, or overall centrality. |
-| `vector-search` | `query` (string), `limit` (number) | Query unstructured RAG chunks from the Neo4j vector similarity index. |
-| `file-list` | None | Lists raw files in the `data-processors/` directory. |
-| `ingest-file` | `fileName` (string) | Triggers the async n8n background ingestion pipeline for a raw file. |
+| `graph-query` | `query` (string), `params` (object), `read_only` (boolean, default `true`) | Run a Cypher query in a read transaction, or a write transaction when `read_only` is `false`. |
+| `schema-inspect` | None | List node labels, relationship types, and property keys. |
+| `subgraph-extract` | `entity_id` (string), `entity_type` (string), `depth` (1-4), `unit_id` (optional, for `Process` nodes) | Extract the neighbourhood of a node using APOC `subgraphAll`. |
+| `diagram-generate` | `nodes` (array), `relationships` (array) | Render nodes and relationships as PlantUML. |
+| `analytics` | `analysis_type` (`bottleneck_analysis` \| `critical_path` \| `centrality`) | In-degree bottlenecks, longest process paths, or degree centrality. |
+| `vector-search` | `query_text` (string), `limit` (number) | Semantic search over document chunks in the Neo4j vector index. |
+| `file-list` | None | List ingested `ProcessedFile` nodes with hash and embedding status. |
+| `ingest-file` | None | Trigger the n8n ingestion pipeline in the background. |
 
 ---
 
@@ -119,5 +119,5 @@ The n8n Multi-Agent Chat Orchestrator interacts with the Express server routes.
 
 ## 6. Security & Rate Limiting
 
-- **Read-Only Enforcement**: By default, `graph-query` blocks mutating Cypher statements (such as `CREATE`, `MERGE`, `DELETE`, `SET`) to prevent accidental schema modifications, unless `allow_write` is explicitly set to `true`.
+- **Read-only by default**: the `graph-query` tool runs in a read transaction unless `read_only` is `false`. The REST endpoint `POST /api/query` additionally rejects mutating keywords (`CREATE`, `MERGE`, `DELETE`, `SET`, ...) unless `allow_write: true` is passed.
 - **Rate Limiting**: When accessed over HTTP SSE, the server implements sliding-window rate limiting of **120 requests per minute per IP** to prevent abuse.

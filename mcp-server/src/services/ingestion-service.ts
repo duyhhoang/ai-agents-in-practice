@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import { getNeo4jDriver } from "../neo4j-client.js";
 import { getHash } from "../utils.js";
 import { initializeEmbeddings } from "./embedding.js";
-import { logDetailedExecution, ExecutionRunFile, ExecutionRun } from "./execution-logger.js";
+import { logDetailedExecution, ExecutionRunFile } from "./execution-logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

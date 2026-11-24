@@ -4,7 +4,7 @@ import { getHash, convertNeo4jTypes, isForbiddenCypherQuery } from "../src/utils
 import { chunkText } from "../src/services/chunker.js";
 import { createRateLimiter } from "../src/services/rate-limiter.js";
 
-test("getHash - returns deterministic MD5 hex string", () => {
+test("getHash - returns deterministic 32-bit hashCode hex string", () => {
   const text = "TUM Supply Chain Test String";
   const hash1 = getHash(text);
   const hash2 = getHash(text);

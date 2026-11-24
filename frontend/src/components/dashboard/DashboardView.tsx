@@ -6,10 +6,6 @@ import {
   Layers,
   MapPin,
   Users,
-  Clock,
-  DollarSign,
-  CheckCircle2,
-  AlertCircle,
   HelpCircle,
   X,
 } from "lucide-react";

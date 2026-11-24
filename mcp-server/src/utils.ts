@@ -1,5 +1,3 @@
-import crypto from "crypto";
-
 /**
  * Computes the Java-like string hashCode custom hash (same as used in n8n pipeline).
  */

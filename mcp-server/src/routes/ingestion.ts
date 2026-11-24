@@ -11,7 +11,6 @@ import {
   getActiveProgress, 
   updateProgress, 
   runIngestionPipeline, 
-  getFileStates,
   completeIngestionPipeline
 } from "../services/ingestion-service.js";
 

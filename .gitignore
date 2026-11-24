@@ -1,37 +1,19 @@
-# =========================================================================
-# Gitignore for GenAI Agents for Supply Chain Analysis Project
-# =========================================================================
-
-# 1. Environment Variables & Secrets
-# ----------------------------------
+# Environment variables & secrets
 .env
 .env.*
 !.env.example
-!mcp-server/.env.example
 mcp-server/.env
 
-# 2. Python Virtual Environments
-# -----------------------------
+# Python virtual environments & caches
 .venv/
 venv/
 ENV/
-# Ignore venv folders inside tum-air-akg-example
-tum-air-akg-example/Lib/
-tum-air-akg-example/Include/
-tum-air-akg-example/Scripts/
-tum-air-akg-example/pyvenv.cfg
-
-# 3. Python Caching & Bytecode
-# ----------------------------
 **/__pycache__/
-**/*.pyc
-**/*.pyo
-**/*.pyd
+**/*.py[cod]
 .pytest_cache/
 .ipynb_checkpoints/
 
-# 4. Node.js (MCP Server) Dependencies & Builds
-# ---------------------------------------------
+# Node.js dependencies & builds
 **/node_modules/
 **/dist/
 npm-debug.log*
@@ -39,73 +21,54 @@ yarn-debug.log*
 yarn-error.log*
 .eslintcache
 
-# 5. Local Databases & Temporary State
-# ------------------------------------
-# n8n & container local SQLite database files and backups
+# Frontend
+frontend/.next/
+frontend/out/
+frontend/.env.local
+
+# Local databases
 *.sqlite
 *.sqlite.bak
 *.sqlite-shm
 *.sqlite-wal
 *.db
 
-# 6. Temporary Directories & Log Files
-# ------------------------------------
+# Logs & temporary directories
 temp_large_files/
 **/logs/
 **/*.log
+scratch/
+defense-prep/
 
-# 7. Ad-Hoc Execution Dumps & JSON Payload Logs
-# ---------------------------------------------
-# Excludes raw execution results and JSON dumps at the root
+# Ad-hoc execution dumps & debug scripts at the repository root
 /*.json
+/*.py
+/*.ipynb
 resolved_execution_*.json
 wf.json
 wf_current.json
 wf_patched*.json
-data-processors/execution_*.json
+data-processors/*.json
+data-processors/workflows/
+Neo4j-*.txt
 
-# 8. Root-Level Ad-hoc / Debug Helper Scripts
-# -------------------------------------------
-# Prevents committing the many debugging/inspection scripts at the root.
-# Core codebase files reside inside subdirectories (e.g. tum-air-akg-example/src/, mcp-server/src/).
-# Note: If you ever want to force-add a root script, use: git add -f <script_name>.py
-/*.py
-/*.ipynb
-Neo4j-bfaf074a-Created-2026-05-28.txt
-
-# 9. Reference / Lecture / Course Materials
-# -----------------------------------------
-# Ignore PDFs, slide decks, and Word docs in the root workspace
+# Course materials & private working notes (kept locally, not published)
 /*.pdf
 /*.pptx
 /*.docx
 /*.doc
+/ARCHITECTURE_DIAGRAM.md
+/ARCHITECTURE_DIAGRAM_SIMPLE.md
+/PRESENTATION_DIAGRAMS.md
+/PRESENTATION_PACK.md
+/PROJECT_DOCUMENTATION.md
+/ROADMAP.md
 
-# 10. IDE & OS Metadata
-# ---------------------
+# Course-provided LLM connection example (separate private repository)
+tum-air-akg-example/
+
+# IDE & OS metadata
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
-
-# Frontend
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/dist/
-frontend/.env.local
-frontend/.env
-
-# 11. Custom Local Scratch / Data Directory Ignores
-data-processors/*.json
-data-processors/workflows/
-scratch/
-defense-prep/
-
-
-ARCHITECTURE_DIAGRAM.md
-ARCHITECTURE_DIAGRAM_SIMPLE.md
-PRESENTATION_DIAGRAMS.md
-PRESENTATION_PACK.md
-PROJECT_DOCUMENTATION.md
-ROADMAP.md

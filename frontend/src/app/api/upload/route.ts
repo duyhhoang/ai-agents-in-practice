@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       let errorJson;
       try {
         errorJson = JSON.parse(errorText);
-      } catch (e) {
+      } catch {
         errorJson = { error: errorText || `Backend responded with status ${res.status}` };
       }
       return NextResponse.json(errorJson, { status: res.status });

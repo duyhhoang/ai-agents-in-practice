@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     console.log(`[Next.js API Proxy] Forwarding ingestion trigger request to backend...`);
     const res = await fetch("http://localhost:8000/ingestion/trigger", {
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       let errorJson;
       try {
         errorJson = JSON.parse(errorText);
-      } catch (e) {
+      } catch {
         errorJson = { error: errorText || `Backend responded with status ${res.status}` };
       }
       return NextResponse.json(errorJson, { status: res.status });

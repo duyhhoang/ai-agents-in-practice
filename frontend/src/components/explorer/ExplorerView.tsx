@@ -10,12 +10,10 @@ import {
   AlertTriangle,
   X,
   HelpCircle,
-  SlidersHorizontal,
   Pointer,
   BoxSelect,
   ChevronLeft,
   ChevronRight,
-  Sliders,
   Table
 } from "lucide-react";
 import CytoscapeGraph from "../graph/CytoscapeGraph";
