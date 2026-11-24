@@ -22,14 +22,11 @@ sequenceDiagram
     User->>Web: Submits question
     Web->>Orchestrator: Routes to n8n Webhook
     
-    par Parallel Vector Retrieval
-        Orchestrator->>Neo4j: Vector query on chunk_embeddings
-        Neo4j-->>Orchestrator: Returns unstructured text chunks
-    and Intent Triage
-        Orchestrator->>Orchestrator: Keyword triage (Procurement, Risk, Logistics, etc.)
-    end
+    Orchestrator->>Neo4j: Vector query on chunk_embeddings
+    Neo4j-->>Orchestrator: Returns unstructured text chunks
+    Orchestrator->>Orchestrator: Keyword triage (Procurement, Risk, Logistics, etc.)
 
-    loop For Each Triggered Agent
+    loop For each triggered agent (sequential)
         Orchestrator->>Specialists: Executes sub-workflow
         Specialists->>Neo4j: Executes specialized Cypher query
         Neo4j-->>Specialists: Returns graph evidence
@@ -47,14 +44,14 @@ sequenceDiagram
 
 ## 2. Agent Roles and Core Responsibilities
 
-The system consists of 6 distinct agent workflows in the `n8n-workflows/` folder:
+The system consists of 7 workflows in the `n8n-workflows/` folder:
 
 ### 1. Chat Orchestrator (`Chat Orchestrator.json`)
 - **Role:** Main gateway and router.
 - **Workflow:**
+  - Queries the Neo4j vector index to retrieve relevant unstructured context.
   - Performs intent classification (keyword triage) on the user's question.
-  - Queries Neo4j Vector Index to retrieve relevant unstructured context.
-  - Spawns parallel executions of targeted Specialist Agents.
+  - Runs the selected specialist sub-workflows one after another (n8n executes sub-workflow branches sequentially, so a parallel layout brings no speed-up; see `docs/engineering-notes.md`).
   - Combines the structured specialist data and unstructured chunks.
 
 ### 2. Procurement Specialist (`Agent - Procurement Specialist.json`)

@@ -8,8 +8,8 @@ This guide documents the design, execution flow, and configuration of the **Data
 ## 1. Workflow Architecture Overview
 
 The ingestion pipeline is a hybrid workflow. It dynamically routes incoming files based on their type:
-1. **Structured Data (CSVs)**: Processed deterministically in code via an mapping configuration, bypassing the LLM for maximum performance, accuracy, and zero token costs.
-2. **Unstructured Data (TXT, MD, HTML)**: Processed via a double-LLM (Gemini) entity resolution and extraction loop.
+1. **Structured Data (CSVs)**: Processed deterministically in code via a mapping configuration, bypassing the LLM for maximum performance, accuracy, and zero token costs.
+2. **Unstructured Data (TXT, MD, HTML)**: Processed via a two-stage LLM entity resolution and extraction loop (Gemma 4 on the TUM CIT inference cluster).
 
 ```mermaid
 flowchart TD
@@ -43,7 +43,7 @@ If the raw file has a `.csv` extension:
 
 ### Branch B: Unstructured Text Ingestion
 If the file is unstructured (such as `.txt`, `.md`, or `.html`):
-1. **Cache Check:** Calculates an MD5 hash of the raw text and compares it against `existing_files` in the database to prevent duplicate ingestion.
+1. **Cache Check:** Calculates a 32-bit content hash of the raw text (the same hash the backend uses) and compares it against `existing_files` in the database to prevent duplicate ingestion.
 2. **Dynamic Entity Resolution (`Fetch DB State` & `LLM Call 1`):**
    - **DB Fetch:** Queries Neo4j for all current entities (Actors, Locations, Materials, ChargingStations) before processing.
    - **Resolution Prompt:** The `Resolution Assistant` (LLM 1) takes the raw text and lists of existing database entities, performing semantic matching to resolve typos, casing differences, or suffixes. It outputs a mapping instructions guide.
@@ -68,7 +68,9 @@ To maintain high data quality and avoid graph fragmentation, the LLM is instruct
 
 ## 4. How to Run Ingestion
 
-1. Place your data files in the folder mapped to `/home/node/.n8n-files/` inside the n8n container.
-2. In the n8n interface, open the **07_LLM_Entity_Extraction_v3_HTTP** workflow.
-3. Click **Execute Workflow**.
-4. Monitor the logs. Once complete, you can verify the results in the Neo4j Browser or the Portal's **Explorer** tab.
+In normal operation the workflow is triggered by the backend: uploading a file in the dashboard's **Ingestion** tab (or clicking *Trigger n8n Ingestion*) calls the `trigger-extraction` webhook, and the workflow reports back to `POST /api/ingestion/complete` when it finishes.
+
+To run it manually:
+1. Place your data files in `data-processors/`, which is mounted to `/home/node/.n8n-files/` inside the n8n container.
+2. In n8n, open the **07_LLM_Entity_Extraction_v3_HTTP** workflow and click **Execute Workflow**.
+3. Verify the results in the Neo4j Browser or the dashboard's **Explorer** tab.

@@ -13,8 +13,6 @@ import queryRouter from "./routes/query.js";
 import ingestionRouter from "./routes/ingestion.js";
 import chatRouter from "./routes/chat.js";
 import { cleanupStuckRunningExecutions } from "./services/execution-logger.js";
-
-
 import { createRateLimiter } from "./services/rate-limiter.js";
 
 dotenv.config();
@@ -56,7 +54,7 @@ if (useStdio) {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-  // Rate Limiting Middleware for MCP Transports (Enhancement #4)
+  // Rate limiting for MCP transports
   const mcpRateLimiter = createRateLimiter({
     windowMs: 60 * 1000,
     max: 120,

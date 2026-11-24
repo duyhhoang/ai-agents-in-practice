@@ -1,6 +1,5 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import neo4j from "neo4j-driver";
 import { getNeo4jDriver } from "../neo4j-client.js";
 import { convertNeo4jTypes } from "../utils.js";
 import { getEmbedding } from "./embedding.js";

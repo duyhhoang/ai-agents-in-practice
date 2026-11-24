@@ -7,7 +7,6 @@ import {
   Terminal as TerminalIcon, 
   FileText, 
   CheckCircle, 
-  XCircle, 
   AlertCircle,
   HelpCircle,
   X,
@@ -61,7 +60,7 @@ export default function IngestionView() {
   const [logs, setLogs] = useState<ConsoleLog[]>([]);
   const [selectedFile, setSelectedFile] = useState<IngestionFile | null>(null);
   
-  // Progress State (Enhancement #3)
+  // Progress state
   const [progress, setProgress] = useState<ProgressState>({
     active: false,
     fileName: null,
@@ -80,7 +79,6 @@ export default function IngestionView() {
 
   // Poll progress state
   useEffect(() => {
-    let interval: NodeJS.Timeout;
     async function fetchProgress() {
       try {
         const res = await fetch("/api/ingestion/progress", { cache: "no-store" });
@@ -93,7 +91,7 @@ export default function IngestionView() {
       }
     }
     fetchProgress();
-    interval = setInterval(fetchProgress, 1500);
+    const interval = setInterval(fetchProgress, 1500);
     return () => clearInterval(interval);
   }, []);
 
@@ -128,7 +126,7 @@ export default function IngestionView() {
         const data = await res.json();
         setFiles(data as IngestionFile[]);
       }
-    } catch (err) {
+    } catch {
       addLog("Failed to retrieve file status from backend.", "error");
     } finally {
       setLoadingFiles(false);
@@ -376,7 +374,7 @@ export default function IngestionView() {
             </div>
           </div>
 
-          {/* Live Ingestion Progress Bar (Enhancement #3) */}
+          {/* Live ingestion progress bar */}
           {(progress.active || uploading || triggering) && (
             <div className="rounded-2xl border border-[#0065bd]/20 bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-purple-50/40 p-5 shadow-sm mb-4">
               <div className="flex items-center justify-between mb-2">

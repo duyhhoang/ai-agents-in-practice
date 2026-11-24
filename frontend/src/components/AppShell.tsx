@@ -7,12 +7,6 @@ import {
   Network, 
   MessageSquare, 
   Settings as SettingsIcon, 
-  Info,
-  Database,
-  Activity,
-  CheckCircle2,
-  HelpCircle,
-  Cpu,
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
